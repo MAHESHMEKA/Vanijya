@@ -6,6 +6,7 @@ WORKDIR /app
 # Copy root and package dependency manifests
 COPY package.json package-lock.json ./
 COPY apps/backend/package.json ./apps/backend/
+COPY apps/web/package.json ./apps/web/
 COPY packages/shared-types/package.json ./packages/shared-types/
 COPY packages/shared-utils/package.json ./packages/shared-utils/
 
