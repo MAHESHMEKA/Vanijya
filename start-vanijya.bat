@@ -4,7 +4,59 @@ setlocal
 cd /d "%~dp0"
 
 echo =========================================================
-echo   Vanijya - National Agricultural Portal
+echo   Vanijya - National Agricultural Portal Launcher
+echo =========================================================
+echo.
+echo   [1] Local Mode  (Node.js & Next.js - Instant)
+echo   [2] Docker Mode (Docker Compose - Full Container Stack)
+echo   [3] Stop Docker Containers
+echo.
+set /p MODE="Select launch mode [1, 2, or 3] (Default is 1): "
+
+if "%MODE%"=="2" goto DOCKER_MODE
+if "%MODE%"=="3" goto DOCKER_DOWN
+goto LOCAL_MODE
+
+:DOCKER_MODE
+echo.
+echo =========================================================
+echo   Launching Vanijya with Docker Compose...
+echo =========================================================
+echo.
+docker compose up -d --build
+if errorlevel 1 (
+    echo.
+    echo [ERROR] Docker Compose failed to start.
+    echo Please make sure Docker Desktop is installed and running.
+    echo Falling back to Local Mode...
+    pause
+    goto LOCAL_MODE
+)
+echo.
+echo =========================================================
+echo   Vanijya Containers are Running!
+echo   - Unified Portal: http://localhost:3000
+echo   - Public Prices:  http://localhost:3000/prices
+echo   - Common Login:   http://localhost:3000/login
+echo   - Backend API:    http://localhost:4000/api/docs
+echo   - PostgreSQL:     localhost:5432
+echo =========================================================
+echo.
+pause
+exit /b 0
+
+:DOCKER_DOWN
+echo.
+echo Stopping all Vanijya Docker containers...
+docker compose down
+echo Done.
+pause
+exit /b 0
+
+:LOCAL_MODE
+echo.
+echo =========================================================
+echo   Launching Vanijya in Local Node.js Mode...
 echo =========================================================
 echo.
 
