@@ -1,0 +1,214 @@
+// Vanijya Prisma Schema
+// SIH Problem Statement 26132: Strengthening Market Linkages & Price Discovery for Farmers
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  FARMER
+  BUYER
+  ADMIN
+}
+
+enum CropLotStatus {
+  OPEN
+  BIDDING
+  SOLD
+  CANCELLED
+}
+
+enum BidStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+  WITHDRAWN
+}
+
+enum TransactionStatus {
+  INITIATED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum PaymentStatus {
+  PENDING
+  INITIATED
+  PAID
+  FAILED
+}
+
+enum PriceSource {
+  AGMARKNET
+  MOCK
+}
+
+enum QualityGrade {
+  GRADE_A
+  GRADE_B
+  GRADE_C
+}
+
+enum CropUnit {
+  QUINTAL
+  KG
+  TONNE
+}
+
+model User {
+  id           String   @id @default(uuid())
+  name         String
+  phone        String?  @unique
+  email        String?  @unique
+  passwordHash String
+  role         Role     @default(FARMER)
+  district     String?
+  state        String?
+  location     String?
+  isVerified   Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  cropLots          CropLot[]
+  bids              Bid[]
+  buyerTransactions Transaction[] @relation("BuyerTransactions")
+  farmerTransactions Transaction[] @relation("FarmerTransactions")
+
+  @@map("users")
+}
+
+model Crop {
+  id          String    @id @default(uuid())
+  name        String    @unique
+  category    String
+  defaultUnit CropUnit  @default(QUINTAL)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  cropLots    CropLot[]
+  mandiPrices MandiPrice[]
+
+  @@map("crops")
+}
+
+model Market {
+  id        String   @id @default(uuid())
+  name      String
+  district  String
+  state     String
+  latitude  Float?
+  longitude Float?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  mandiPrices MandiPrice[]
+
+  @@map("markets")
+}
+
+model MandiPrice {
+  id              String      @id @default(uuid())
+  cropId          String
+  crop            Crop        @relation(fields: [cropId], references: [id], onDelete: Cascade)
+  marketId        String
+  market          Market      @relation(fields: [marketId], references: [id], onDelete: Cascade)
+  minPrice        Float
+  maxPrice        Float
+  modalPrice      Float
+  arrivalQuantity Float       @default(0)
+  date            DateTime
+  source          PriceSource @default(MOCK)
+  createdAt       DateTime    @default(now())
+
+  @@index([cropId, date])
+  @@index([marketId, date])
+  @@map("mandi_prices")
+}
+
+model CropLot {
+  id            String        @id @default(uuid())
+  farmerId      String
+  farmer        User          @relation(fields: [farmerId], references: [id], onDelete: Cascade)
+  cropId        String
+  crop          Crop          @relation(fields: [cropId], references: [id], onDelete: Cascade)
+  quantity      Float
+  unit          String        @default("QUINTAL")
+  expectedPrice Float
+  qualityGrade  QualityGrade  @default(GRADE_A)
+  location      String
+  harvestDate   DateTime?
+  status        CropLotStatus @default(OPEN)
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  bids        Bid[]
+  transaction Transaction?
+
+  @@index([farmerId])
+  @@index([cropId])
+  @@index([status])
+  @@map("crop_lots")
+}
+
+model Bid {
+  id        String    @id @default(uuid())
+  lotId     String
+  lot       CropLot   @relation(fields: [lotId], references: [id], onDelete: Cascade)
+  buyerId   String
+  buyer     User      @relation(fields: [buyerId], references: [id], onDelete: Cascade)
+  price     Float
+  quantity  Float
+  message   String?
+  status    BidStatus @default(PENDING)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  transaction Transaction?
+
+  @@index([lotId])
+  @@index([buyerId])
+  @@map("bids")
+}
+
+model Transaction {
+  id            String            @id @default(uuid())
+  lotId         String            @unique
+  lot           CropLot           @relation(fields: [lotId], references: [id], onDelete: Cascade)
+  buyerId       String
+  buyer         User              @relation("BuyerTransactions", fields: [buyerId], references: [id], onDelete: Cascade)
+  farmerId      String
+  farmer        User              @relation("FarmerTransactions", fields: [farmerId], references: [id], onDelete: Cascade)
+  acceptedBidId String            @unique
+  acceptedBid   Bid               @relation(fields: [acceptedBidId], references: [id], onDelete: Cascade)
+  agreedPrice   Float
+  quantity      Float
+  totalAmount   Float
+  status        TransactionStatus @default(INITIATED)
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+
+  payment Payment?
+
+  @@index([buyerId])
+  @@index([farmerId])
+  @@map("transactions")
+}
+
+model Payment {
+  id               String        @id @default(uuid())
+  transactionId    String        @unique
+  transaction      Transaction   @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+  amount           Float
+  status           PaymentStatus @default(PENDING)
+  paymentReference String?
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+
+  @@map("payments")
+}
