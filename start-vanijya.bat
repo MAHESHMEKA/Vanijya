@@ -1,5 +1,5 @@
 @echo off
-setlocal
+setlocal EnableDelayedExpansion
 
 cd /d "%~dp0"
 
@@ -8,58 +8,48 @@ echo   Vanijya - National Agricultural Portal Launcher
 echo =========================================================
 echo.
 
-REM 1. Verify Node.js and npm
+REM 1. Verify Node.js
 where node >nul 2>&1
-if errorlevel 1 (
-    echo [ERROR] Node.js is not installed or not in PATH.
-    echo Please install Node.js (v18 or v20+) from https://nodejs.org
-    echo.
-    pause
-    exit /b 1
-)
+if errorlevel 1 goto NO_NODE
 
-REM 2. Check and install dependencies if needed
-if not exist "node_modules\" (
-    echo [1/3] First-time setup: Installing dependencies...
-    call npm.cmd install
-    if errorlevel 1 (
-        echo [ERROR] npm install failed.
-        pause
-        exit /b 1
-    )
-) else (
-    echo [1/3] Dependencies found.
-)
+REM 2. Check dependencies
+if not exist "node_modules\" goto INSTALL_DEPS
+echo [1/3] Dependencies verified.
+goto CHECK_BUILD
 
-REM 3. Check build artifacts and compile if needed
-if not exist "apps\backend\dist\main.js" (
-    echo [2/3] First-time setup: Generating database client and building...
-    call npx.cmd prisma generate --schema=apps/backend/prisma/schema.prisma
-    call npm.cmd run build
-    if errorlevel 1 (
-        echo [ERROR] Build failed.
-        pause
-        exit /b 1
-    )
-) else (
-    echo [2/3] Build artifacts found.
-)
+:INSTALL_DEPS
+echo [1/3] Installing dependencies for first-time run...
+call npm.cmd install
+if errorlevel 1 goto ERR_NPM
+echo [1/3] Dependencies installed successfully.
 
-REM 4. Launch Backend and Web Portal
+:CHECK_BUILD
+if not exist "apps\backend\dist\main.js" goto DO_BUILD
+if not exist "apps\web\.next\" goto DO_BUILD
+echo [2/3] Build artifacts verified.
+goto LAUNCH_SERVERS
+
+:DO_BUILD
+echo [2/3] Building backend and web applications...
+call npx.cmd prisma generate --schema=apps/backend/prisma/schema.prisma
+call npm.cmd run build
+if errorlevel 1 goto ERR_BUILD
+echo [2/3] Build completed successfully.
+
+:LAUNCH_SERVERS
 echo [3/3] Launching Vanijya Platform...
 echo.
 
 echo Starting Backend API on port 4000...
-start "Vanijya Backend (Port 4000)" cmd /k "cd /d %~dp0 && node apps/backend/dist/main.js"
+start "Vanijya Backend (Port 4000)" /D "%~dp0" cmd /k "node apps/backend/dist/main.js"
 
 ping 127.0.0.1 -n 4 > nul
 
 echo Starting Unified Web Portal on port 3000...
-start "Vanijya Web Portal (Port 3000)" cmd /k "cd /d %~dp0 && npm.cmd run start --workspace=apps/web"
+start "Vanijya Web Portal (Port 3000)" /D "%~dp0" cmd /k "npm.cmd run start --workspace=apps/web"
 
 ping 127.0.0.1 -n 3 > nul
 
-REM 5. Open browser automatically
 start http://localhost:3000
 
 echo.
@@ -74,3 +64,23 @@ echo.
 echo Browser opened to http://localhost:3000
 echo You can close this window. The servers will continue running.
 pause
+exit /b 0
+
+:NO_NODE
+echo [ERROR] Node.js is not installed or not found in PATH.
+echo Please install Node.js from https://nodejs.org
+echo.
+pause
+exit /b 1
+
+:ERR_NPM
+echo.
+echo [ERROR] npm install failed. Please check your internet connection.
+pause
+exit /b 1
+
+:ERR_BUILD
+echo.
+echo [ERROR] Build failed. Please review the build errors above.
+pause
+exit /b 1
