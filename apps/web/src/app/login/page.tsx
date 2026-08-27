@@ -60,7 +60,7 @@ export default function UnifiedLoginPage() {
       setPassword('Farmer@123');
     } else if (role === 'BUYER') {
       setIdentifier('buyer@freshcart.com');
-      setPassword('Buyer@123');
+      setPassword('asdfcv321');
     } else if (role === 'ADMIN') {
       setIdentifier('admin@vanijya.gov.in');
       setPassword('Admin@123');

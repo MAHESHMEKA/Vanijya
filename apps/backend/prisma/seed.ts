@@ -18,7 +18,7 @@ async function main() {
 
   const saltRounds = 10;
   const farmerPassword = await bcrypt.hash('Farmer@123', saltRounds);
-  const buyerPassword = await bcrypt.hash('Buyer@123', saltRounds);
+  const buyerPassword = await bcrypt.hash('asdfcv321', saltRounds);
   const adminPassword = await bcrypt.hash('Admin@123', saltRounds);
 
   // 2. Seed Users

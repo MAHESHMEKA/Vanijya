@@ -21,7 +21,7 @@ On the unified login page ([`http://localhost:3000/login`](http://localhost:3000
 | Persona | Name / Entity | Identifier | Password | Role & Purpose |
 | :--- | :--- | :--- | :--- | :--- |
 | **Farmer** | Ramesh Patel | `9876543210` | `Farmer@123` | Nashik, Maharashtra (KCC Verified Producer) |
-| **Buyer** | FreshCart Agro Ltd. | `buyer@freshcart.com` | `Buyer@123` | Mumbai, Maharashtra (Wholesale Sourcing) |
+| **Buyer** | FreshCart Agro Ltd. | `buyer@freshcart.com` | `asdfcv321` | Mumbai, Maharashtra (Wholesale Sourcing) |
 | **Admin** | Vanijya System Admin | `admin@vanijya.gov.in` | `Admin@123` | Ministry of Agriculture Oversight |
 
 ---

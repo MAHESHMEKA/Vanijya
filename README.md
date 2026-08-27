@@ -83,7 +83,7 @@ Use these pre-configured accounts on the unified sign-in page ([`/login`](http:/
 | Role | Mobile / Email | Password | Persona Details |
 | :--- | :--- | :--- | :--- |
 | 👨‍🌾 **Farmer** | `9876543210` | `Farmer@123` | **Ramesh Patel** (Nashik, Maharashtra) — KCC Verified |
-| 🏢 **Buyer** | `buyer@freshcart.com` | `Buyer@123` | **FreshCart Agro Ltd.** — Institutional Procurer |
+| 🏢 **Buyer** | `buyer@freshcart.com` | `asdfcv321` | **FreshCart Agro Ltd.** — Institutional Procurer |
 | ⚙️ **Admin** | `admin@vanijya.gov.in` | `Admin@123` | **System Administrator** — Ministry Oversight |
 
 ---
@@ -98,7 +98,7 @@ Use these pre-configured accounts on the unified sign-in page ([`/login`](http:/
    Sign in as Farmer (9876543210) → Click "Publish Crop Lot" → List 100 Qtl Tomato at ₹2,200/Qtl (Grade A).
 
 3. BID (Buyer)
-   Sign in as Buyer (buyer@freshcart.com) → Browse Marketplace → Place bid of ₹2,250/Qtl for 100 Qtl.
+   Sign in as Buyer (buyer@freshcart.com / asdfcv321) → Browse Marketplace → Place bid of ₹2,250/Qtl for 100 Qtl.
 
 4. ACCEPT (Farmer)
    Switch to Farmer → Go to "My Lots" → Accept Buyer's offer → Contract is generated atomically (Status: SOLD).
