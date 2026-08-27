@@ -4,76 +4,73 @@ setlocal
 cd /d "%~dp0"
 
 echo =========================================================
-echo   Vanijya - National Agricultural Portal (Docker Mode)
+echo   Vanijya - National Agricultural Portal Launcher
 echo =========================================================
 echo.
 
-REM 1. Check if Docker CLI is installed
-where docker >nul 2>&1
+REM 1. Verify Node.js and npm
+where node >nul 2>&1
 if errorlevel 1 (
-    echo [ERROR] Docker is not installed or not found in system PATH.
-    echo Please install Docker Desktop from https://www.docker.com/products/docker-desktop
+    echo [ERROR] Node.js is not installed or not in PATH.
+    echo Please install Node.js (v18 or v20+) from https://nodejs.org
     echo.
     pause
     exit /b 1
 )
 
-REM 2. Check if Docker daemon is running
-echo [1/3] Checking Docker Engine status...
-docker info >nul 2>&1
-if errorlevel 1 (
-    echo Docker Engine is not running. Starting Docker Desktop automatically...
-
-    if exist "%LOCALAPPDATA%\Programs\DockerDesktop\Docker Desktop.exe" (
-        start "" "%LOCALAPPDATA%\Programs\DockerDesktop\Docker Desktop.exe"
-    ) else if exist "C:\Program Files\Docker\Docker\Docker Desktop.exe" (
-        start "" "C:\Program Files\Docker\Docker\Docker Desktop.exe"
-    ) else (
-        echo Could not locate Docker Desktop executable automatically.
-        echo Please launch Docker Desktop manually and run this script again.
+REM 2. Check and install dependencies if needed
+if not exist "node_modules\" (
+    echo [1/3] First-time setup: Installing dependencies...
+    call npm.cmd install
+    if errorlevel 1 (
+        echo [ERROR] npm install failed.
         pause
         exit /b 1
     )
-
-    echo Waiting for Docker daemon to initialize...
-    :WAIT_DOCKER
-    ping 127.0.0.1 -n 4 > nul
-    docker info >nul 2>&1
-    if errorlevel 1 (
-        echo Still waiting for Docker Engine...
-        goto WAIT_DOCKER
-    )
-    echo Docker Engine is ready!
 ) else (
-    echo [1/3] Docker Engine is active and ready.
+    echo [1/3] Dependencies found.
 )
 
-REM 3. Build and launch Docker containers
-echo.
-echo [2/3] Building and starting Vanijya Docker Containers...
-echo.
-docker compose up -d --build
-if errorlevel 1 (
-    echo.
-    echo [ERROR] Docker Compose build/startup failed.
-    echo Please check Docker logs above.
-    pause
-    exit /b 1
+REM 3. Check build artifacts and compile if needed
+if not exist "apps\backend\dist\main.js" (
+    echo [2/3] First-time setup: Generating database client and building...
+    call npx.cmd prisma generate --schema=apps/backend/prisma/schema.prisma
+    call npm.cmd run build
+    if errorlevel 1 (
+        echo [ERROR] Build failed.
+        pause
+        exit /b 1
+    )
+) else (
+    echo [2/3] Build artifacts found.
 )
 
-REM 4. Status and URLs
+REM 4. Launch Backend and Web Portal
+echo [3/3] Launching Vanijya Platform...
 echo.
-echo [3/3] Vanijya Stack is Running inside Docker!
+
+echo Starting Backend API on port 4000...
+start "Vanijya Backend (Port 4000)" cmd /k "cd /d %~dp0 && node apps/backend/dist/main.js"
+
+ping 127.0.0.1 -n 4 > nul
+
+echo Starting Unified Web Portal on port 3000...
+start "Vanijya Web Portal (Port 3000)" cmd /k "cd /d %~dp0 && npm.cmd run start --workspace=apps/web"
+
+ping 127.0.0.1 -n 3 > nul
+
+REM 5. Open browser automatically
+start http://localhost:3000
+
+echo.
 echo =========================================================
-echo   Vanijya Containers are Live!
+echo   Vanijya is Live!
 echo   - Unified Portal: http://localhost:3000
 echo   - Public Prices:  http://localhost:3000/prices
 echo   - Common Login:   http://localhost:3000/login
 echo   - Backend API:    http://localhost:4000/api/docs
-echo   - PostgreSQL:     localhost:5432 (vanijya_db)
 echo =========================================================
 echo.
-echo To view container logs:   docker compose logs -f
-echo To stop containers:       docker compose down
-echo.
+echo Browser opened to http://localhost:3000
+echo You can close this window. The servers will continue running.
 pause

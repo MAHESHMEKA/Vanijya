@@ -47,28 +47,31 @@
 
 ---
 
-## 🚀 Quick Start Guide (Docker-Powered)
+## 🚀 Quick Start Guide
 
-### Option 1: 1-Click Launch (Windows with Docker)
+### Option 1: 1-Click Launch (Windows)
 Double-click the launcher script in the project root:
 ```bat
 start-vanijya.bat
 ```
-*This automatically starts Docker Desktop if stopped, builds all multi-stage containers, and launches PostgreSQL, Backend API, and Web Portal.*
+*This automatically checks dependencies, compiles the project on first run, starts the backend & frontend servers, and opens your browser.*
 
 ---
 
-### Option 2: Command Line (Docker Compose)
+### Option 2: Manual Terminal Startup
 
 ```bash
-# Start the full containerized stack (Postgres + NestJS Backend + Next.js Web)
-docker compose up -d --build
+# 1. Install dependencies
+npm install
 
-# View container logs
-docker compose logs -f
+# 2. Build monorepo packages
+npm run build
 
-# Stop all containers
-docker compose down
+# 3. Start Backend (Terminal 1)
+node apps/backend/dist/main.js
+
+# 4. Start Unified Web Portal (Terminal 2)
+npm run start --workspace=apps/web
 ```
 
 ---
@@ -129,8 +132,6 @@ vanijya/
 ├── packages/
 │   ├── shared-types/               # Shared TypeScript Interfaces & DTOs
 │   └── shared-utils/               # Mathematical Formulas & Date Utilities
-├── Dockerfile.backend              # Production Backend Container
-├── Dockerfile.web                  # Production Web Container
 ├── start-vanijya.bat               # 1-Click Windows Launcher
 └── README.md                       # Master Documentation
 ```
