@@ -7,7 +7,7 @@ import { LoginDto } from './dto/login.dto';
 import { AuthResponseDto } from './dto/auth-response.dto';
 
 // In-memory fallback accounts for 100% offline/resilient authentication
-const FALLBACK_USERS = [
+export const FALLBACK_USERS = [
   {
     id: 'usr-farmer-1',
     name: 'Ramesh Patel',

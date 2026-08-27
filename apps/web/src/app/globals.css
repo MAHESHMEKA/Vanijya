@@ -4,20 +4,12 @@
 
 @layer base {
   :root {
-    --background: 222 47% 4%;
-    --foreground: 48 100% 98%;
-  }
-
-  /* Force universal Dark Golden Theme across all OS and browsers */
-  html {
-    color-scheme: dark;
-    background-color: #030712;
+    --background: 48 100% 98%;
+    --foreground: 30 50% 10%;
   }
 
   body {
-    @apply bg-slate-950 text-slate-100 antialiased;
-    background-color: #030712;
-    color: #f8fafc;
+    @apply bg-amber-50/40 text-slate-900 antialiased;
     font-feature-settings: "cv02", "cv03", "cv04", "cv11";
   }
 }
@@ -29,7 +21,7 @@
 
 .transition-card:hover {
   transform: translateY(-2px);
-  box-shadow: 0 10px 25px -5px rgba(245, 158, 11, 0.2), 0 8px 10px -6px rgba(245, 158, 11, 0.1);
+  box-shadow: 0 10px 25px -5px rgba(217, 119, 6, 0.15), 0 8px 10px -6px rgba(217, 119, 6, 0.1);
 }
 
 .transition-card:active {
@@ -47,7 +39,7 @@
 }
 
 .animate-shimmer {
-  background: linear-gradient(90deg, #1e293b 25%, #334155 50%, #1e293b 75%);
+  background: linear-gradient(90deg, #fef3c7 25%, #fde68a 50%, #fef3c7 75%);
   background-size: 200% 100%;
   animation: shimmer 1.5s infinite;
 }
@@ -58,7 +50,7 @@
   height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: #030712;
+  background: transparent;
 }
 ::-webkit-scrollbar-thumb {
   background: #f59e0b;

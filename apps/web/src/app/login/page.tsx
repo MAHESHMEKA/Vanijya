@@ -33,13 +33,13 @@ export default function UnifiedLoginPage() {
 
   if (isAuthenticated && user) {
     return (
-      <div className="max-w-md mx-auto bg-slate-900/90 p-6 md:p-8 rounded-3xl border border-amber-500/30 shadow-2xl text-center space-y-4 my-8 animate-in fade-in">
-        <div className="w-14 h-14 bg-amber-500/20 text-amber-400 border border-amber-500/30 rounded-full flex items-center justify-center mx-auto">
+      <div className="max-w-md mx-auto bg-white p-6 md:p-8 rounded-3xl border border-amber-200 shadow-md text-center space-y-4 my-8 animate-in fade-in">
+        <div className="w-14 h-14 bg-amber-100 text-amber-900 rounded-full flex items-center justify-center mx-auto">
           <ShieldCheck className="w-8 h-8" />
         </div>
-        <h2 className="text-xl font-black text-white">Signed In Successfully</h2>
-        <p className="text-xs text-slate-300">
-          Logged in as <strong className="text-amber-300">{user.name}</strong> ({user.role})
+        <h2 className="text-xl font-black text-slate-900">Signed In Successfully</h2>
+        <p className="text-xs text-slate-600">
+          Logged in as <strong>{user.name}</strong> ({user.role})
         </p>
         <div className="pt-2">
           <Link
@@ -86,22 +86,22 @@ export default function UnifiedLoginPage() {
 
   return (
     <div className="max-w-md mx-auto space-y-5 animate-in fade-in duration-300">
-      <Link href="/" className="inline-flex items-center gap-1 text-xs text-amber-400 font-bold hover:underline">
+      <Link href="/" className="inline-flex items-center gap-1 text-xs text-amber-800 font-bold hover:underline">
         <ArrowLeft className="w-3.5 h-3.5" /> {t.navHome}
       </Link>
 
-      <div className="bg-slate-900/90 p-6 md:p-8 rounded-3xl border border-amber-500/30 shadow-2xl space-y-5">
+      <div className="bg-white p-6 md:p-8 rounded-3xl border border-amber-200 shadow-md space-y-5">
         <div className="text-center space-y-1">
           <div className="w-12 h-12 bg-gradient-to-br from-amber-400 to-yellow-500 text-slate-950 rounded-2xl flex items-center justify-center mx-auto mb-2 font-bold shadow-md shadow-amber-500/25">
             <LogIn className="w-6 h-6" />
           </div>
-          <h1 className="text-2xl font-black text-white tracking-tight">{t.loginTitle}</h1>
-          <p className="text-xs text-slate-400">{t.loginSubtitle}</p>
+          <h1 className="text-2xl font-black text-slate-900 tracking-tight">{t.loginTitle}</h1>
+          <p className="text-xs text-slate-500">{t.loginSubtitle}</p>
         </div>
 
         {/* Role Selector Tabs */}
         <div className="space-y-1.5">
-          <label className="block text-xs font-bold text-slate-300">
+          <label className="block text-xs font-bold text-slate-700">
             {t.roleSelectLabel}
           </label>
           <div className="grid grid-cols-3 gap-2">
@@ -110,8 +110,8 @@ export default function UnifiedLoginPage() {
               onClick={() => handleRoleSelect('FARMER')}
               className={`p-2.5 rounded-2xl border text-xs font-bold flex flex-col items-center gap-1 transition ${
                 selectedRole === 'FARMER'
-                  ? 'bg-gradient-to-r from-amber-400 to-yellow-500 text-slate-950 border-amber-400 shadow-md font-black'
-                  : 'bg-slate-950 text-slate-300 border-amber-500/20 hover:bg-slate-800 hover:text-amber-300'
+                  ? 'bg-gradient-to-r from-amber-400 to-yellow-500 text-slate-950 border-amber-500 shadow-sm font-black'
+                  : 'bg-amber-50/50 text-slate-700 border-amber-200 hover:bg-amber-100/50'
               }`}
             >
               <Sprout className="w-4 h-4" />
@@ -123,8 +123,8 @@ export default function UnifiedLoginPage() {
               onClick={() => handleRoleSelect('BUYER')}
               className={`p-2.5 rounded-2xl border text-xs font-bold flex flex-col items-center gap-1 transition ${
                 selectedRole === 'BUYER'
-                  ? 'bg-gradient-to-r from-amber-400 to-yellow-500 text-slate-950 border-amber-400 shadow-md font-black'
-                  : 'bg-slate-950 text-slate-300 border-amber-500/20 hover:bg-slate-800 hover:text-amber-300'
+                  ? 'bg-gradient-to-r from-amber-400 to-yellow-500 text-slate-950 border-amber-500 shadow-sm font-black'
+                  : 'bg-amber-50/50 text-slate-700 border-amber-200 hover:bg-amber-100/50'
               }`}
             >
               <Building2 className="w-4 h-4" />
@@ -136,8 +136,8 @@ export default function UnifiedLoginPage() {
               onClick={() => handleRoleSelect('ADMIN')}
               className={`p-2.5 rounded-2xl border text-xs font-bold flex flex-col items-center gap-1 transition ${
                 selectedRole === 'ADMIN'
-                  ? 'bg-slate-800 text-amber-400 border-amber-400 shadow-md font-black'
-                  : 'bg-slate-950 text-slate-300 border-amber-500/20 hover:bg-slate-800 hover:text-amber-300'
+                  ? 'bg-slate-900 text-amber-400 border-slate-950 shadow-sm font-black'
+                  : 'bg-amber-50/50 text-slate-700 border-amber-200 hover:bg-amber-100/50'
               }`}
             >
               <ShieldAlert className="w-4 h-4" />
@@ -147,15 +147,15 @@ export default function UnifiedLoginPage() {
         </div>
 
         {errorMessage && (
-          <div className="p-3 bg-rose-950/60 border border-rose-500/40 text-rose-300 text-xs rounded-xl font-medium">
+          <div className="p-3 bg-rose-50 border border-rose-200 text-rose-800 text-xs rounded-xl font-medium">
             {errorMessage}
           </div>
         )}
 
         <form onSubmit={handleLogin} className="space-y-4 pt-1">
           <div>
-            <label className="block text-xs font-bold text-slate-300 mb-1.5 flex items-center gap-1.5">
-              <Phone className="w-3.5 h-3.5 text-amber-400" />
+            <label className="block text-xs font-bold text-slate-700 mb-1.5 flex items-center gap-1.5">
+              <Phone className="w-3.5 h-3.5 text-amber-700" />
               {t.phoneOrEmailLabel}
             </label>
             <input
@@ -164,13 +164,13 @@ export default function UnifiedLoginPage() {
               value={identifier}
               onChange={(e) => setIdentifier(e.target.value)}
               placeholder="e.g. 9876543210 or buyer@freshcart.com"
-              className="w-full px-3.5 py-2.5 bg-slate-950 border border-amber-500/30 rounded-xl text-sm font-medium text-white focus:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-400 placeholder:text-slate-600"
+              className="w-full px-3.5 py-2.5 bg-amber-50/40 border border-amber-200 rounded-xl text-sm font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-slate-300 mb-1.5 flex items-center gap-1.5">
-              <Lock className="w-3.5 h-3.5 text-amber-400" />
+            <label className="block text-xs font-bold text-slate-700 mb-1.5 flex items-center gap-1.5">
+              <Lock className="w-3.5 h-3.5 text-amber-700" />
               {t.passwordLabel}
             </label>
             <input
@@ -179,7 +179,7 @@ export default function UnifiedLoginPage() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="••••••••"
-              className="w-full px-3.5 py-2.5 bg-slate-950 border border-amber-500/30 rounded-xl text-sm font-medium text-white focus:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-400 placeholder:text-slate-600"
+              className="w-full px-3.5 py-2.5 bg-amber-50/40 border border-amber-200 rounded-xl text-sm font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500"
             />
           </div>
 
@@ -199,7 +199,7 @@ export default function UnifiedLoginPage() {
           </button>
         </form>
 
-        <div className="pt-2 text-center text-xs text-slate-500">
+        <div className="pt-2 text-center text-xs text-slate-400">
           Kisan Credit Card (KCC) & National APMC Trade Enrolled
         </div>
       </div>

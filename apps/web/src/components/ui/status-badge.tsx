@@ -6,48 +6,48 @@ interface StatusBadgeProps {
 }
 
 export function StatusBadge({ status, type = 'lot' }: StatusBadgeProps) {
-  let colorStyles = 'bg-slate-800 text-slate-300 border-slate-700';
+  let colorStyles = 'bg-slate-100 text-slate-800 border-slate-200';
   let label = status;
 
   switch (status) {
     case 'OPEN':
-      colorStyles = 'bg-amber-500/20 text-amber-300 border-amber-500/30 font-bold';
+      colorStyles = 'bg-amber-50 text-amber-900 border-amber-300 font-bold';
       label = 'OPEN FOR BIDS';
       break;
     case 'BIDDING':
-      colorStyles = 'bg-yellow-500/20 text-yellow-300 border-yellow-500/30 font-bold';
+      colorStyles = 'bg-yellow-100 text-amber-950 border-yellow-300 font-bold';
       label = 'ACTIVE BIDDING';
       break;
     case 'SOLD':
-      colorStyles = 'bg-amber-500 text-slate-950 border-amber-400 font-black shadow-md';
+      colorStyles = 'bg-amber-600 text-white border-amber-700 font-black shadow-sm';
       label = 'SOLD & LOCKED';
       break;
     case 'CANCELLED':
-      colorStyles = 'bg-rose-950/60 text-rose-300 border-rose-500/30';
+      colorStyles = 'bg-rose-50 text-rose-800 border-rose-200';
       label = 'CANCELLED';
       break;
     case 'PENDING':
-      colorStyles = 'bg-slate-800 text-slate-300 border-slate-700 font-medium';
+      colorStyles = 'bg-amber-50 text-amber-800 border-amber-200';
       label = 'PENDING REVIEW';
       break;
     case 'ACCEPTED':
-      colorStyles = 'bg-amber-400/20 text-amber-300 border-amber-400/40 font-black';
+      colorStyles = 'bg-amber-100 text-amber-950 border-amber-400 font-black shadow-sm';
       label = 'ACCEPTED';
       break;
     case 'REJECTED':
-      colorStyles = 'bg-rose-950/60 text-rose-300 border-rose-500/30';
+      colorStyles = 'bg-rose-50 text-rose-800 border-rose-200';
       label = 'REJECTED';
       break;
     case 'INITIATED':
-      colorStyles = 'bg-blue-950/60 text-blue-300 border-blue-500/30';
+      colorStyles = 'bg-blue-50 text-blue-800 border-blue-200';
       label = 'PAYMENT DISPATCHED';
       break;
     case 'PAID':
-      colorStyles = 'bg-gradient-to-r from-amber-400 to-yellow-500 text-slate-950 border-amber-400 font-black shadow-md';
+      colorStyles = 'bg-gradient-to-r from-amber-500 to-yellow-500 text-slate-950 border-amber-600 font-black shadow-sm';
       label = 'SETTLED (PAID)';
       break;
     case 'COMPLETED':
-      colorStyles = 'bg-amber-600 text-slate-950 border-amber-500 font-black shadow-md';
+      colorStyles = 'bg-amber-700 text-white border-amber-800 font-black shadow-sm';
       label = 'CONTRACT COMPLETED';
       break;
   }

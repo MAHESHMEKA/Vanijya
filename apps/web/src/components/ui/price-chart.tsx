@@ -16,7 +16,7 @@ interface PriceChartProps {
 export function PriceChart({ data, cropName }: PriceChartProps) {
   if (!data || data.length === 0) {
     return (
-      <div className="h-44 flex items-center justify-center bg-slate-900 rounded-2xl border border-dashed border-amber-500/30 text-xs text-amber-400">
+      <div className="h-44 flex items-center justify-center bg-amber-50/50 rounded-2xl border border-dashed border-amber-200 text-xs text-amber-600">
         No price history points available for {cropName}
       </div>
     );
@@ -44,13 +44,13 @@ export function PriceChart({ data, cropName }: PriceChartProps) {
   const areaD = `${pathD} L ${points[points.length - 1].x} ${height - padding} L ${points[0].x} ${height - padding} Z`;
 
   return (
-    <div className="w-full bg-slate-900/80 p-4 md:p-5 rounded-3xl border border-amber-500/20 shadow-sm space-y-2">
+    <div className="w-full bg-white p-4 md:p-5 rounded-3xl border border-amber-200/80 shadow-sm space-y-2">
       <div className="flex items-center justify-between">
-        <span className="text-xs font-black text-white tracking-tight flex items-center gap-1.5">
-          <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
+        <span className="text-xs font-black text-slate-900 tracking-tight flex items-center gap-1.5">
+          <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
           7-Day Mandi Price Trend ({cropName})
         </span>
-        <span className="text-[11px] font-black text-amber-300 bg-slate-950 border border-amber-500/30 px-2.5 py-0.5 rounded-full">
+        <span className="text-[11px] font-black text-amber-700 bg-amber-50 border border-amber-200 px-2.5 py-0.5 rounded-full">
           Latest: ₹{data[data.length - 1]?.modalPrice?.toLocaleString('en-IN')}/Qtl
         </span>
       </div>
@@ -59,7 +59,7 @@ export function PriceChart({ data, cropName }: PriceChartProps) {
         <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-40">
           <defs>
             <linearGradient id="goldenPriceGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-              <stop offset="0%" stopColor="#f59e0b" stopOpacity="0.4" />
+              <stop offset="0%" stopColor="#f59e0b" stopOpacity="0.35" />
               <stop offset="100%" stopColor="#f59e0b" stopOpacity="0.0" />
             </linearGradient>
           </defs>
@@ -70,7 +70,7 @@ export function PriceChart({ data, cropName }: PriceChartProps) {
             y1={height - padding}
             x2={width - padding}
             y2={height - padding}
-            stroke="#334155"
+            stroke="#fde68a"
             strokeWidth="1"
           />
           <line
@@ -78,7 +78,7 @@ export function PriceChart({ data, cropName }: PriceChartProps) {
             y1={padding}
             x2={width - padding}
             y2={padding}
-            stroke="#1e293b"
+            stroke="#fef3c7"
             strokeWidth="1"
             strokeDasharray="4 4"
           />
@@ -87,18 +87,18 @@ export function PriceChart({ data, cropName }: PriceChartProps) {
           <path d={areaD} fill="url(#goldenPriceGradient)" />
 
           {/* Stroke Line */}
-          <path d={pathD} fill="none" stroke="#f59e0b" strokeWidth="3" strokeLinecap="round" />
+          <path d={pathD} fill="none" stroke="#d97706" strokeWidth="3" strokeLinecap="round" />
 
           {/* Points */}
           {points.map((p, i) => (
             <g key={i}>
-              <circle cx={p.x} cy={p.y} r="4.5" fill="#f59e0b" stroke="#0f172a" strokeWidth="2.5" />
+              <circle cx={p.x} cy={p.y} r="4.5" fill="#f59e0b" stroke="#ffffff" strokeWidth="2.5" />
               <text
                 x={p.x}
                 y={height - 10}
                 textAnchor="middle"
                 fontSize="9"
-                fill="#cbd5e1"
+                fill="#92400e"
                 fontWeight="bold"
               >
                 {new Date(p.date).toLocaleDateString('en-IN', { weekday: 'narrow', day: 'numeric' })}
