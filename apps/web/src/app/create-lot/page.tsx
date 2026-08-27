@@ -116,9 +116,12 @@ export default function CreateLotPage() {
     e.preventDefault();
     setIsSubmitting(true);
 
+    const chosenCrop = crops.find((c) => c.name === selectedCropName) || crops.find((c) => c.id === cropId) || crops[0];
+    const finalCropId = chosenCrop?.id || cropId || 'crop-1';
+
     try {
       await api.post('/lots', {
-        cropId: cropId || crops.find((c) => c.name === selectedCropName)?.id || '1',
+        cropId: finalCropId,
         quantity: parseFloat(quantity),
         unit,
         expectedPrice: parseFloat(expectedPrice),

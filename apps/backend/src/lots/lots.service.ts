@@ -92,8 +92,7 @@ export class LotsService {
         FALLBACK_CROPS.find(
           (c) =>
             c.id === dto.cropId ||
-            c.name.toLowerCase() === (dto.cropId || '').toLowerCase() ||
-            c.id === 'crop-1'
+            c.name.toLowerCase() === (dto.cropId || '').toLowerCase()
         ) || FALLBACK_CROPS[0];
 
       const newLot = {
