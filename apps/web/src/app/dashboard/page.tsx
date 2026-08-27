@@ -74,16 +74,16 @@ export default function SmartDashboardPage() {
 
   if (!isAuthenticated || !user) {
     return (
-      <div className="max-w-md mx-auto bg-white p-8 rounded-3xl border border-amber-200 shadow-md text-center space-y-4 my-8">
-        <div className="w-14 h-14 bg-amber-100 text-amber-900 rounded-full flex items-center justify-center mx-auto">
+      <div className="max-w-md mx-auto bg-slate-900/90 p-8 rounded-3xl border border-amber-500/30 shadow-xl text-center space-y-4 my-8">
+        <div className="w-14 h-14 bg-amber-500/20 text-amber-400 border border-amber-500/30 rounded-full flex items-center justify-center mx-auto">
           <LogIn className="w-8 h-8" />
         </div>
-        <h2 className="text-xl font-black text-slate-900">Sign In Required</h2>
-        <p className="text-xs text-slate-600">Please sign in to access your personalized command center.</p>
+        <h2 className="text-xl font-black text-white">Sign In Required</h2>
+        <p className="text-xs text-slate-400">Please sign in to access your personalized command center.</p>
         <div className="pt-2">
           <Link
             href="/login"
-            className="block w-full bg-gradient-to-r from-amber-400 to-yellow-500 text-slate-950 font-black py-3 rounded-2xl text-xs transition shadow"
+            className="block w-full bg-gradient-to-r from-amber-400 to-yellow-500 text-slate-950 font-black py-3 rounded-2xl text-xs transition shadow-md shadow-amber-500/20"
           >
             Go to Sign In
           </Link>
@@ -99,18 +99,18 @@ export default function SmartDashboardPage() {
     return (
       <div className="space-y-6 animate-in fade-in duration-300">
         {/* Farmer Header */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-amber-200/80 pb-4">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-amber-500/20 pb-4">
           <div>
             <div className="flex items-center gap-2">
-              <span className="bg-amber-100 text-amber-900 border border-amber-300 text-[10px] font-black px-2.5 py-0.5 rounded-full uppercase">
+              <span className="bg-amber-500/20 text-amber-300 border border-amber-500/30 text-[10px] font-black px-2.5 py-0.5 rounded-full uppercase">
                 {t.roleFarmer}
               </span>
-              <span className="text-xs text-slate-500">{user.location || user.district || 'Maharashtra'}</span>
+              <span className="text-xs text-slate-400">{user.location || user.district || 'Maharashtra'}</span>
             </div>
-            <h1 className="text-2xl md:text-3xl font-black text-slate-900 tracking-tight mt-1">
+            <h1 className="text-2xl md:text-3xl font-black text-white tracking-tight mt-1">
               Ram Ram, {user.name.split(' ')[0]}!
             </h1>
-            <p className="text-xs text-slate-500">Real-time mandi prices, selling window advisory, and buyer offers</p>
+            <p className="text-xs text-slate-400">Real-time mandi prices, selling window advisory, and buyer offers</p>
           </div>
 
           <div className="flex gap-2">
@@ -127,27 +127,27 @@ export default function SmartDashboardPage() {
         {/* Top 3 KPI Grid */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {/* Hero Benchmark Rate */}
-          <div className="bg-white p-5 rounded-3xl border border-amber-200 shadow-sm space-y-3 transition-card">
+          <div className="bg-slate-900/80 p-5 rounded-3xl border border-amber-500/20 shadow-sm space-y-3 transition-card">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-slate-500 uppercase tracking-wide">
+              <span className="text-xs font-bold text-slate-400 uppercase tracking-wide">
                 Tomato Benchmark Rate
               </span>
-              <span className="bg-amber-100 text-amber-900 text-[10px] font-black px-2 py-0.5 rounded-full border border-amber-300">
+              <span className="bg-amber-500/20 text-amber-300 text-[10px] font-black px-2 py-0.5 rounded-full border border-amber-500/30">
                 Agmarknet Live
               </span>
             </div>
 
             <div>
-              <div className="text-3xl font-black text-slate-900 tracking-tight">
+              <div className="text-3xl font-black text-white tracking-tight">
                 ₹{farmerData?.todayPrice?.modalPrice || 2233}{' '}
                 <span className="text-sm font-semibold text-slate-400">/ Qtl</span>
               </div>
-              <p className="text-[11px] text-slate-500 mt-0.5">Nashik APMC Main Yard</p>
+              <p className="text-[11px] text-slate-400 mt-0.5">Nashik APMC Main Yard</p>
             </div>
 
-            <div className="pt-2 border-t border-amber-100 flex items-center justify-between text-xs font-bold">
-              <span className="text-slate-500">7-Day Moving Avg:</span>
-              <span className="text-slate-900">₹{farmerData?.analytics?.sma7 || 2213}/Qtl</span>
+            <div className="pt-2 border-t border-slate-800 flex items-center justify-between text-xs font-bold">
+              <span className="text-slate-400">7-Day Moving Avg:</span>
+              <span className="text-amber-300">₹{farmerData?.analytics?.sma7 || 2213}/Qtl</span>
             </div>
           </div>
 
@@ -178,23 +178,23 @@ export default function SmartDashboardPage() {
           </div>
 
           {/* Nearby Market Arbitrage */}
-          <div className="bg-white p-5 rounded-3xl border border-amber-200 shadow-sm space-y-3 transition-card">
+          <div className="bg-slate-900/80 p-5 rounded-3xl border border-amber-500/20 shadow-sm space-y-3 transition-card">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-slate-500 uppercase tracking-wide">
+              <span className="text-xs font-bold text-slate-400 uppercase tracking-wide">
                 Nearby Arbitrage
               </span>
-              <span className="text-amber-700 text-xs font-black">+₹96 Net Gain</span>
+              <span className="text-yellow-400 text-xs font-black">+₹96 Net Gain</span>
             </div>
 
             <div>
-              <div className="text-lg font-black text-slate-900">
+              <div className="text-lg font-black text-white">
                 Lasalgaon APMC (₹2,380/Qtl)
               </div>
-              <p className="text-xs text-slate-500 mt-0.5">24 km distance (₹12 transport deducted)</p>
+              <p className="text-xs text-slate-400 mt-0.5">24 km distance (₹12 transport deducted)</p>
             </div>
 
-            <div className="pt-2 border-t border-amber-100 flex items-center justify-between text-xs">
-              <Link href="/prices" className="text-amber-800 font-extrabold hover:underline flex items-center gap-1">
+            <div className="pt-2 border-t border-slate-800 flex items-center justify-between text-xs">
+              <Link href="/prices" className="text-amber-400 font-extrabold hover:underline flex items-center gap-1">
                 View Price Analytics <ArrowRight className="w-3.5 h-3.5" />
               </Link>
             </div>
@@ -208,29 +208,29 @@ export default function SmartDashboardPage() {
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <Link
             href="/prices"
-            className="bg-white p-5 rounded-3xl border border-amber-200 shadow-sm hover:border-amber-500 hover:shadow-md transition flex flex-col justify-between"
+            className="bg-slate-900/80 p-5 rounded-3xl border border-amber-500/20 shadow-sm hover:border-amber-500 hover:shadow-md transition flex flex-col justify-between"
           >
-            <TrendingUp className="w-6 h-6 text-amber-600 mb-2" />
-            <h3 className="font-extrabold text-slate-900 text-sm">7-Day Price Trends</h3>
-            <p className="text-xs text-slate-500 mt-0.5">Interactive Agmarknet price charts and regional comparisons</p>
+            <TrendingUp className="w-6 h-6 text-amber-400 mb-2" />
+            <h3 className="font-extrabold text-white text-sm">7-Day Price Trends</h3>
+            <p className="text-xs text-slate-400 mt-0.5">Interactive Agmarknet price charts and regional comparisons</p>
           </Link>
 
           <Link
             href="/create-lot"
-            className="bg-gradient-to-br from-amber-500 via-amber-600 to-yellow-600 hover:from-amber-400 hover:to-yellow-500 text-slate-950 p-5 rounded-3xl shadow-md transition flex flex-col justify-between"
+            className="bg-gradient-to-br from-amber-400 via-amber-500 to-yellow-500 hover:from-amber-300 hover:to-yellow-400 text-slate-950 p-5 rounded-3xl shadow-md transition flex flex-col justify-between"
           >
             <Sprout className="w-6 h-6 text-slate-950 mb-2" />
             <h3 className="font-black text-slate-950 text-sm">Publish Crop Lot</h3>
-            <p className="text-xs text-slate-950/80 font-medium mt-0.5">List produce directly to verified commercial buyers</p>
+            <p className="text-xs text-slate-950/80 font-semibold mt-0.5">List produce directly to verified commercial buyers</p>
           </Link>
 
           <Link
             href="/my-lots"
-            className="bg-white p-5 rounded-3xl border border-amber-200 shadow-sm hover:border-amber-500 hover:shadow-md transition flex flex-col justify-between"
+            className="bg-slate-900/80 p-5 rounded-3xl border border-amber-500/20 shadow-sm hover:border-amber-500 hover:shadow-md transition flex flex-col justify-between"
           >
-            <Package className="w-6 h-6 text-amber-700 mb-2" />
-            <h3 className="font-extrabold text-slate-900 text-sm">My Lots & Received Bids</h3>
-            <p className="text-xs text-slate-500 mt-0.5">Review buyer offers, accept winning deals, and track payments</p>
+            <Package className="w-6 h-6 text-amber-400 mb-2" />
+            <h3 className="font-extrabold text-white text-sm">My Lots & Received Bids</h3>
+            <p className="text-xs text-slate-400 mt-0.5">Review buyer offers, accept winning deals, and track payments</p>
           </Link>
         </div>
       </div>
@@ -244,18 +244,18 @@ export default function SmartDashboardPage() {
     return (
       <div className="space-y-6 animate-in fade-in duration-300">
         {/* Buyer Header */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-amber-200/80 pb-4">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-amber-500/20 pb-4">
           <div>
             <div className="flex items-center gap-2">
-              <span className="bg-amber-100 text-amber-900 border border-amber-300 text-[10px] font-black px-2.5 py-0.5 rounded-full uppercase">
+              <span className="bg-amber-500/20 text-amber-300 border border-amber-500/30 text-[10px] font-black px-2.5 py-0.5 rounded-full uppercase">
                 {t.roleBuyer}
               </span>
-              <span className="text-xs text-slate-500">{user.name} ({user.district || 'National'})</span>
+              <span className="text-xs text-slate-400">{user.name} ({user.district || 'National'})</span>
             </div>
-            <h1 className="text-2xl md:text-3xl font-black text-slate-900 tracking-tight mt-1">
+            <h1 className="text-2xl md:text-3xl font-black text-white tracking-tight mt-1">
               Procurement Command Center
             </h1>
-            <p className="text-xs text-slate-500">Farm-gate crop discovery, transparent bidding, and purchase contracts</p>
+            <p className="text-xs text-slate-400">Farm-gate crop discovery, transparent bidding, and purchase contracts</p>
           </div>
 
           <div className="flex gap-2">
@@ -271,21 +271,21 @@ export default function SmartDashboardPage() {
 
         {/* KPI Grid */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-          <div className="bg-white p-5 rounded-3xl border border-amber-200 shadow-sm transition-card">
-            <span className="text-xs font-bold text-slate-500 block">Available Lots</span>
-            <span className="text-2xl font-black text-slate-900 mt-1 block">4 Active</span>
+          <div className="bg-slate-900/80 p-5 rounded-3xl border border-amber-500/20 shadow-sm transition-card">
+            <span className="text-xs font-bold text-slate-400 block">Available Lots</span>
+            <span className="text-2xl font-black text-white mt-1 block">4 Active</span>
           </div>
-          <div className="bg-white p-5 rounded-3xl border border-amber-200 shadow-sm transition-card">
-            <span className="text-xs font-bold text-slate-500 block">Active Bids</span>
-            <span className="text-2xl font-black text-amber-600 mt-1 block">2 Submitted</span>
+          <div className="bg-slate-900/80 p-5 rounded-3xl border border-amber-500/20 shadow-sm transition-card">
+            <span className="text-xs font-bold text-slate-400 block">Active Bids</span>
+            <span className="text-2xl font-black text-amber-400 mt-1 block">2 Submitted</span>
           </div>
-          <div className="bg-white p-5 rounded-3xl border border-amber-200 shadow-sm transition-card">
-            <span className="text-xs font-bold text-slate-500 block">Finalized Contracts</span>
-            <span className="text-2xl font-black text-yellow-600 mt-1 block">1 Completed</span>
+          <div className="bg-slate-900/80 p-5 rounded-3xl border border-amber-500/20 shadow-sm transition-card">
+            <span className="text-xs font-bold text-slate-400 block">Finalized Contracts</span>
+            <span className="text-2xl font-black text-yellow-400 mt-1 block">1 Completed</span>
           </div>
-          <div className="bg-white p-5 rounded-3xl border border-amber-200 shadow-sm transition-card">
-            <span className="text-xs font-bold text-slate-500 block">Total Sourced (GMV)</span>
-            <span className="text-2xl font-black text-slate-900 mt-1 block">₹2,25,000</span>
+          <div className="bg-slate-900/80 p-5 rounded-3xl border border-amber-500/20 shadow-sm transition-card">
+            <span className="text-xs font-bold text-slate-400 block">Total Sourced (GMV)</span>
+            <span className="text-2xl font-black text-white mt-1 block">₹2,25,000</span>
           </div>
         </div>
 
@@ -293,29 +293,29 @@ export default function SmartDashboardPage() {
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <Link
             href="/browse-lots"
-            className="bg-white p-5 rounded-3xl border border-amber-200 shadow-sm hover:border-amber-500 hover:shadow-md transition flex flex-col justify-between"
+            className="bg-slate-900/80 p-5 rounded-3xl border border-amber-500/20 shadow-sm hover:border-amber-500 hover:shadow-md transition flex flex-col justify-between"
           >
-            <ShoppingBag className="w-6 h-6 text-amber-600 mb-2" />
-            <h3 className="font-extrabold text-slate-900 text-sm">Crop Marketplace</h3>
-            <p className="text-xs text-slate-500 mt-0.5">Discover fresh harvest lots with APMC mandi benchmark guides</p>
+            <ShoppingBag className="w-6 h-6 text-amber-400 mb-2" />
+            <h3 className="font-extrabold text-white text-sm">Crop Marketplace</h3>
+            <p className="text-xs text-slate-400 mt-0.5">Discover fresh harvest lots with APMC mandi benchmark guides</p>
           </Link>
 
           <Link
             href="/my-bids"
-            className="bg-white p-5 rounded-3xl border border-amber-200 shadow-sm hover:border-amber-500 hover:shadow-md transition flex flex-col justify-between"
+            className="bg-slate-900/80 p-5 rounded-3xl border border-amber-500/20 shadow-sm hover:border-amber-500 hover:shadow-md transition flex flex-col justify-between"
           >
-            <Gavel className="w-6 h-6 text-amber-600 mb-2" />
-            <h3 className="font-extrabold text-slate-900 text-sm">Bid Management Desk</h3>
-            <p className="text-xs text-slate-500 mt-0.5">Track status of active offers and negotiations</p>
+            <Gavel className="w-6 h-6 text-amber-400 mb-2" />
+            <h3 className="font-extrabold text-white text-sm">Bid Management Desk</h3>
+            <p className="text-xs text-slate-400 mt-0.5">Track status of active offers and negotiations</p>
           </Link>
 
           <Link
             href="/transactions"
-            className="bg-white p-5 rounded-3xl border border-amber-200 shadow-sm hover:border-amber-500 hover:shadow-md transition flex flex-col justify-between"
+            className="bg-slate-900/80 p-5 rounded-3xl border border-amber-500/20 shadow-sm hover:border-amber-500 hover:shadow-md transition flex flex-col justify-between"
           >
-            <FileCheck className="w-6 h-6 text-amber-700 mb-2" />
-            <h3 className="font-extrabold text-slate-900 text-sm">Purchases & Settlement</h3>
-            <p className="text-xs text-slate-500 mt-0.5">Manage legally binding contracts and update payment status</p>
+            <FileCheck className="w-6 h-6 text-amber-400 mb-2" />
+            <h3 className="font-extrabold text-white text-sm">Purchases & Settlement</h3>
+            <p className="text-xs text-slate-400 mt-0.5">Manage legally binding contracts and update payment status</p>
           </Link>
         </div>
       </div>
@@ -327,44 +327,44 @@ export default function SmartDashboardPage() {
   // ==========================================
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
-      <div className="border-b border-amber-200/80 pb-4">
+      <div className="border-b border-amber-500/20 pb-4">
         <div className="flex items-center gap-2">
-          <span className="bg-slate-900 text-amber-400 text-[10px] font-black px-2.5 py-0.5 rounded-full uppercase">
+          <span className="bg-slate-800 text-amber-400 border border-amber-500/30 text-[10px] font-black px-2.5 py-0.5 rounded-full uppercase">
             {t.roleAdmin}
           </span>
-          <span className="text-xs text-slate-500">Ministry of Agriculture & APMC Directorate</span>
+          <span className="text-xs text-slate-400">Ministry of Agriculture & APMC Directorate</span>
         </div>
-        <h1 className="text-2xl md:text-3xl font-black text-slate-900 tracking-tight mt-1">
+        <h1 className="text-2xl md:text-3xl font-black text-white tracking-tight mt-1">
           {t.adminTitle}
         </h1>
-        <p className="text-xs text-slate-500">{t.adminSubtitle}</p>
+        <p className="text-xs text-slate-400">{t.adminSubtitle}</p>
       </div>
 
       <ImpactCard />
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="bg-white p-5 rounded-3xl border border-amber-200 shadow-sm space-y-1 transition-card">
-          <span className="text-xs font-bold text-slate-500 block">Total GMV Settled</span>
-          <span className="text-2xl font-black text-amber-700 block">
+        <div className="bg-slate-900/80 p-5 rounded-3xl border border-amber-500/20 shadow-sm space-y-1 transition-card">
+          <span className="text-xs font-bold text-slate-400 block">Total GMV Settled</span>
+          <span className="text-2xl font-black text-amber-400 block">
             ₹{adminStats?.totalGrossMerchandiseValue?.toLocaleString('en-IN') || '2,25,000'}
           </span>
-          <p className="text-[11px] text-slate-400">100% Direct Payout to Farmers</p>
+          <p className="text-[11px] text-slate-500">100% Direct Payout to Farmers</p>
         </div>
 
-        <div className="bg-white p-5 rounded-3xl border border-amber-200 shadow-sm space-y-1 transition-card">
-          <span className="text-xs font-bold text-slate-500 block">Commission Saved</span>
-          <span className="text-2xl font-black text-yellow-600 block">
+        <div className="bg-slate-900/80 p-5 rounded-3xl border border-amber-500/20 shadow-sm space-y-1 transition-card">
+          <span className="text-xs font-bold text-slate-400 block">Commission Saved</span>
+          <span className="text-2xl font-black text-yellow-400 block">
             ₹{adminStats?.commissionSaved?.toLocaleString('en-IN') || '19,125'}
           </span>
-          <p className="text-[11px] text-slate-400">8.5% Traditional Middleman Margin Retained</p>
+          <p className="text-[11px] text-slate-500">8.5% Traditional Middleman Margin Retained</p>
         </div>
 
-        <div className="bg-white p-5 rounded-3xl border border-amber-200 shadow-sm space-y-1 transition-card">
-          <span className="text-xs font-bold text-slate-500 block">Active Trading APMCs</span>
-          <span className="text-2xl font-black text-amber-600 block">
+        <div className="bg-slate-900/80 p-5 rounded-3xl border border-amber-500/20 shadow-sm space-y-1 transition-card">
+          <span className="text-xs font-bold text-slate-400 block">Active Trading APMCs</span>
+          <span className="text-2xl font-black text-amber-300 block">
             {adminStats?.connectedMandis || 8} Mandis
           </span>
-          <p className="text-[11px] text-slate-400">Agmarknet Gateway Synchronized</p>
+          <p className="text-[11px] text-slate-500">Agmarknet Gateway Synchronized</p>
         </div>
       </div>
     </div>

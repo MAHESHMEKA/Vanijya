@@ -99,9 +99,9 @@ export default function PublicPricesPage() {
             { date: '2026-08-21', modalPrice: base - 40 },
             { date: '2026-08-22', modalPrice: base - 10 },
             { date: '2026-08-23', modalPrice: base + 15 },
-            { date: '2026-08-24', modalPrice: base + 30 },
+            { date: '2026-08-24', modalPrice: base + 20 },
             { date: '2026-08-25', modalPrice: base + 45 },
-            { date: '2026-08-26', modalPrice: base + 70 },
+            { date: '2026-08-26', modalPrice: base + 33 },
           ];
           setTrendData(points);
         }
@@ -112,16 +112,16 @@ export default function PublicPricesPage() {
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-amber-200/80 pb-4">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-amber-500/20 pb-4">
         <div>
-          <div className="inline-flex items-center gap-1.5 bg-amber-100 text-amber-900 border border-amber-300 text-[11px] font-black px-2.5 py-0.5 rounded-full uppercase">
-            <ShieldCheck className="w-3.5 h-3.5 text-amber-700" />
+          <div className="inline-flex items-center gap-1.5 bg-amber-500/20 text-amber-300 border border-amber-500/30 text-[11px] font-black px-2.5 py-0.5 rounded-full uppercase">
+            <ShieldCheck className="w-3.5 h-3.5 text-amber-400" />
             Public Market Intelligence Feed
           </div>
-          <h1 className="text-2xl md:text-3xl font-black text-slate-900 tracking-tight mt-1.5">
+          <h1 className="text-2xl md:text-3xl font-black text-white tracking-tight mt-1.5">
             {t.pricesTitle}
           </h1>
-          <p className="text-xs text-slate-500 mt-0.5">{t.pricesSubtitle}</p>
+          <p className="text-xs text-slate-400 mt-0.5">{t.pricesSubtitle}</p>
         </div>
 
         {/* Sell CTA button */}
@@ -136,7 +136,7 @@ export default function PublicPricesPage() {
 
       {/* Commodity Selector Pills */}
       <div className="space-y-2">
-        <label className="block text-xs font-bold text-slate-700">
+        <label className="block text-xs font-bold text-slate-300">
           {t.selectCrop}
         </label>
         <div className="flex gap-2 overflow-x-auto pb-2 no-scrollbar">
@@ -146,8 +146,8 @@ export default function PublicPricesPage() {
               onClick={() => setSelectedCrop(crop.name)}
               className={`px-4 py-2 rounded-2xl text-xs font-black transition shrink-0 border ${
                 selectedCrop === crop.name
-                  ? 'bg-gradient-to-r from-amber-400 via-amber-500 to-yellow-500 text-slate-950 border-amber-500 shadow-md shadow-amber-500/20'
-                  : 'bg-white text-slate-700 border-amber-200 hover:bg-amber-50/50'
+                  ? 'bg-gradient-to-r from-amber-400 via-amber-500 to-yellow-500 text-slate-950 border-amber-400 shadow-md shadow-amber-500/20'
+                  : 'bg-slate-900 text-slate-300 border-amber-500/20 hover:bg-slate-800 hover:text-amber-300'
               }`}
             >
               {crop.name}
@@ -167,29 +167,29 @@ export default function PublicPricesPage() {
           {/* Top 3 KPI Grid */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {/* 1. Today Benchmark Price */}
-            <div className="bg-white p-5 rounded-3xl border border-amber-200 shadow-sm space-y-3 transition-card">
+            <div className="bg-slate-900/80 p-5 rounded-3xl border border-amber-500/20 shadow-sm space-y-3 transition-card">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-slate-500 uppercase tracking-wide">
+                <span className="text-xs font-bold text-slate-400 uppercase tracking-wide">
                   {t.todayRate}
                 </span>
-                <span className="bg-amber-100 text-amber-900 text-[10px] font-black px-2 py-0.5 rounded-full border border-amber-300">
+                <span className="bg-amber-500/20 text-amber-300 text-[10px] font-black px-2 py-0.5 rounded-full border border-amber-500/30">
                   Agmarknet Live
                 </span>
               </div>
 
               <div>
-                <div className="text-3xl font-black text-slate-900 tracking-tight">
+                <div className="text-3xl font-black text-white tracking-tight">
                   ₹{data?.todayPrice?.modalPrice?.toLocaleString('en-IN') || 2233}{' '}
                   <span className="text-sm font-semibold text-slate-400">/ Qtl</span>
                 </div>
-                <p className="text-[11px] text-slate-500 mt-1">
+                <p className="text-[11px] text-slate-400 mt-1">
                   Range: ₹{data?.todayPrice?.minPrice} – ₹{data?.todayPrice?.maxPrice} | Arrivals: {data?.todayPrice?.arrivalQuantity || 450} Qtl
                 </p>
               </div>
 
-              <div className="pt-2 border-t border-amber-100 flex items-center justify-between text-xs font-bold">
-                <span className="text-slate-500">{t.weeklyAvg}:</span>
-                <span className="text-slate-900">₹{data?.analytics?.sma7 || 2213}/Qtl</span>
+              <div className="pt-2 border-t border-slate-800 flex items-center justify-between text-xs font-bold">
+                <span className="text-slate-400">{t.weeklyAvg}:</span>
+                <span className="text-amber-300">₹{data?.analytics?.sma7 || 2213}/Qtl</span>
               </div>
             </div>
 
@@ -221,31 +221,31 @@ export default function PublicPricesPage() {
             </div>
 
             {/* 3. Spatial Arbitrage / Nearby APMC Comparison */}
-            <div className="bg-white p-5 rounded-3xl border border-amber-200 shadow-sm space-y-3 transition-card">
+            <div className="bg-slate-900/80 p-5 rounded-3xl border border-amber-500/20 shadow-sm space-y-3 transition-card">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-slate-500 uppercase tracking-wide">
+                <span className="text-xs font-bold text-slate-400 uppercase tracking-wide">
                   {t.nearbyArbitrage}
                 </span>
-                <span className="text-amber-700 text-xs font-black">
+                <span className="text-yellow-400 text-xs font-black">
                   +{data?.comparison?.bestNearbyMarket?.netGainPerQtl || 96} {t.netGain}
                 </span>
               </div>
 
               <div>
-                <div className="text-xl font-black text-slate-900">
+                <div className="text-xl font-black text-white">
                   {data?.comparison?.bestNearbyMarket?.marketName || 'Lasalgaon APMC'}
                 </div>
-                <p className="text-xs text-slate-500 mt-0.5">
+                <p className="text-xs text-slate-400 mt-0.5">
                   Rate: ₹{data?.comparison?.bestNearbyMarket?.modalPrice || 2380}/Qtl | Distance: {data?.comparison?.bestNearbyMarket?.distanceKm || 24} km
                 </p>
               </div>
 
-              <div className="pt-2 border-t border-amber-100 text-xs text-slate-600 space-y-1">
+              <div className="pt-2 border-t border-slate-800 text-xs text-slate-300 space-y-1">
                 <div className="flex justify-between">
-                  <span>Transport Cost:</span>
-                  <span className="font-bold text-rose-600">-₹{data?.comparison?.bestNearbyMarket?.transportCostPerQtl || 12}/Qtl</span>
+                  <span className="text-slate-400">Transport Cost:</span>
+                  <span className="font-bold text-rose-400">-₹{data?.comparison?.bestNearbyMarket?.transportCostPerQtl || 12}/Qtl</span>
                 </div>
-                <div className="flex justify-between font-bold text-amber-700">
+                <div className="flex justify-between font-bold text-amber-400">
                   <span>Net Arbitrage Benefit:</span>
                   <span>+₹{data?.comparison?.bestNearbyMarket?.netGainPerQtl || 96}/Qtl</span>
                 </div>

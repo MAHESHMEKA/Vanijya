@@ -89,7 +89,7 @@ export default function UnifiedHomePage() {
 
         {/* Hero Live Mandi Card Widget */}
         <div className="mt-8 pt-6 border-t border-amber-500/20 grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <div className="bg-white/5 backdrop-blur-md p-4 rounded-2xl border border-amber-500/20 space-y-1">
+          <div className="bg-slate-950/60 backdrop-blur-md p-4 rounded-2xl border border-amber-500/20 space-y-1">
             <div className="flex items-center justify-between text-xs text-amber-200 font-bold">
               <span>Tomato (टमाटर) Today</span>
               <span className="text-amber-400 font-black">▲ +6.8%</span>
@@ -100,7 +100,7 @@ export default function UnifiedHomePage() {
             <p className="text-[10px] text-amber-200/80">Nashik APMC Main Yard</p>
           </div>
 
-          <div className="bg-white/5 backdrop-blur-md p-4 rounded-2xl border border-amber-500/20 space-y-1">
+          <div className="bg-slate-950/60 backdrop-blur-md p-4 rounded-2xl border border-amber-500/20 space-y-1">
             <div className="flex items-center justify-between text-xs text-amber-200 font-bold">
               <span>Spatial Arbitrage</span>
               <span className="text-yellow-400 font-black">+₹96 Net Gain</span>
@@ -111,7 +111,7 @@ export default function UnifiedHomePage() {
             <p className="text-[10px] text-amber-200/80">Lasalgaon APMC (24 km transport deducted)</p>
           </div>
 
-          <div className="bg-white/5 backdrop-blur-md p-4 rounded-2xl border border-amber-500/20 space-y-1">
+          <div className="bg-slate-950/60 backdrop-blur-md p-4 rounded-2xl border border-amber-500/20 space-y-1">
             <div className="flex items-center justify-between text-xs text-amber-200 font-bold">
               <span>Best Selling Window</span>
               <span className="bg-amber-400/30 text-amber-300 text-[9px] font-black px-1.5 py-0.5 rounded">OPTIMAL</span>
@@ -130,45 +130,45 @@ export default function UnifiedHomePage() {
       {/* 3. How Vanijya Works (4 Transparent Steps) */}
       <div className="space-y-6">
         <div className="text-center max-w-2xl mx-auto space-y-2">
-          <h2 className="text-2xl md:text-3xl font-black text-slate-900 tracking-tight">
+          <h2 className="text-2xl md:text-3xl font-black text-white tracking-tight">
             {t.howItWorksTitle}
           </h2>
-          <p className="text-xs md:text-sm text-slate-600 font-medium">
+          <p className="text-xs md:text-sm text-slate-400 font-medium">
             {t.howItWorksSubtitle}
           </p>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="bg-white p-5 rounded-3xl border border-amber-200 shadow-sm space-y-3 transition-card">
-            <div className="w-10 h-10 bg-amber-100 text-amber-900 rounded-2xl flex items-center justify-center font-black">
+          <div className="bg-slate-900/80 p-5 rounded-3xl border border-amber-500/20 shadow-sm space-y-3 transition-card">
+            <div className="w-10 h-10 bg-amber-500/20 text-amber-400 border border-amber-500/30 rounded-2xl flex items-center justify-center font-black">
               1
             </div>
-            <h3 className="font-extrabold text-slate-900 text-base">{t.step1Title}</h3>
-            <p className="text-xs text-slate-600 leading-relaxed">{t.step1Desc}</p>
+            <h3 className="font-extrabold text-white text-base">{t.step1Title}</h3>
+            <p className="text-xs text-slate-400 leading-relaxed">{t.step1Desc}</p>
           </div>
 
-          <div className="bg-white p-5 rounded-3xl border border-amber-200 shadow-sm space-y-3 transition-card">
-            <div className="w-10 h-10 bg-yellow-100 text-yellow-900 rounded-2xl flex items-center justify-center font-black">
+          <div className="bg-slate-900/80 p-5 rounded-3xl border border-amber-500/20 shadow-sm space-y-3 transition-card">
+            <div className="w-10 h-10 bg-yellow-500/20 text-yellow-400 border border-yellow-500/30 rounded-2xl flex items-center justify-center font-black">
               2
             </div>
-            <h3 className="font-extrabold text-slate-900 text-base">{t.step2Title}</h3>
-            <p className="text-xs text-slate-600 leading-relaxed">{t.step2Desc}</p>
+            <h3 className="font-extrabold text-white text-base">{t.step2Title}</h3>
+            <p className="text-xs text-slate-400 leading-relaxed">{t.step2Desc}</p>
           </div>
 
-          <div className="bg-white p-5 rounded-3xl border border-amber-200 shadow-sm space-y-3 transition-card">
-            <div className="w-10 h-10 bg-amber-200 text-amber-950 rounded-2xl flex items-center justify-center font-black">
+          <div className="bg-slate-900/80 p-5 rounded-3xl border border-amber-500/20 shadow-sm space-y-3 transition-card">
+            <div className="w-10 h-10 bg-amber-600/20 text-amber-300 border border-amber-500/30 rounded-2xl flex items-center justify-center font-black">
               3
             </div>
-            <h3 className="font-extrabold text-slate-900 text-base">{t.step3Title}</h3>
-            <p className="text-xs text-slate-600 leading-relaxed">{t.step3Desc}</p>
+            <h3 className="font-extrabold text-white text-base">{t.step3Title}</h3>
+            <p className="text-xs text-slate-400 leading-relaxed">{t.step3Desc}</p>
           </div>
 
-          <div className="bg-white p-5 rounded-3xl border border-amber-200 shadow-sm space-y-3 transition-card">
-            <div className="w-10 h-10 bg-amber-600 text-white rounded-2xl flex items-center justify-center font-black">
+          <div className="bg-slate-900/80 p-5 rounded-3xl border border-amber-500/20 shadow-sm space-y-3 transition-card">
+            <div className="w-10 h-10 bg-amber-500 text-slate-950 rounded-2xl flex items-center justify-center font-black">
               4
             </div>
-            <h3 className="font-extrabold text-slate-900 text-base">{t.step4Title}</h3>
-            <p className="text-xs text-slate-600 leading-relaxed">{t.step4Desc}</p>
+            <h3 className="font-extrabold text-white text-base">{t.step4Title}</h3>
+            <p className="text-xs text-slate-400 leading-relaxed">{t.step4Desc}</p>
           </div>
         </div>
       </div>
@@ -176,37 +176,37 @@ export default function UnifiedHomePage() {
       {/* 4. Farmer Benefits vs Buyer Benefits Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Farmer Benefits */}
-        <div className="bg-gradient-to-br from-amber-50 via-yellow-50/60 to-orange-50/40 p-6 md:p-8 rounded-3xl border border-amber-300/80 shadow-sm space-y-4">
+        <div className="bg-gradient-to-br from-amber-950/50 via-slate-900 to-amber-900/40 p-6 md:p-8 rounded-3xl border border-amber-500/30 shadow-sm space-y-4">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-gradient-to-br from-amber-500 to-yellow-500 text-slate-950 rounded-2xl flex items-center justify-center font-bold shadow-md shadow-amber-500/20">
+            <div className="w-10 h-10 bg-gradient-to-br from-amber-400 to-yellow-500 text-slate-950 rounded-2xl flex items-center justify-center font-bold shadow-md shadow-amber-500/20">
               <Sprout className="w-5 h-5 text-slate-950" />
             </div>
-            <h3 className="font-black text-xl text-amber-950">{t.farmerBenefitsTitle}</h3>
+            <h3 className="font-black text-xl text-white">{t.farmerBenefitsTitle}</h3>
           </div>
 
-          <ul className="space-y-3 text-xs font-semibold text-amber-950">
+          <ul className="space-y-3 text-xs font-medium text-slate-300">
             <li className="flex items-center gap-2.5">
-              <CheckCircle2 className="w-4 h-4 text-amber-700 shrink-0" />
-              <span><strong>0% Intermediary Deductions:</strong> No arhtiya cuts, no unrecorded weighing charges.</span>
+              <CheckCircle2 className="w-4 h-4 text-amber-400 shrink-0" />
+              <span><strong className="text-white">0% Intermediary Deductions:</strong> No arhtiya cuts, no unrecorded weighing charges.</span>
             </li>
             <li className="flex items-center gap-2.5">
-              <CheckCircle2 className="w-4 h-4 text-amber-700 shrink-0" />
-              <span><strong>Spatial Arbitrage Discovery:</strong> Find regional mandis where price exceeds transport cost.</span>
+              <CheckCircle2 className="w-4 h-4 text-amber-400 shrink-0" />
+              <span><strong className="text-white">Spatial Arbitrage Discovery:</strong> Find regional mandis where price exceeds transport cost.</span>
             </li>
             <li className="flex items-center gap-2.5">
-              <CheckCircle2 className="w-4 h-4 text-amber-700 shrink-0" />
-              <span><strong>Explainable Selling Timing:</strong> Real-time guidance on whether to sell today or hold.</span>
+              <CheckCircle2 className="w-4 h-4 text-amber-400 shrink-0" />
+              <span><strong className="text-white">Explainable Selling Timing:</strong> Real-time guidance on whether to sell today or hold.</span>
             </li>
             <li className="flex items-center gap-2.5">
-              <CheckCircle2 className="w-4 h-4 text-amber-700 shrink-0" />
-              <span><strong>Instant Digital Confirmation:</strong> 1-tap offer acceptance with recorded payment UTR.</span>
+              <CheckCircle2 className="w-4 h-4 text-amber-400 shrink-0" />
+              <span><strong className="text-white">Instant Digital Confirmation:</strong> 1-tap offer acceptance with recorded payment UTR.</span>
             </li>
           </ul>
 
           <div className="pt-2">
             <Link
               href="/prices"
-              className="inline-flex items-center gap-1.5 text-xs font-black text-amber-900 hover:underline"
+              className="inline-flex items-center gap-1.5 text-xs font-black text-amber-400 hover:text-amber-300 transition"
             >
               Explore Price Discovery →
             </Link>
@@ -214,37 +214,37 @@ export default function UnifiedHomePage() {
         </div>
 
         {/* Buyer Benefits */}
-        <div className="bg-gradient-to-br from-slate-50 via-amber-50/30 to-yellow-50/40 p-6 md:p-8 rounded-3xl border border-amber-200 shadow-sm space-y-4">
+        <div className="bg-gradient-to-br from-slate-900 via-slate-900/90 to-amber-950/40 p-6 md:p-8 rounded-3xl border border-amber-500/30 shadow-sm space-y-4">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-slate-900 text-amber-400 rounded-2xl flex items-center justify-center font-bold">
+            <div className="w-10 h-10 bg-slate-800 text-amber-400 border border-amber-500/30 rounded-2xl flex items-center justify-center font-bold">
               <Building2 className="w-5 h-5" />
             </div>
-            <h3 className="font-black text-xl text-slate-900">{t.buyerBenefitsTitle}</h3>
+            <h3 className="font-black text-xl text-white">{t.buyerBenefitsTitle}</h3>
           </div>
 
-          <ul className="space-y-3 text-xs font-semibold text-slate-800">
+          <ul className="space-y-3 text-xs font-medium text-slate-300">
             <li className="flex items-center gap-2.5">
-              <CheckCircle2 className="w-4 h-4 text-amber-600 shrink-0" />
-              <span><strong>Direct Farm-Gate Sourcing:</strong> Bypass multiple aggregator markups.</span>
+              <CheckCircle2 className="w-4 h-4 text-amber-400 shrink-0" />
+              <span><strong className="text-white">Direct Farm-Gate Sourcing:</strong> Bypass multiple aggregator markups.</span>
             </li>
             <li className="flex items-center gap-2.5">
-              <CheckCircle2 className="w-4 h-4 text-amber-600 shrink-0" />
-              <span><strong>Quality Graded Batches:</strong> Verified Grade A, B, C classifications with harvest dates.</span>
+              <CheckCircle2 className="w-4 h-4 text-amber-400 shrink-0" />
+              <span><strong className="text-white">Quality Graded Batches:</strong> Verified Grade A, B, C classifications with harvest dates.</span>
             </li>
             <li className="flex items-center gap-2.5">
-              <CheckCircle2 className="w-4 h-4 text-amber-600 shrink-0" />
-              <span><strong>Live Mandi Benchmark Comparison:</strong> Make data-backed sourcing offers.</span>
+              <CheckCircle2 className="w-4 h-4 text-amber-400 shrink-0" />
+              <span><strong className="text-white">Live Mandi Benchmark Comparison:</strong> Make data-backed sourcing offers.</span>
             </li>
             <li className="flex items-center gap-2.5">
-              <CheckCircle2 className="w-4 h-4 text-amber-600 shrink-0" />
-              <span><strong>Structured Contracts:</strong> Clear purchase orders with digital settlement tracking.</span>
+              <CheckCircle2 className="w-4 h-4 text-amber-400 shrink-0" />
+              <span><strong className="text-white">Structured Contracts:</strong> Clear purchase orders with digital settlement tracking.</span>
             </li>
           </ul>
 
           <div className="pt-2">
             <Link
               href="/browse-lots"
-              className="inline-flex items-center gap-1.5 text-xs font-black text-amber-900 hover:underline"
+              className="inline-flex items-center gap-1.5 text-xs font-black text-amber-400 hover:text-amber-300 transition"
             >
               Explore Agricultural Marketplace →
             </Link>
@@ -253,22 +253,22 @@ export default function UnifiedHomePage() {
       </div>
 
       {/* 5. Policy & Government Alignment Banner */}
-      <div className="bg-white p-6 md:p-8 rounded-3xl border border-amber-200 shadow-sm flex flex-col md:flex-row items-center justify-between gap-6">
+      <div className="bg-slate-900/80 p-6 md:p-8 rounded-3xl border border-amber-500/20 shadow-sm flex flex-col md:flex-row items-center justify-between gap-6">
         <div className="space-y-1.5 max-w-2xl">
-          <div className="flex items-center gap-2 text-xs font-black text-amber-900">
-            <ShieldCheck className="w-4 h-4 text-amber-600" />
+          <div className="flex items-center gap-2 text-xs font-black text-amber-400">
+            <ShieldCheck className="w-4 h-4 text-amber-400" />
             <span>{t.govtAlignmentTitle}</span>
           </div>
-          <p className="text-xs text-slate-600 leading-relaxed font-medium">
+          <p className="text-xs text-slate-400 leading-relaxed font-medium">
             {t.govtAlignmentDesc}
           </p>
         </div>
 
         <div className="flex items-center gap-3 shrink-0">
-          <span className="bg-amber-50 text-amber-900 text-[11px] font-bold px-3 py-1.5 rounded-xl border border-amber-200">
+          <span className="bg-slate-950 text-amber-300 text-[11px] font-bold px-3 py-1.5 rounded-xl border border-amber-500/30">
             Agmarknet Data Synced
           </span>
-          <span className="bg-amber-50 text-amber-900 text-[11px] font-bold px-3 py-1.5 rounded-xl border border-amber-200">
+          <span className="bg-slate-950 text-amber-300 text-[11px] font-bold px-3 py-1.5 rounded-xl border border-amber-500/30">
             e-NAM Compliant
           </span>
         </div>

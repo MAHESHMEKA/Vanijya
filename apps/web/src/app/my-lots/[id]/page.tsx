@@ -93,9 +93,9 @@ export default function LotDetailsPage() {
 
   if (!lot) {
     return (
-      <div className="bg-white p-8 rounded-3xl border border-amber-200 text-center space-y-4">
-        <h2 className="text-xl font-black text-slate-900">Crop Lot Not Found</h2>
-        <Link href="/my-lots" className="inline-block text-xs font-bold text-amber-800 hover:underline">
+      <div className="bg-slate-900/90 p-8 rounded-3xl border border-amber-500/30 text-center space-y-4">
+        <h2 className="text-xl font-black text-white">Crop Lot Not Found</h2>
+        <Link href="/my-lots" className="inline-block text-xs font-bold text-amber-400 hover:underline">
           ← Return to My Lots
         </Link>
       </div>
@@ -107,18 +107,18 @@ export default function LotDetailsPage() {
 
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
-      <Link href="/my-lots" className="inline-flex items-center gap-1 text-xs text-amber-800 font-bold hover:underline">
+      <Link href="/my-lots" className="inline-flex items-center gap-1 text-xs text-amber-400 font-bold hover:underline">
         <ArrowLeft className="w-3.5 h-3.5" /> Back to My Lots
       </Link>
 
       {/* Lot Summary Card */}
-      <div className="bg-white p-6 md:p-8 rounded-3xl border border-amber-200 shadow-sm space-y-5">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-amber-100 pb-4">
+      <div className="bg-slate-900/80 p-6 md:p-8 rounded-3xl border border-amber-500/20 shadow-sm space-y-5">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 pb-4">
           <div className="space-y-1">
             <span className="text-xs font-bold text-slate-400 uppercase tracking-wide">
               Lot #{lot.id?.substring(0, 8)}
             </span>
-            <h1 className="text-2xl font-black text-slate-900 tracking-tight">
+            <h1 className="text-2xl font-black text-white tracking-tight">
               {lot.crop?.name || 'Crop'} — {lot.quantity} {lot.unit || 'Quintals'}
             </h1>
           </div>
@@ -126,29 +126,29 @@ export default function LotDetailsPage() {
         </div>
 
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
-          <div className="bg-amber-50/50 p-3 rounded-2xl border border-amber-100">
+          <div className="bg-slate-950 p-3 rounded-2xl border border-amber-500/20">
             <span className="text-slate-400 font-bold block text-[10px]">Expected Rate</span>
-            <span className="font-black text-slate-900 text-sm">₹{lot.expectedPrice}/Qtl</span>
+            <span className="font-black text-amber-300 text-sm">₹{lot.expectedPrice}/Qtl</span>
           </div>
-          <div className="bg-amber-50/50 p-3 rounded-2xl border border-amber-100">
+          <div className="bg-slate-950 p-3 rounded-2xl border border-amber-500/20">
             <span className="text-slate-400 font-bold block text-[10px]">Quality Grade</span>
-            <span className="font-black text-amber-800 text-sm">{lot.qualityGrade || 'GRADE_A'}</span>
+            <span className="font-black text-white text-sm">{lot.qualityGrade || 'GRADE_A'}</span>
           </div>
-          <div className="bg-amber-50/50 p-3 rounded-2xl border border-amber-100">
+          <div className="bg-slate-950 p-3 rounded-2xl border border-amber-500/20">
             <span className="text-slate-400 font-bold block text-[10px]">Estimated Lot Value</span>
-            <span className="font-black text-slate-900 text-sm">
+            <span className="font-black text-white text-sm">
               ₹{(lot.expectedPrice * lot.quantity)?.toLocaleString('en-IN')}
             </span>
           </div>
-          <div className="bg-amber-50/50 p-3 rounded-2xl border border-amber-100">
+          <div className="bg-slate-950 p-3 rounded-2xl border border-amber-500/20">
             <span className="text-slate-400 font-bold block text-[10px]">Commission Cut</span>
-            <span className="font-black text-amber-600 text-sm">0% (Direct)</span>
+            <span className="font-black text-amber-400 text-sm">0% (Direct)</span>
           </div>
         </div>
 
-        <div className="flex items-center gap-2 text-xs text-slate-600">
-          <MapPin className="w-4 h-4 text-slate-400 shrink-0" />
-          <span>Farm Pickup Address: <strong>{lot.location || 'Nashik Farm Gate'}</strong></span>
+        <div className="flex items-center gap-2 text-xs text-slate-400">
+          <MapPin className="w-4 h-4 text-amber-400 shrink-0" />
+          <span>Farm Pickup Address: <strong className="text-white">{lot.location || 'Nashik Farm Gate'}</strong></span>
         </div>
       </div>
 
@@ -165,7 +165,7 @@ export default function LotDetailsPage() {
             </span>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs bg-white/10 p-4 rounded-2xl backdrop-blur-sm border border-white/10">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs bg-slate-950/60 p-4 rounded-2xl backdrop-blur-sm border border-amber-500/30">
             <div>
               <span className="text-amber-200 block text-[10px]">Agreed Deal Rate</span>
               <span className="text-base font-black text-white">₹{lot.transaction.agreedPrice}/Qtl</span>
@@ -189,16 +189,16 @@ export default function LotDetailsPage() {
       {/* Incoming Bids Review Section */}
       <div className="space-y-4">
         <div className="flex items-center justify-between">
-          <h2 className="text-xl font-black text-slate-900 tracking-tight">
+          <h2 className="text-xl font-black text-white tracking-tight">
             {t.incomingOffersTitle} ({bids.length})
           </h2>
-          <span className="text-xs text-slate-500 font-medium">100% Direct Buyer Offers</span>
+          <span className="text-xs text-slate-400 font-medium">100% Direct Buyer Offers</span>
         </div>
 
         {bids.length === 0 ? (
-          <div className="bg-white p-8 rounded-3xl border border-amber-200 text-center space-y-2 text-xs text-slate-500">
-            <Clock className="w-8 h-8 mx-auto text-amber-300 mb-1" />
-            <p className="font-bold text-slate-700">Awaiting Buyer Offers</p>
+          <div className="bg-slate-900/80 p-8 rounded-3xl border border-amber-500/20 text-center space-y-2 text-xs text-slate-400">
+            <Clock className="w-8 h-8 mx-auto text-amber-400 mb-1" />
+            <p className="font-bold text-white">Awaiting Buyer Offers</p>
             <p>Your listing is broadcast to institutional procurers. Offers will appear here in real-time.</p>
           </div>
         ) : (
@@ -213,15 +213,15 @@ export default function LotDetailsPage() {
                   key={bid.id}
                   className={`p-5 rounded-3xl border transition space-y-3 ${
                     isAccepted
-                      ? 'bg-amber-50/80 border-amber-400 shadow-sm'
-                      : 'bg-white border-amber-200 shadow-sm'
+                      ? 'bg-amber-950/40 border-amber-400 shadow-md'
+                      : 'bg-slate-900/80 border-amber-500/20 shadow-sm'
                   }`}
                 >
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                     <div className="space-y-1">
                       <div className="flex items-center gap-2">
-                        <Building2 className="w-4 h-4 text-amber-600" />
-                        <span className="font-extrabold text-slate-900 text-sm">
+                        <Building2 className="w-4 h-4 text-amber-400" />
+                        <span className="font-extrabold text-white text-sm">
                           {bid.buyer?.name || 'Verified Wholesale Buyer'}
                         </span>
                         {isHighest && (
@@ -230,14 +230,14 @@ export default function LotDetailsPage() {
                           </span>
                         )}
                       </div>
-                      <p className="text-xs text-slate-500">{bid.message || 'Farm-gate pickup with instant digital settlement'}</p>
+                      <p className="text-xs text-slate-400">{bid.message || 'Farm-gate pickup with instant digital settlement'}</p>
                     </div>
 
                     <div className="text-right sm:self-center">
-                      <div className="text-xl font-black text-slate-900">
-                        ₹{bid.price} <span className="text-xs font-normal text-slate-500">/ Qtl</span>
+                      <div className="text-xl font-black text-white">
+                        ₹{bid.price} <span className="text-xs font-normal text-slate-400">/ Qtl</span>
                       </div>
-                      <span className="text-[11px] text-slate-500 font-bold block">
+                      <span className="text-[11px] text-amber-300 font-bold block">
                         Total: ₹{(bid.price * bid.quantity)?.toLocaleString('en-IN')}
                       </span>
                     </div>
@@ -245,11 +245,11 @@ export default function LotDetailsPage() {
 
                   {/* Actions for Farmer */}
                   {!isSold && isPending && (
-                    <div className="pt-3 border-t border-amber-100 flex gap-2 justify-end">
+                    <div className="pt-3 border-t border-slate-800 flex gap-2 justify-end">
                       <button
                         onClick={() => handleRejectBid(bid.id)}
                         disabled={!!actionLoading}
-                        className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition"
+                        className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-bold transition"
                       >
                         Reject
                       </button>
