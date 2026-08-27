@@ -40,6 +40,10 @@ echo [2/3] Build completed successfully.
 echo [3/3] Launching Vanijya Platform...
 echo.
 
+REM Free up ports 4000 and 3000 if previously occupied to prevent EADDRINUSE
+for /f "tokens=5" %%a in ('netstat -aon ^| findstr ":4000 "') do taskkill /f /pid %%a >nul 2>&1
+for /f "tokens=5" %%a in ('netstat -aon ^| findstr ":3000 "') do taskkill /f /pid %%a >nul 2>&1
+
 echo Starting Backend API on port 4000...
 start "Vanijya Backend (Port 4000)" /D "%~dp0" cmd /k "node apps/backend/dist/main.js"
 
