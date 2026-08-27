@@ -19,7 +19,7 @@ import {
 
 export default function CreateLotPage() {
   const router = useRouter();
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, login } = useAuth();
   const { t } = useLanguage();
   const { showToast } = useToast();
 
@@ -71,6 +71,41 @@ export default function CreateLotPage() {
             className="block w-full bg-gradient-to-r from-amber-400 to-yellow-500 text-slate-950 font-black py-3 rounded-2xl text-xs transition shadow"
           >
             Go to Sign In
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  if (user.role !== 'FARMER' && user.role !== 'ADMIN') {
+    return (
+      <div className="max-w-md mx-auto bg-white p-8 rounded-3xl border border-amber-200 shadow-md text-center space-y-4 my-8 animate-in fade-in duration-300">
+        <div className="w-14 h-14 bg-amber-100 text-amber-900 rounded-full flex items-center justify-center mx-auto">
+          <Sprout className="w-8 h-8" />
+        </div>
+        <h2 className="text-xl font-black text-slate-900">Farmer Account Required</h2>
+        <p className="text-xs text-slate-600">
+          You are currently signed in as a <span className="font-bold text-amber-700">{user.role}</span> ({user.name}). Only registered farmers can publish crop listings to the marketplace.
+        </p>
+        <div className="pt-3 space-y-2">
+          <button
+            onClick={async () => {
+              try {
+                await login('9876543210', 'Farmer@123');
+                showToast('Switched to Farmer Account (Ramesh Patel)', 'success');
+              } catch (err: any) {
+                showToast(err.message, 'error');
+              }
+            }}
+            className="w-full bg-gradient-to-r from-amber-400 to-yellow-500 text-slate-950 font-black py-3 rounded-2xl text-xs transition shadow"
+          >
+            Switch to Farmer Account (Ramesh Patel)
+          </button>
+          <Link
+            href="/browse-lots"
+            className="block w-full border border-amber-300 bg-amber-50/50 text-slate-800 font-bold py-2.5 rounded-2xl text-xs transition"
+          >
+            Browse Marketplace as Buyer
           </Link>
         </div>
       </div>
