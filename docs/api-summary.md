@@ -18,7 +18,7 @@
 
 | Method | Endpoint | Description | Role / Auth |
 | :--- | :--- | :--- | :--- |
-| `GET` | `/crops` | List agricultural commodities (Tomato, Onion, Paddy, etc.) | Public |
+| `GET` | `/crops` | List agricultural commodities (Tomato, Onion, Paddy, Wheat, etc.) | Public |
 | `GET` | `/markets` | List APMC mandis with GPS coordinates and state | Public |
 
 ---
@@ -39,10 +39,11 @@
 
 | Method | Endpoint | Description | Role / Auth |
 | :--- | :--- | :--- | :--- |
-| `GET` | `/lots` | Query crop lots with crop, farmer, quality, status filters | Public |
-| `GET` | `/lots/:id` | Get lot specifications, farmer credentials, and existing bids | Public |
+| `GET` | `/lots` | Query crop lots with crop, farmer, quality, status (`OPEN`, `BIDDING`, `SOLD`) | Public |
+| `GET` | `/lots/:id` | Get lot specifications, farmer credentials, and bids | Public |
 | `POST` | `/lots` | Publish a new crop lot | `FARMER` |
 | `PATCH` | `/lots/:id` | Update lot status or price | `FARMER` |
+| `DELETE` | `/lots/:id` | Cancel lot listing | `FARMER` |
 
 ---
 
@@ -50,10 +51,12 @@
 
 | Method | Endpoint | Description | Role / Auth |
 | :--- | :--- | :--- | :--- |
-| `GET` | `/bids/my` | List all bids submitted by the authenticated buyer | `BUYER` |
+| `GET` | `/bids/my` | List all bids submitted by buyer or received by farmer | Bearer JWT |
 | `GET` | `/lots/:id/bids` | List all incoming bids on a specific crop lot | `FARMER` / `BUYER` |
 | `POST` | `/lots/:id/bids` | Submit a direct sourcing offer on a lot | `BUYER` |
-| `PATCH` | `/bids/:id/accept` | Accept winning bid (atomically marks lot SOLD and creates transaction) | `FARMER` |
+| `PATCH` | `/bids/:id/quantity` | **Modify Quantity:** Adjust sourcing quantity on a pending bid | `BUYER` / `ADMIN` |
+| `PATCH` | `/bids/:id/cancel` | **Cancel Bid:** Withdraw a pending bid (`PENDING` $\rightarrow$ `WITHDRAWN`) | `BUYER` / `ADMIN` |
+| `PATCH` | `/bids/:id/accept` | Accept winning bid (atomically marks lot `SOLD` and creates transaction) | `FARMER` |
 | `PATCH` | `/bids/:id/reject` | Reject a specific bid | `FARMER` |
 
 ---
@@ -69,7 +72,20 @@
 
 ---
 
-## 7. Demo & Simulation
+## 7. Admin Oversight & Monitoring
+
+| Method | Endpoint | Description | Role / Auth |
+| :--- | :--- | :--- | :--- |
+| `GET` | `/admin/dashboard` | Unified marketplace KPI statistics and aggregates | `ADMIN` |
+| `GET` | `/admin/lots` | Monitor all crop lots across categories with filters | `ADMIN` |
+| `GET` | `/admin/bids` | Monitor all bidding activity with modification timeline | `ADMIN` |
+| `GET` | `/admin/users` | Farmers and buyers directories with sales/procurement volumes | `ADMIN` |
+| `GET` | `/admin/transactions` | Full trade contracts ledger and settlement states | `ADMIN` |
+| `GET` | `/admin/activity` | Live real-time audit event stream | `ADMIN` |
+
+---
+
+## 8. Demo & Simulation
 
 | Method | Endpoint | Description | Role / Auth |
 | :--- | :--- | :--- | :--- |

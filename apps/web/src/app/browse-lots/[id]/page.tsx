@@ -9,6 +9,7 @@ import { useLanguage } from '../../../lib/language-context';
 import { useToast } from '../../../components/ui/toast';
 import { StatusBadge } from '../../../components/ui/status-badge';
 import { CardSkeleton } from '../../../components/ui/skeleton';
+import { formatINR } from '@vanijya/shared-utils';
 import {
   ShoppingBag,
   ArrowLeft,
@@ -20,6 +21,7 @@ import {
   TrendingUp,
   Loader2,
   CheckCircle2,
+  Info,
 } from 'lucide-react';
 
 export default function BuyerLotDetailPage() {
@@ -32,7 +34,7 @@ export default function BuyerLotDetailPage() {
   const [lot, setLot] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
-  const [bidPrice, setBidPrice] = useState('2250');
+  const [bidPrice, setBidPrice] = useState('2200');
   const [bidQuantity, setBidQuantity] = useState('100');
   const [bidMessage, setBidMessage] = useState('Farm gate pickup with instant electronic settlement.');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -43,7 +45,7 @@ export default function BuyerLotDetailPage() {
       .then((res) => {
         setLot(res);
         if (res) {
-          setBidPrice((res.expectedPrice + 50).toString());
+          setBidPrice(res.expectedPrice.toString());
           setBidQuantity(res.quantity.toString());
         }
       })
@@ -56,6 +58,11 @@ export default function BuyerLotDetailPage() {
     if (!isAuthenticated) {
       showToast('Please sign in as a buyer to place a bid', 'info');
       router.push('/login');
+      return;
+    }
+
+    if (user?.role === 'FARMER') {
+      showToast('You are signed in as a farmer. Only buyers can place purchase bids.', 'error');
       return;
     }
 
@@ -129,16 +136,6 @@ export default function BuyerLotDetailPage() {
               </div>
             </div>
 
-            <div className="p-4 bg-amber-50 rounded-2xl border border-amber-300 text-xs space-y-1">
-              <div className="flex items-center gap-2 font-bold text-amber-950">
-                <TrendingUp className="w-4 h-4 text-amber-700" />
-                <span>APMC Mandi Benchmark Reference: ₹2,320/Qtl</span>
-              </div>
-              <p className="text-[11px] text-amber-900">
-                Direct farm-gate sourcing allows a competitive bid of ₹2,250/Qtl while saving transport and yard fees.
-              </p>
-            </div>
-
             <div className="flex items-center gap-2 text-xs text-slate-600 pt-2 border-t border-amber-100">
               <MapPin className="w-4 h-4 text-slate-400 shrink-0" />
               <span>Farm Pickup Location: <strong>{lot.location || 'Nashik Farm Gate'}</strong></span>
@@ -157,7 +154,7 @@ export default function BuyerLotDetailPage() {
             <form onSubmit={handlePlaceBid} className="space-y-3.5">
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1">
-                  Offer Price per Quintal (₹/Qtl)
+                  Your Bid Price per Quintal (₹/Qtl)
                 </label>
                 <input
                   type="number"
@@ -165,7 +162,7 @@ export default function BuyerLotDetailPage() {
                   min="1"
                   value={bidPrice}
                   onChange={(e) => setBidPrice(e.target.value)}
-                  className="w-full px-3.5 py-2.5 bg-amber-50/40 border border-amber-200 rounded-xl text-sm font-black focus:bg-white focus:ring-2 focus:ring-amber-500 focus:outline-none"
+                  className="w-full px-3.5 py-2.5 bg-amber-50/40 border border-amber-200 rounded-xl text-base font-black focus:bg-white focus:ring-2 focus:ring-amber-500 focus:outline-none"
                 />
               </div>
 
@@ -180,20 +177,23 @@ export default function BuyerLotDetailPage() {
                   max={lot.quantity}
                   value={bidQuantity}
                   onChange={(e) => setBidQuantity(e.target.value)}
-                  className="w-full px-3.5 py-2.5 bg-amber-50/40 border border-amber-200 rounded-xl text-sm font-black focus:bg-white focus:ring-2 focus:ring-amber-500 focus:outline-none"
+                  className="w-full px-3.5 py-2.5 bg-amber-50/40 border border-amber-200 rounded-xl text-base font-black focus:bg-white focus:ring-2 focus:ring-amber-500 focus:outline-none"
                 />
+                <span className="text-[10px] text-slate-400 mt-1 block">
+                  Max available: {lot.quantity} {lot.unit || 'Qtl'}
+                </span>
               </div>
 
-              <div className="p-3 bg-amber-50/50 rounded-xl border border-amber-100 text-xs">
-                <span className="text-slate-400 block text-[10px] font-bold">Total Bid Sourcing Value</span>
+              <div className="p-3 bg-amber-50 rounded-xl border border-amber-200 text-xs">
+                <span className="text-slate-500 block text-[10px] font-bold">Total Bid Sourcing Value</span>
                 <span className="text-base font-black text-slate-900">
-                  ₹{(parseFloat(bidPrice || '0') * parseFloat(bidQuantity || '0'))?.toLocaleString('en-IN')}
+                  {formatINR((parseFloat(bidPrice || '0') * parseFloat(bidQuantity || '0')))}
                 </span>
               </div>
 
               <button
                 type="submit"
-                disabled={isSubmitting || lot.status === 'SOLD'}
+                disabled={isSubmitting || lot.status === 'SOLD' || lot.status === 'CANCELLED'}
                 className="w-full bg-gradient-to-r from-amber-400 via-amber-500 to-yellow-500 hover:from-amber-300 hover:to-yellow-400 text-slate-950 font-black py-3.5 rounded-2xl text-xs shadow-md shadow-amber-500/20 transition transform active:scale-95 flex items-center justify-center gap-1.5"
               >
                 {isSubmitting ? (

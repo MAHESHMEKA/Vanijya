@@ -2,6 +2,7 @@ import { Controller, Get, Post, Patch, Body, Param, UseGuards } from '@nestjs/co
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { BidsService } from './bids.service';
 import { CreateBidDto } from './dto/create-bid.dto';
+import { UpdateBidQuantityDto } from './dto/update-bid-quantity.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
@@ -45,6 +46,37 @@ export class BidsController {
     @CurrentUser('role') role: Role,
   ) {
     return this.bidsService.getMyBids(userId, role);
+  }
+
+  @Patch('bids/:id/quantity')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.BUYER, Role.ADMIN)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Modify quantity of a pending bid (Buyer only)' })
+  @ApiResponse({ status: 200, description: 'Bid quantity modified successfully' })
+  @ApiResponse({ status: 400, description: 'Cannot modify non-pending bid or invalid quantity' })
+  updateBidQuantity(
+    @Param('id') bidId: string,
+    @CurrentUser('id') buyerId: string,
+    @CurrentUser('role') userRole: Role,
+    @Body() dto: UpdateBidQuantityDto,
+  ) {
+    return this.bidsService.updateBidQuantity(bidId, buyerId, userRole, dto.quantity);
+  }
+
+  @Patch('bids/:id/cancel')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.BUYER, Role.ADMIN)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Cancel/withdraw a pending bid (Buyer only)' })
+  @ApiResponse({ status: 200, description: 'Bid cancelled and marked WITHDRAWN' })
+  @ApiResponse({ status: 400, description: 'Cannot cancel non-pending bid or sold lot bid' })
+  cancelBid(
+    @Param('id') bidId: string,
+    @CurrentUser('id') buyerId: string,
+    @CurrentUser('role') userRole: Role,
+  ) {
+    return this.bidsService.cancelBid(bidId, buyerId, userRole);
   }
 
   @Patch('bids/:id/accept')

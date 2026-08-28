@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { LotsService } from './lots.service';
 import { PrismaService } from '../prisma/prisma.service';
+import { AuditService } from '../audit/audit.service';
 import { CropLotStatus, QualityGrade, Role } from '@prisma/client';
 import { BadRequestException, ForbiddenException, NotFoundException } from '@nestjs/common';
 
@@ -9,6 +10,7 @@ describe('LotsService', () => {
   let prisma: PrismaService;
 
   const mockPrismaService = {
+    isConnected: true,
     crop: {
       findUnique: jest.fn(),
     },
@@ -20,11 +22,17 @@ describe('LotsService', () => {
     },
   };
 
+  const mockAuditService = {
+    log: jest.fn().mockResolvedValue({ id: 'audit-1' }),
+    getRecent: jest.fn().mockResolvedValue([]),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         LotsService,
         { provide: PrismaService, useValue: mockPrismaService },
+        { provide: AuditService, useValue: mockAuditService },
       ],
     }).compile();
 
@@ -62,6 +70,7 @@ describe('LotsService', () => {
 
       expect(result.id).toEqual('lot-1');
       expect(result.status).toEqual(CropLotStatus.OPEN);
+      expect(result.expectedPrice).toEqual(2200);
     });
 
     it('should throw NotFoundException if crop does not exist', async () => {

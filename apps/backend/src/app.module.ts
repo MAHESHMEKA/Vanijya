@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { PrismaModule } from './prisma/prisma.module';
+import { AuditModule } from './audit/audit.module';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { CropsModule } from './crops/crops.module';
@@ -13,10 +14,12 @@ import { TransactionsModule } from './transactions/transactions.module';
 import { PaymentsModule } from './payments/payments.module';
 import { DemoModule } from './demo/demo.module';
 import { AnalyticsModule } from './analytics/analytics.module';
+import { AdminModule } from './admin/admin.module';
 
 @Module({
   imports: [
     PrismaModule,
+    AuditModule,
     AuthModule,
     UsersModule,
     CropsModule,
@@ -28,6 +31,7 @@ import { AnalyticsModule } from './analytics/analytics.module';
     PaymentsModule,
     DemoModule,
     AnalyticsModule,
+    AdminModule,
   ],
   controllers: [AppController],
   providers: [AppService],

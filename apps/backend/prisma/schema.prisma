@@ -61,6 +61,16 @@ enum CropUnit {
   TONNE
 }
 
+enum AuditAction {
+  LOT_CREATED
+  BID_PLACED
+  QUANTITY_MODIFIED
+  BID_CANCELLED
+  BID_ACCEPTED
+  BID_REJECTED
+  PAYMENT_PAID
+}
+
 model User {
   id           String   @id @default(uuid())
   name         String
@@ -75,10 +85,11 @@ model User {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  cropLots          CropLot[]
-  bids              Bid[]
-  buyerTransactions Transaction[] @relation("BuyerTransactions")
+  cropLots           CropLot[]
+  bids               Bid[]
+  buyerTransactions  Transaction[] @relation("BuyerTransactions")
   farmerTransactions Transaction[] @relation("FarmerTransactions")
+  auditLogs          AuditLog[]
 
   @@map("users")
 }
@@ -149,6 +160,7 @@ model CropLot {
 
   bids        Bid[]
   transaction Transaction?
+  auditLogs   AuditLog[]
 
   @@index([farmerId])
   @@index([cropId])
@@ -170,6 +182,7 @@ model Bid {
   updatedAt DateTime  @updatedAt
 
   transaction Transaction?
+  auditLogs   AuditLog[]
 
   @@index([lotId])
   @@index([buyerId])
@@ -211,4 +224,28 @@ model Payment {
   updatedAt        DateTime      @updatedAt
 
   @@map("payments")
+}
+
+model AuditLog {
+  id          String      @id @default(uuid())
+  bidId       String?
+  bid         Bid?        @relation(fields: [bidId], references: [id], onDelete: SetNull)
+  lotId       String?
+  lot         CropLot?    @relation(fields: [lotId], references: [id], onDelete: SetNull)
+  actorId     String
+  actor       User        @relation(fields: [actorId], references: [id], onDelete: Cascade)
+  action      AuditAction
+  oldQuantity Float?
+  newQuantity Float?
+  oldStatus   String?
+  newStatus   String?
+  price       Float?
+  metadata    String?
+  createdAt   DateTime    @default(now())
+
+  @@index([actorId])
+  @@index([lotId])
+  @@index([bidId])
+  @@index([action])
+  @@map("audit_logs")
 }

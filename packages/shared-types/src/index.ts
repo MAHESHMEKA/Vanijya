@@ -49,6 +49,16 @@ export enum CropUnit {
   TONNE = 'TONNE',
 }
 
+export enum AuditAction {
+  LOT_CREATED = 'LOT_CREATED',
+  BID_PLACED = 'BID_PLACED',
+  QUANTITY_MODIFIED = 'QUANTITY_MODIFIED',
+  BID_CANCELLED = 'BID_CANCELLED',
+  BID_ACCEPTED = 'BID_ACCEPTED',
+  BID_REJECTED = 'BID_REJECTED',
+  PAYMENT_PAID = 'PAYMENT_PAID',
+}
+
 export interface UserDTO {
   id: string;
   name: string;
@@ -119,6 +129,7 @@ export interface BidDTO {
   message?: string;
   status: BidStatus;
   createdAt: string;
+  updatedAt?: string;
 }
 
 export interface TransactionDTO {
@@ -141,4 +152,38 @@ export interface PaymentDTO {
   status: PaymentStatus;
   reference?: string;
   updatedAt: string;
+}
+
+export interface AuditLogDTO {
+  id: string;
+  bidId?: string;
+  lotId?: string;
+  actorId: string;
+  actorName?: string;
+  actorRole?: string;
+  action: AuditAction | string;
+  oldQuantity?: number;
+  newQuantity?: number;
+  oldStatus?: string;
+  newStatus?: string;
+  price?: number;
+  metadata?: Record<string, any>;
+  createdAt: string;
+}
+
+export interface AdminDashboardStats {
+  totalFarmers: number;
+  totalBuyers: number;
+  activeLots: number;
+  activeBiddingLots: number;
+  soldLots: number;
+  cancelledLots: number;
+  pendingBids: number;
+  acceptedBids: number;
+  cancelledBids: number;
+  modifiedBids: number;
+  totalTransactionValue: number;
+  pendingPaymentsValue: number;
+  completedPaymentsValue: number;
+  recentActivity: AuditLogDTO[];
 }

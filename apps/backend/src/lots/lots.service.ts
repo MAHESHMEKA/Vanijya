@@ -1,8 +1,9 @@
 import { Injectable, NotFoundException, ForbiddenException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateCropLotDto, UpdateCropLotDto, QueryLotsDto } from './dto/create-lot.dto';
-import { CropLotStatus, Role } from '@prisma/client';
+import { CropLotStatus, Role, AuditAction } from '@prisma/client';
 import { FALLBACK_CROPS } from '../crops/crops.service';
+import { AuditService } from '../audit/audit.service';
 
 export const FALLBACK_LOTS: any[] = [
   {
@@ -15,8 +16,8 @@ export const FALLBACK_LOTS: any[] = [
     qualityGrade: 'GRADE_A',
     location: 'Village Pimpalgaon, Niphad Taluka, Nashik',
     harvestDate: new Date(),
-    status: CropLotStatus.OPEN,
-    createdAt: new Date(),
+    status: CropLotStatus.BIDDING,
+    createdAt: new Date(Date.now() - 3600000 * 4),
     updatedAt: new Date(),
     crop: { id: 'crop-1', name: 'Tomato', category: 'VEGETABLE', icon: '🍅' },
     farmer: {
@@ -28,7 +29,7 @@ export const FALLBACK_LOTS: any[] = [
       isVerified: true,
     },
     bids: [],
-    _count: { bids: 0 },
+    _count: { bids: 1 },
   },
   {
     id: 'lot-demo-2',
@@ -80,11 +81,61 @@ export const FALLBACK_LOTS: any[] = [
     bids: [],
     _count: { bids: 0 },
   },
+  {
+    id: 'lot-demo-4',
+    farmerId: 'usr-farmer-1',
+    cropId: 'crop-3',
+    quantity: 120,
+    unit: 'QUINTAL',
+    expectedPrice: 1400,
+    qualityGrade: 'GRADE_B',
+    location: 'Dindori Road, Nashik',
+    harvestDate: new Date(Date.now() - 86400000 * 3),
+    status: CropLotStatus.SOLD,
+    createdAt: new Date(Date.now() - 86400000 * 3),
+    updatedAt: new Date(Date.now() - 86400000 * 2),
+    crop: { id: 'crop-3', name: 'Potato', category: 'VEGETABLE', icon: '🥔' },
+    farmer: {
+      id: 'usr-farmer-1',
+      name: 'Ramesh Patel',
+      phone: '9876543210',
+      district: 'Nashik',
+      state: 'Maharashtra',
+      isVerified: true,
+    },
+    bids: [],
+    _count: { bids: 1 },
+    transaction: {
+      id: 'txn-demo-1',
+      agreedPrice: 1450,
+      quantity: 120,
+      totalAmount: 174000,
+      status: 'COMPLETED',
+      buyer: { name: 'FreshCart Agro Ltd.', district: 'Mumbai' },
+      payment: { status: 'PAID', paymentReference: 'UPI-SBI-882199' },
+    },
+  },
 ];
 
 @Injectable()
 export class LotsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private auditService: AuditService,
+  ) {}
+
+  private enrichLot(lot: any) {
+    const bids = lot.bids || [];
+    const activeBids = bids.filter((b: any) => b.status === 'PENDING');
+    const highestBid = bids.length > 0 ? Math.max(...bids.map((b: any) => b.price)) : null;
+    const highestActiveBid = activeBids.length > 0 ? Math.max(...activeBids.map((b: any) => b.price)) : null;
+
+    return {
+      ...lot,
+      highestBid: highestActiveBid || highestBid,
+      bidCount: lot._count?.bids ?? bids.length,
+    };
+  }
 
   async create(farmerId: string, dto: CreateCropLotDto) {
     if (!this.prisma.isConnected) {
@@ -122,7 +173,17 @@ export class LotsService {
       };
 
       FALLBACK_LOTS.unshift(newLot);
-      return newLot;
+
+      await this.auditService.log({
+        actorId: farmerId,
+        action: AuditAction.LOT_CREATED,
+        lotId: newLot.id,
+        price: newLot.expectedPrice,
+        newQuantity: newLot.quantity,
+        metadata: { cropName: crop.name, location: newLot.location },
+      });
+
+      return this.enrichLot(newLot);
     }
 
     try {
@@ -131,7 +192,7 @@ export class LotsService {
         throw new NotFoundException(`Crop with ID ${dto.cropId} does not exist.`);
       }
 
-      return await this.prisma.cropLot.create({
+      const created = await this.prisma.cropLot.create({
         data: {
           farmerId,
           cropId: dto.cropId,
@@ -157,9 +218,19 @@ export class LotsService {
           },
         },
       });
+
+      await this.auditService.log({
+        actorId: farmerId,
+        action: AuditAction.LOT_CREATED,
+        lotId: created.id,
+        price: created.expectedPrice,
+        newQuantity: created.quantity,
+        metadata: { cropName: crop.name, location: created.location },
+      });
+
+      return this.enrichLot(created);
     } catch (err) {
       if (err instanceof NotFoundException) throw err;
-      // Fallback
       return this.create(farmerId, dto);
     }
   }
@@ -179,7 +250,7 @@ export class LotsService {
       if (query.qualityGrade) {
         filtered = filtered.filter((l) => l.qualityGrade === query.qualityGrade);
       }
-      return filtered;
+      return filtered.map((l) => this.enrichLot(l));
     }
 
     try {
@@ -190,7 +261,7 @@ export class LotsService {
       if (query.qualityGrade) where.qualityGrade = query.qualityGrade;
       if (query.location) where.location = { contains: query.location, mode: 'insensitive' };
 
-      return await this.prisma.cropLot.findMany({
+      const lots = await this.prisma.cropLot.findMany({
         where,
         orderBy: { createdAt: 'desc' },
         include: {
@@ -205,13 +276,29 @@ export class LotsService {
               isVerified: true,
             },
           },
+          bids: {
+            orderBy: { price: 'desc' },
+            include: {
+              buyer: {
+                select: { id: true, name: true, district: true, state: true, isVerified: true },
+              },
+            },
+          },
+          transaction: {
+            include: {
+              buyer: { select: { id: true, name: true, district: true } },
+              payment: true,
+            },
+          },
           _count: {
             select: { bids: true },
           },
         },
       });
+
+      return lots.map((l) => this.enrichLot(l));
     } catch (err) {
-      return FALLBACK_LOTS;
+      return FALLBACK_LOTS.map((l) => this.enrichLot(l));
     }
   }
 
@@ -219,7 +306,7 @@ export class LotsService {
     if (!this.prisma.isConnected) {
       const found = FALLBACK_LOTS.find((l) => l.id === id);
       if (!found) throw new NotFoundException(`Crop Lot with ID ${id} not found.`);
-      return found;
+      return this.enrichLot(found);
     }
 
     try {
@@ -252,7 +339,10 @@ export class LotsService {
             },
           },
           transaction: {
-            include: { payment: true },
+            include: {
+              buyer: { select: { id: true, name: true, district: true } },
+              payment: true,
+            },
           },
         },
       });
@@ -261,10 +351,10 @@ export class LotsService {
         throw new NotFoundException(`Crop Lot with ID ${id} not found.`);
       }
 
-      return lot;
+      return this.enrichLot(lot);
     } catch (err) {
       const found = FALLBACK_LOTS.find((l) => l.id === id);
-      if (found) return found;
+      if (found) return this.enrichLot(found);
       throw new NotFoundException(`Crop Lot with ID ${id} not found.`);
     }
   }
@@ -277,7 +367,7 @@ export class LotsService {
         throw new ForbiddenException('You are not authorized to modify this lot.');
       }
       Object.assign(lot, dto, { updatedAt: new Date() });
-      return lot;
+      return this.enrichLot(lot);
     }
 
     try {
@@ -289,16 +379,17 @@ export class LotsService {
       if (lot.status === CropLotStatus.SOLD) {
         throw new BadRequestException('Sold lots cannot be modified.');
       }
-      return await this.prisma.cropLot.update({
+      const updated = await this.prisma.cropLot.update({
         where: { id: lotId },
         data: dto,
         include: { crop: true, farmer: true },
       });
+      return this.enrichLot(updated);
     } catch (err) {
       const lot = FALLBACK_LOTS.find((l) => l.id === lotId);
       if (lot) {
         Object.assign(lot, dto, { updatedAt: new Date() });
-        return lot;
+        return this.enrichLot(lot);
       }
       throw err;
     }
@@ -309,7 +400,7 @@ export class LotsService {
       const lot = FALLBACK_LOTS.find((l) => l.id === lotId);
       if (!lot) throw new NotFoundException(`Crop Lot with ID ${lotId} not found.`);
       lot.status = CropLotStatus.CANCELLED;
-      return lot;
+      return this.enrichLot(lot);
     }
 
     try {
@@ -324,15 +415,16 @@ export class LotsService {
       if (lot.status === CropLotStatus.SOLD) {
         throw new BadRequestException('A sold lot cannot be cancelled.');
       }
-      return await this.prisma.cropLot.update({
+      const updated = await this.prisma.cropLot.update({
         where: { id: lotId },
         data: { status: CropLotStatus.CANCELLED },
       });
+      return this.enrichLot(updated);
     } catch (err) {
       const lot = FALLBACK_LOTS.find((l) => l.id === lotId);
       if (lot) {
         lot.status = CropLotStatus.CANCELLED;
-        return lot;
+        return this.enrichLot(lot);
       }
       throw err;
     }
