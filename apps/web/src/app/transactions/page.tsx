@@ -22,7 +22,7 @@ import {
 
 export default function TransactionsPage() {
   const { user, isAuthenticated } = useAuth();
-  const { t } = useLanguage();
+  const { t, translateCrop, formatCurrency, formatUnit, formatDateLocalized } = useLanguage();
   const { showToast } = useToast();
 
   const [transactions, setTransactions] = useState<any[]>([]);
@@ -78,14 +78,14 @@ export default function TransactionsPage() {
         <div className="w-14 h-14 bg-amber-100 text-amber-900 rounded-full flex items-center justify-center mx-auto">
           <LogIn className="w-8 h-8" />
         </div>
-        <h2 className="text-xl font-black text-slate-900">Sign In to View Purchases</h2>
-        <p className="text-xs text-slate-600">View legally binding purchase contracts and manage payment settlements.</p>
+        <h2 className="text-xl font-black text-slate-900">{t.commonLoginRequired}</h2>
+        <p className="text-xs text-slate-600">{t.purchasesSubtitle}</p>
         <div className="pt-2">
           <Link
             href="/login"
             className="block w-full bg-gradient-to-r from-amber-400 to-yellow-500 text-slate-950 font-black py-3 rounded-2xl text-xs transition shadow"
           >
-            Go to Sign In
+            {t.btnSignIn}
           </Link>
         </div>
       </div>
@@ -98,125 +98,97 @@ export default function TransactionsPage() {
         <h1 className="text-2xl md:text-3xl font-black text-slate-900 tracking-tight">
           {t.purchasesTitle}
         </h1>
-        <p className="text-xs text-slate-500 mt-0.5">Manage legal purchase agreements and electronic digital settlements</p>
+        <p className="text-xs text-slate-500 mt-0.5">{t.purchasesSubtitle}</p>
       </div>
 
       {loading ? (
-        <div className="space-y-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <CardSkeleton />
           <CardSkeleton />
         </div>
       ) : transactions.length === 0 ? (
-        <div className="bg-white p-10 rounded-3xl border border-amber-200 text-center space-y-3 max-w-md mx-auto">
-          <FileCheck className="w-10 h-10 text-amber-300 mx-auto" />
-          <h2 className="text-base font-black text-slate-900">No Finalized Purchases Yet</h2>
-          <p className="text-xs text-slate-500">When a farmer accepts your bid offer, the purchase contract will appear here.</p>
-          <Link
-            href="/browse-lots"
-            className="inline-flex items-center gap-2 bg-gradient-to-r from-amber-400 to-yellow-500 text-slate-950 font-black px-6 py-3 rounded-2xl text-xs shadow transition"
-          >
-            Explore Marketplace
-          </Link>
+        <div className="bg-white p-12 rounded-3xl border border-amber-200 text-center space-y-3 max-w-md mx-auto">
+          <FileCheck className="w-12 h-12 text-amber-300 mx-auto" />
+          <h3 className="text-base font-black text-slate-900">{t.commonNoData}</h3>
+          <p className="text-xs text-slate-500">{t.purchasesSubtitle}</p>
         </div>
       ) : (
-        <div className="space-y-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {transactions.map((txn) => {
             const isPaid = txn.payment?.status === 'PAID';
-            const isInitiated = txn.payment?.status === 'INITIATED';
+            const isBuyer = user.role === 'BUYER';
+            const cropName = txn.lot?.crop?.name || txn.lot?.cropName || 'Produce';
 
             return (
               <div
                 key={txn.id}
-                className="bg-white p-6 md:p-8 rounded-3xl border border-amber-200 shadow-sm space-y-5 transition-card"
+                className="bg-white rounded-3xl border border-amber-200 p-6 space-y-4 shadow-sm hover:shadow-md transition"
               >
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-amber-100 pb-4">
-                  <div className="space-y-1">
-                    <span className="text-xs font-bold text-slate-400 uppercase">
-                      Contract #{txn.id?.substring(0, 8)}
+                <div className="flex items-center justify-between border-b border-amber-100 pb-3">
+                  <div>
+                    <span className="text-[10px] font-mono font-bold text-slate-400">
+                      {t.purchaseContractId} #{txn.id?.substring(0, 8)}
                     </span>
-                    <h2 className="text-xl font-black text-slate-900 tracking-tight">
-                      {txn.lot?.crop?.name || 'Crop'} — {txn.quantity} {txn.lot?.unit || 'Qtl'}
-                    </h2>
-                    <p className="text-xs text-slate-500">
-                      Farmer Seller: <strong>{txn.farmer?.name || 'Patel Farms'}</strong> ({txn.farmer?.district || 'Nashik'})
-                    </p>
+                    <h3 className="font-black text-slate-900 text-base">
+                      {translateCrop(cropName)} ({txn.quantity} {formatUnit(txn.lot?.unit)})
+                    </h3>
                   </div>
+                  <StatusBadge status={txn.payment?.status || 'PENDING'} type="payment" />
+                </div>
 
-                  <div className="flex items-center gap-2">
-                    <StatusBadge status={txn.payment?.status || 'PENDING'} type="payment" />
+                <div className="space-y-2 text-xs bg-amber-50/40 p-4 rounded-2xl border border-amber-100">
+                  <div className="flex justify-between">
+                    <span className="text-slate-500">{t.commonFarmer}:</span>
+                    <strong className="text-slate-900">{txn.farmer?.name || 'Ramesh Patel'}</strong>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-500">{t.commonBuyer}:</span>
+                    <strong className="text-slate-900">{txn.buyer?.name || 'FreshCart Agro Ltd.'}</strong>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-500">{t.agreedRate}:</span>
+                    <span className="font-bold text-amber-900">{formatCurrency(txn.finalPrice)}/Qtl</span>
+                  </div>
+                  <div className="flex justify-between pt-1 border-t border-amber-200/60 font-black">
+                    <span className="text-slate-700 uppercase text-[10px]">{t.totalAmount}:</span>
+                    <span className="text-base text-emerald-800">{formatCurrency(txn.totalAmount)}</span>
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
-                  <div className="bg-amber-50/50 p-3 rounded-2xl border border-amber-100">
-                    <span className="text-slate-400 font-bold block text-[10px]">Agreed Deal Rate</span>
-                    <span className="font-black text-slate-900 text-sm">₹{txn.agreedPrice}/Qtl</span>
-                  </div>
-                  <div className="bg-amber-50/50 p-3 rounded-2xl border border-amber-100">
-                    <span className="text-slate-400 font-bold block text-[10px]">Contract Total</span>
-                    <span className="font-black text-amber-900 text-sm">
-                      ₹{txn.totalAmount?.toLocaleString('en-IN')}
-                    </span>
-                  </div>
-                  <div className="bg-amber-50/50 p-3 rounded-2xl border border-amber-100">
-                    <span className="text-slate-400 font-bold block text-[10px]">Payment Milestone</span>
-                    <span className="font-black text-slate-900 text-sm">{txn.payment?.status || 'PENDING'}</span>
-                  </div>
-                  <div className="bg-amber-50/50 p-3 rounded-2xl border border-amber-100">
-                    <span className="text-slate-400 font-bold block text-[10px]">Commission Cut</span>
-                    <span className="font-black text-amber-600 text-sm">₹0 (Zero Cut)</span>
-                  </div>
-                </div>
-
-                {/* Interactive Payment Settlement Actions */}
-                <div className="p-4 bg-amber-50/40 rounded-2xl border border-amber-200/80 space-y-3">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                    <div className="space-y-0.5">
-                      <span className="text-xs font-black text-slate-900">Digital Settlement & Bank UTR Reference</span>
-                      <p className="text-[11px] text-slate-500">Record digital transaction reference for immediate farmer payout verification</p>
-                    </div>
-
-                    <input
-                      type="text"
-                      value={referenceMap[txn.id] || ''}
-                      onChange={(e) => setReferenceMap({ ...referenceMap, [txn.id]: e.target.value })}
-                      placeholder="e.g. UPI-HDFC-992144"
-                      className="px-3 py-1.5 bg-white border border-amber-200 rounded-xl text-xs font-bold text-slate-800 w-full sm:w-56 focus:outline-none focus:ring-2 focus:ring-amber-500"
-                    />
-                  </div>
-
-                  {!isPaid && (
-                    <div className="flex gap-2 justify-end pt-2 border-t border-amber-200/60">
-                      <button
-                        onClick={() => handleUpdatePaymentStatus(txn.id, 'INITIATED')}
-                        disabled={updatingId === txn.id}
-                        className="px-4 py-2 bg-amber-100 hover:bg-amber-200 text-amber-950 font-bold rounded-xl text-xs transition"
-                      >
-                        Mark Dispatched (Initiated)
-                      </button>
-
+                {isBuyer && !isPaid && (
+                  <div className="space-y-2 pt-2 border-t border-amber-100">
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="text"
+                        placeholder="UTR / Bank Ref: UPI-HDFC-992144"
+                        value={referenceMap[txn.id] || ''}
+                        onChange={(e) =>
+                          setReferenceMap({ ...referenceMap, [txn.id]: e.target.value })
+                        }
+                        className="flex-1 px-3 py-2 bg-amber-50/30 border border-amber-200 rounded-xl text-xs font-mono font-bold focus:bg-white focus:outline-none"
+                      />
                       <button
                         onClick={() => handleUpdatePaymentStatus(txn.id, 'PAID')}
                         disabled={updatingId === txn.id}
-                        className="px-5 py-2 bg-gradient-to-r from-amber-400 via-amber-500 to-yellow-500 hover:from-amber-300 hover:to-yellow-400 text-slate-950 font-black rounded-xl text-xs shadow-md shadow-amber-500/20 transition flex items-center gap-1.5"
+                        className="bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-500 hover:to-green-500 text-white font-black px-4 py-2 rounded-xl text-xs flex items-center gap-1 shadow transition"
                       >
                         {updatingId === txn.id ? (
                           <Loader2 className="w-3.5 h-3.5 animate-spin" />
                         ) : (
                           <Check className="w-3.5 h-3.5" />
                         )}
-                        Confirm Settlement (Paid)
+                        {t.btnConfirmPayment}
                       </button>
                     </div>
-                  )}
+                  </div>
+                )}
 
-                  {isPaid && (
-                    <div className="flex items-center gap-2 text-xs font-black text-amber-900 pt-1">
-                      <CheckCircle2 className="w-4 h-4 text-amber-600" />
-                      <span>Payment Verified & Released to Farmer. Reference: {txn.payment?.paymentReference || 'UPI-HDFC-992144'}</span>
-                    </div>
-                  )}
-                </div>
+                {isPaid && (
+                  <div className="bg-emerald-50 text-emerald-800 p-2.5 rounded-xl text-center text-xs font-bold flex items-center justify-center gap-1.5 border border-emerald-200">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                    <span>{t.paymentPaidBadge} — Ref: {txn.payment?.paymentReference || 'UTR-891244'}</span>
+                  </div>
+                )}
               </div>
             );
           })}

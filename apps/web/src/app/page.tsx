@@ -24,7 +24,7 @@ import {
 
 export default function UnifiedHomePage() {
   const { user, isAuthenticated } = useAuth();
-  const { t } = useLanguage();
+  const { t, translateCrop, formatCurrency } = useLanguage();
   const [heroPriceData, setHeroPriceData] = useState<any>(null);
 
   useEffect(() => {
@@ -43,7 +43,7 @@ export default function UnifiedHomePage() {
 
   return (
     <div className="space-y-12 animate-in fade-in duration-300">
-      {/* 1. Hero Section: "Know the Best Price Before You Sell." */}
+      {/* 1. Hero Section */}
       <div className="relative overflow-hidden bg-gradient-to-br from-amber-950 via-slate-900 to-amber-900 rounded-3xl p-6 md:p-12 text-white shadow-2xl border border-amber-500/30">
         <div className="max-w-3xl space-y-4">
           <div className="inline-flex items-center gap-2 bg-amber-400/20 text-amber-300 border border-amber-400/30 text-xs font-black px-3.5 py-1 rounded-full uppercase tracking-wider">
@@ -78,7 +78,7 @@ export default function UnifiedHomePage() {
             </Link>
 
             <Link
-              href={isAuthenticated && user?.role === 'BUYER' ? '/browse-lots' : '/browse-lots'}
+              href="/browse-lots"
               className="bg-slate-900/90 hover:bg-slate-800 text-amber-200 border border-amber-500/30 font-black px-6 py-3.5 rounded-2xl text-sm flex items-center gap-2 transition"
             >
               <ShoppingBag className="w-4 h-4 text-amber-400" />
@@ -91,187 +91,141 @@ export default function UnifiedHomePage() {
         <div className="mt-8 pt-6 border-t border-amber-500/20 grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div className="bg-white/5 backdrop-blur-md p-4 rounded-2xl border border-amber-500/20 space-y-1">
             <div className="flex items-center justify-between text-xs text-amber-200 font-bold">
-              <span>Tomato (टमाटर) Today</span>
+              <span>{translateCrop('Tomato')} {t.todayPriceLabel}</span>
               <span className="text-amber-400 font-black">▲ +6.8%</span>
             </div>
             <div className="text-2xl font-black text-white">
-              ₹{heroPriceData?.todayPrice?.modalPrice || 2233} <span className="text-xs font-normal text-amber-200">/ Qtl</span>
+              {formatCurrency(heroPriceData?.todayPrice?.modalPrice || 2233)} <span className="text-xs font-normal text-amber-200">/ Qtl</span>
             </div>
             <p className="text-[10px] text-amber-200/80">Nashik APMC Main Yard</p>
           </div>
 
           <div className="bg-white/5 backdrop-blur-md p-4 rounded-2xl border border-amber-500/20 space-y-1">
             <div className="flex items-center justify-between text-xs text-amber-200 font-bold">
-              <span>Spatial Arbitrage</span>
-              <span className="text-yellow-400 font-black">+₹96 Net Gain</span>
+              <span>{t.spatialArbitrageLabel}</span>
+              <span className="text-yellow-400 font-black">+₹96 {t.netGainBadge}</span>
             </div>
             <div className="text-2xl font-black text-yellow-300">
-              ₹2,380 <span className="text-xs font-normal text-amber-200">/ Qtl</span>
+              {formatCurrency(2380)} <span className="text-xs font-normal text-amber-200">/ Qtl</span>
             </div>
-            <p className="text-[10px] text-amber-200/80">Lasalgaon APMC (24 km transport deducted)</p>
+            <p className="text-[10px] text-amber-200/80">Lasalgaon APMC (24 km transport offset)</p>
           </div>
 
           <div className="bg-white/5 backdrop-blur-md p-4 rounded-2xl border border-amber-500/20 space-y-1">
             <div className="flex items-center justify-between text-xs text-amber-200 font-bold">
-              <span>Best Selling Window</span>
-              <span className="bg-amber-400/30 text-amber-300 text-[9px] font-black px-1.5 py-0.5 rounded">OPTIMAL</span>
+              <span>{t.bestSellingWindowLabel}</span>
+              <span className="bg-amber-400/30 text-amber-300 text-[9px] font-black px-1.5 py-0.5 rounded">{t.optimalBadge}</span>
             </div>
             <div className="text-sm font-black text-white leading-snug">
-              {heroPriceData?.sellingWindow?.recommendation || 'Sell within next 24-48 Hours'}
+              {t.sellNowAdvisory}
             </div>
-            <p className="text-[10px] text-amber-300">Price momentum peak detected</p>
+            <p className="text-[10px] text-amber-200/80">{t.recommendationLabel} (92% Confidence)</p>
           </div>
         </div>
       </div>
 
-      {/* 2. Today's Impact Card Component */}
+      {/* 2. Impact Metrics */}
       <ImpactCard />
 
-      {/* 3. How Vanijya Works (4 Transparent Steps) */}
+      {/* 3. Four-Step Interactive Trade Journey */}
       <div className="space-y-6">
-        <div className="text-center max-w-2xl mx-auto space-y-2">
+        <div className="text-center space-y-1">
           <h2 className="text-2xl md:text-3xl font-black text-slate-900 tracking-tight">
             {t.howItWorksTitle}
           </h2>
-          <p className="text-xs md:text-sm text-slate-600 font-medium">
+          <p className="text-xs md:text-sm text-slate-500 max-w-xl mx-auto">
             {t.howItWorksSubtitle}
           </p>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="bg-white p-5 rounded-3xl border border-amber-200 shadow-sm space-y-3 transition-card">
-            <div className="w-10 h-10 bg-amber-100 text-amber-900 rounded-2xl flex items-center justify-center font-black">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="bg-white p-5 rounded-3xl border border-amber-200 shadow-sm hover:shadow-md transition space-y-3">
+            <div className="w-10 h-10 bg-amber-100 text-amber-900 rounded-2xl flex items-center justify-center font-bold text-sm">
               1
             </div>
-            <h3 className="font-extrabold text-slate-900 text-base">{t.step1Title}</h3>
+            <h3 className="font-black text-slate-900 text-sm tracking-tight">{t.step1Title}</h3>
             <p className="text-xs text-slate-600 leading-relaxed">{t.step1Desc}</p>
           </div>
 
-          <div className="bg-white p-5 rounded-3xl border border-amber-200 shadow-sm space-y-3 transition-card">
-            <div className="w-10 h-10 bg-yellow-100 text-yellow-900 rounded-2xl flex items-center justify-center font-black">
+          <div className="bg-white p-5 rounded-3xl border border-amber-200 shadow-sm hover:shadow-md transition space-y-3">
+            <div className="w-10 h-10 bg-amber-100 text-amber-900 rounded-2xl flex items-center justify-center font-bold text-sm">
               2
             </div>
-            <h3 className="font-extrabold text-slate-900 text-base">{t.step2Title}</h3>
+            <h3 className="font-black text-slate-900 text-sm tracking-tight">{t.step2Title}</h3>
             <p className="text-xs text-slate-600 leading-relaxed">{t.step2Desc}</p>
           </div>
 
-          <div className="bg-white p-5 rounded-3xl border border-amber-200 shadow-sm space-y-3 transition-card">
-            <div className="w-10 h-10 bg-amber-200 text-amber-950 rounded-2xl flex items-center justify-center font-black">
+          <div className="bg-white p-5 rounded-3xl border border-amber-200 shadow-sm hover:shadow-md transition space-y-3">
+            <div className="w-10 h-10 bg-amber-100 text-amber-900 rounded-2xl flex items-center justify-center font-bold text-sm">
               3
             </div>
-            <h3 className="font-extrabold text-slate-900 text-base">{t.step3Title}</h3>
+            <h3 className="font-black text-slate-900 text-sm tracking-tight">{t.step3Title}</h3>
             <p className="text-xs text-slate-600 leading-relaxed">{t.step3Desc}</p>
           </div>
 
-          <div className="bg-white p-5 rounded-3xl border border-amber-200 shadow-sm space-y-3 transition-card">
-            <div className="w-10 h-10 bg-amber-600 text-white rounded-2xl flex items-center justify-center font-black">
+          <div className="bg-white p-5 rounded-3xl border border-amber-200 shadow-sm hover:shadow-md transition space-y-3">
+            <div className="w-10 h-10 bg-amber-100 text-amber-900 rounded-2xl flex items-center justify-center font-bold text-sm">
               4
             </div>
-            <h3 className="font-extrabold text-slate-900 text-base">{t.step4Title}</h3>
+            <h3 className="font-black text-slate-900 text-sm tracking-tight">{t.step4Title}</h3>
             <p className="text-xs text-slate-600 leading-relaxed">{t.step4Desc}</p>
           </div>
         </div>
       </div>
 
-      {/* 4. Farmer Benefits vs Buyer Benefits Grid */}
+      {/* 4. Value Propositions for Farmers and Buyers */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Farmer Benefits */}
-        <div className="bg-gradient-to-br from-amber-50 via-yellow-50/60 to-orange-50/40 p-6 md:p-8 rounded-3xl border border-amber-300/80 shadow-sm space-y-4">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-gradient-to-br from-amber-500 to-yellow-500 text-slate-950 rounded-2xl flex items-center justify-center font-bold shadow-md shadow-amber-500/20">
-              <Sprout className="w-5 h-5 text-slate-950" />
-            </div>
-            <h3 className="font-black text-xl text-amber-950">{t.farmerBenefitsTitle}</h3>
+        <div className="bg-gradient-to-br from-amber-500/10 via-yellow-500/5 to-amber-500/10 p-6 md:p-8 rounded-3xl border border-amber-200 space-y-4">
+          <div className="flex items-center gap-2">
+            <Sprout className="w-5 h-5 text-amber-700" />
+            <h3 className="font-black text-lg text-slate-900">{t.farmerBenefitsTitle}</h3>
           </div>
-
-          <ul className="space-y-3 text-xs font-semibold text-amber-950">
-            <li className="flex items-center gap-2.5">
-              <CheckCircle2 className="w-4 h-4 text-amber-700 shrink-0" />
-              <span><strong>0% Intermediary Deductions:</strong> No arhtiya cuts, no unrecorded weighing charges.</span>
+          <ul className="space-y-2.5 text-xs text-slate-700">
+            <li className="flex items-start gap-2">
+              <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+              <span>Real-time benchmark modal prices across multiple nearby APMC mandis.</span>
             </li>
-            <li className="flex items-center gap-2.5">
-              <CheckCircle2 className="w-4 h-4 text-amber-700 shrink-0" />
-              <span><strong>Spatial Arbitrage Discovery:</strong> Find regional mandis where price exceeds transport cost.</span>
+            <li className="flex items-start gap-2">
+              <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+              <span>Direct transparent bids from verified institutional buyers with zero commission deductions.</span>
             </li>
-            <li className="flex items-center gap-2.5">
-              <CheckCircle2 className="w-4 h-4 text-amber-700 shrink-0" />
-              <span><strong>Explainable Selling Timing:</strong> Real-time guidance on whether to sell today or hold.</span>
-            </li>
-            <li className="flex items-center gap-2.5">
-              <CheckCircle2 className="w-4 h-4 text-amber-700 shrink-0" />
-              <span><strong>Instant Digital Confirmation:</strong> 1-tap offer acceptance with recorded payment UTR.</span>
+            <li className="flex items-start gap-2">
+              <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+              <span>Instant digital contract generation and verified direct bank settlements.</span>
             </li>
           </ul>
-
-          <div className="pt-2">
-            <Link
-              href="/prices"
-              className="inline-flex items-center gap-1.5 text-xs font-black text-amber-900 hover:underline"
-            >
-              Explore Price Discovery →
-            </Link>
-          </div>
         </div>
 
-        {/* Buyer Benefits */}
-        <div className="bg-gradient-to-br from-slate-50 via-amber-50/30 to-yellow-50/40 p-6 md:p-8 rounded-3xl border border-amber-200 shadow-sm space-y-4">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-slate-900 text-amber-400 rounded-2xl flex items-center justify-center font-bold">
-              <Building2 className="w-5 h-5" />
-            </div>
-            <h3 className="font-black text-xl text-slate-900">{t.buyerBenefitsTitle}</h3>
+        <div className="bg-gradient-to-br from-slate-900/5 via-slate-900/10 to-slate-900/5 p-6 md:p-8 rounded-3xl border border-slate-200 space-y-4">
+          <div className="flex items-center gap-2">
+            <Building2 className="w-5 h-5 text-slate-800" />
+            <h3 className="font-black text-lg text-slate-900">{t.buyerBenefitsTitle}</h3>
           </div>
-
-          <ul className="space-y-3 text-xs font-semibold text-slate-800">
-            <li className="flex items-center gap-2.5">
-              <CheckCircle2 className="w-4 h-4 text-amber-600 shrink-0" />
-              <span><strong>Direct Farm-Gate Sourcing:</strong> Bypass multiple aggregator markups.</span>
+          <ul className="space-y-2.5 text-xs text-slate-700">
+            <li className="flex items-start gap-2">
+              <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+              <span>Single-point procurement catalog with verified crop quality grades and GPS farm coordinates.</span>
             </li>
-            <li className="flex items-center gap-2.5">
-              <CheckCircle2 className="w-4 h-4 text-amber-600 shrink-0" />
-              <span><strong>Quality Graded Batches:</strong> Verified Grade A, B, C classifications with harvest dates.</span>
+            <li className="flex items-start gap-2">
+              <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+              <span>Direct bidding and negotiation desk with customizable volume procurement.</span>
             </li>
-            <li className="flex items-center gap-2.5">
-              <CheckCircle2 className="w-4 h-4 text-amber-600 shrink-0" />
-              <span><strong>Live Mandi Benchmark Comparison:</strong> Make data-backed sourcing offers.</span>
-            </li>
-            <li className="flex items-center gap-2.5">
-              <CheckCircle2 className="w-4 h-4 text-amber-600 shrink-0" />
-              <span><strong>Structured Contracts:</strong> Clear purchase orders with digital settlement tracking.</span>
+            <li className="flex items-start gap-2">
+              <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+              <span>Complete supply chain auditability and standardized digital tax invoices.</span>
             </li>
           </ul>
-
-          <div className="pt-2">
-            <Link
-              href="/browse-lots"
-              className="inline-flex items-center gap-1.5 text-xs font-black text-amber-900 hover:underline"
-            >
-              Explore Agricultural Marketplace →
-            </Link>
-          </div>
         </div>
       </div>
 
-      {/* 5. Policy & Government Alignment Banner */}
-      <div className="bg-white p-6 md:p-8 rounded-3xl border border-amber-200 shadow-sm flex flex-col md:flex-row items-center justify-between gap-6">
-        <div className="space-y-1.5 max-w-2xl">
-          <div className="flex items-center gap-2 text-xs font-black text-amber-900">
-            <ShieldCheck className="w-4 h-4 text-amber-600" />
-            <span>{t.govtAlignmentTitle}</span>
-          </div>
-          <p className="text-xs text-slate-600 leading-relaxed font-medium">
-            {t.govtAlignmentDesc}
-          </p>
+      {/* 5. National Policy Alignment */}
+      <div className="bg-slate-950 text-white p-6 md:p-8 rounded-3xl border border-amber-500/20 text-center space-y-2">
+        <div className="inline-flex items-center gap-2 bg-amber-400/20 text-amber-300 text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-wider">
+          <ShieldCheck className="w-3.5 h-3.5" /> {t.govtAlignmentTitle}
         </div>
-
-        <div className="flex items-center gap-3 shrink-0">
-          <span className="bg-amber-50 text-amber-900 text-[11px] font-bold px-3 py-1.5 rounded-xl border border-amber-200">
-            Agmarknet Data Synced
-          </span>
-          <span className="bg-amber-50 text-amber-900 text-[11px] font-bold px-3 py-1.5 rounded-xl border border-amber-200">
-            e-NAM Compliant
-          </span>
-        </div>
+        <p className="text-xs text-slate-400 max-w-xl mx-auto">
+          {t.govtAlignmentDesc}
+        </p>
       </div>
     </div>
   );

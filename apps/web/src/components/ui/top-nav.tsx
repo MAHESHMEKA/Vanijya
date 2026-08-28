@@ -19,7 +19,6 @@ import {
   User,
   LogIn,
   LogOut,
-  Sparkles,
 } from 'lucide-react';
 
 export function TopNav() {
@@ -61,6 +60,8 @@ export function TopNav() {
     ];
   }
 
+  const roleLabel = user?.role === 'FARMER' ? t.roleFarmer.split(' ')[0] : user?.role === 'BUYER' ? t.roleBuyer.split(' ')[0] : t.roleAdmin.split(' ')[0];
+
   return (
     <header className="sticky top-0 z-50 bg-slate-950 text-white shadow-xl border-b border-amber-500/20">
       <div className="max-w-7xl mx-auto px-4 py-2.5 flex items-center justify-between gap-3">
@@ -71,7 +72,7 @@ export function TopNav() {
           </div>
           <div>
             <div className="font-black text-base md:text-lg tracking-tight flex items-center gap-1.5 leading-none text-white">
-              Vanijya
+              {t.brandTitle}
               <span className="text-amber-400 text-xs font-black">वाणिज्य</span>
             </div>
             <p className="text-[10px] text-amber-200/80 mt-0.5 leading-none hidden sm:block">
@@ -116,7 +117,7 @@ export function TopNav() {
                 <ShieldCheck className="w-3.5 h-3.5 text-amber-400 shrink-0" />
                 <span className="max-w-[110px] truncate text-slate-200">{user.name.split(' ')[0]}</span>
                 <span className="bg-amber-400 text-slate-950 text-[9px] font-black px-1.5 py-0.2 rounded-full uppercase">
-                  {user.role}
+                  {roleLabel}
                 </span>
               </Link>
               <button

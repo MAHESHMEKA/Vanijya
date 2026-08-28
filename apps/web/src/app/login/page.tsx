@@ -45,16 +45,16 @@ export default function UnifiedLoginPage() {
         <div className="w-14 h-14 bg-amber-100 text-amber-900 rounded-full flex items-center justify-center mx-auto">
           <ShieldCheck className="w-8 h-8" />
         </div>
-        <h2 className="text-xl font-black text-slate-900">Signed In Successfully</h2>
+        <h2 className="text-xl font-black text-slate-900">{t.commonWelcomeBack}</h2>
         <p className="text-xs text-slate-600">
-          Logged in as <strong>{user.name}</strong> ({user.role})
+          <strong>{user.name}</strong> ({user.role})
         </p>
         <div className="pt-2">
           <Link
             href="/dashboard"
             className="block w-full bg-gradient-to-r from-amber-400 via-amber-500 to-yellow-500 hover:from-amber-300 hover:to-yellow-400 text-slate-950 font-black py-3 rounded-2xl text-xs transition shadow-md shadow-amber-500/20"
           >
-            Go to {user.role === 'FARMER' ? 'Farmer Hub' : user.role === 'BUYER' ? 'Procurement Desk' : 'Admin Panel'}
+            {t.navDashboard} ({user.role === 'FARMER' ? t.roleFarmer.split(' ')[0] : user.role === 'BUYER' ? t.roleBuyer.split(' ')[0] : t.roleAdmin.split(' ')[0]})
           </Link>
         </div>
       </div>
@@ -80,8 +80,8 @@ export default function UnifiedLoginPage() {
     e.preventDefault();
 
     if (!captchaData.captchaAnswer || captchaData.captchaAnswer.trim() === '') {
-      setErrorMessage('Please enter the CAPTCHA.');
-      showToast('Please enter the CAPTCHA.', 'error');
+      setErrorMessage(t.errCaptchaRequired);
+      showToast(t.errCaptchaRequired, 'error');
       return;
     }
 
@@ -96,21 +96,25 @@ export default function UnifiedLoginPage() {
         captchaData.captchaId,
         captchaData.captchaAnswer,
       );
-      showToast(`Welcome back, ${loggedInUser.name}!`, 'success');
+      showToast(`${t.commonWelcomeBack}, ${loggedInUser.name}!`, 'success');
       router.push('/dashboard');
     } catch (err: any) {
-      const msg = err.message || 'Login failed. Please check your credentials.';
+      const rawMsg = err.message || '';
+      let msg = t.errInvalidCredentials;
+      if (rawMsg.toLowerCase().includes('captcha') || rawMsg.toLowerCase().includes('security')) {
+        if (rawMsg.toLowerCase().includes('expired')) {
+          msg = t.errCaptchaExpired;
+        } else if (rawMsg.toLowerCase().includes('too many')) {
+          msg = t.errTooManyAttempts;
+        } else {
+          msg = t.errCaptchaInvalid;
+        }
+      }
       setErrorMessage(msg);
       showToast(msg, 'error');
 
-      // If CAPTCHA error or failed attempt, refresh challenge for security
-      if (
-        msg.toLowerCase().includes('captcha') ||
-        msg.toLowerCase().includes('security') ||
-        msg.toLowerCase().includes('attempt')
-      ) {
-        captchaRef.current?.refresh();
-      }
+      // Refresh CAPTCHA challenge for security
+      captchaRef.current?.refresh();
     } finally {
       setIsSubmitting(false);
     }
@@ -133,8 +137,8 @@ export default function UnifiedLoginPage() {
           <div className="w-12 h-12 bg-gradient-to-br from-amber-400 to-yellow-500 text-slate-950 rounded-2xl flex items-center justify-center mx-auto mb-2 font-bold shadow-md shadow-amber-500/25">
             <LogIn className="w-6 h-6" />
           </div>
-          <h1 className="text-2xl font-black text-slate-900 tracking-tight">Secure Marketplace Login</h1>
-          <p className="text-xs text-slate-500">Sign in to access unified agriculture trade operations</p>
+          <h1 className="text-2xl font-black text-slate-900 tracking-tight">{t.loginTitle}</h1>
+          <p className="text-xs text-slate-500">{t.loginSubtitle}</p>
         </div>
 
         {errorMessage && (
@@ -149,14 +153,14 @@ export default function UnifiedLoginPage() {
           <div>
             <label className="block text-xs font-bold text-slate-700 mb-1.5 flex items-center gap-1.5">
               <Phone className="w-3.5 h-3.5 text-amber-700" />
-              Mobile Number or Email Address
+              {t.phoneOrEmailLabel}
             </label>
             <input
               type="text"
               required
               value={identifier}
               onChange={(e) => setIdentifier(e.target.value)}
-              placeholder="e.g. 9876543210 or buyer@freshcart.com"
+              placeholder={t.identifierPlaceholder}
               className="w-full px-3.5 py-2.5 bg-amber-50/40 border border-amber-200 rounded-xl text-sm font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500"
             />
           </div>
@@ -165,14 +169,14 @@ export default function UnifiedLoginPage() {
           <div>
             <label className="block text-xs font-bold text-slate-700 mb-1.5 flex items-center gap-1.5">
               <Lock className="w-3.5 h-3.5 text-amber-700" />
-              Password
+              {t.passwordLabel}
             </label>
             <input
               type="password"
               required
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="••••••••"
+              placeholder={t.passwordPlaceholder}
               className="w-full px-3.5 py-2.5 bg-amber-50/40 border border-amber-200 rounded-xl text-sm font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500"
             />
           </div>
@@ -197,10 +201,10 @@ export default function UnifiedLoginPage() {
             {isSubmitting ? (
               <>
                 <Loader2 className="w-4 h-4 animate-spin" />
-                Signing in...
+                {t.signingIn}
               </>
             ) : (
-              'Sign In to Vanijya'
+              t.btnSignIn
             )}
           </button>
         </form>
@@ -208,7 +212,7 @@ export default function UnifiedLoginPage() {
         {/* 1-Click Demo Personas */}
         <div className="pt-2 border-t border-amber-100 space-y-2">
           <label className="block text-[11px] font-bold text-slate-500 text-center">
-            Choose account type / 1-Click Demo Fill:
+            {t.chooseAccountTypeLabel}
           </label>
           <div className="grid grid-cols-3 gap-2">
             <button
@@ -221,7 +225,7 @@ export default function UnifiedLoginPage() {
               }`}
             >
               <Sprout className="w-4 h-4" />
-              <span>🌾 Farmer</span>
+              <span>🌾 {t.roleFarmer.split(' ')[0]}</span>
             </button>
 
             <button
@@ -234,7 +238,7 @@ export default function UnifiedLoginPage() {
               }`}
             >
               <Building2 className="w-4 h-4" />
-              <span>🏢 Buyer</span>
+              <span>🏢 {t.roleBuyer.split(' ')[0]}</span>
             </button>
 
             <button
@@ -247,13 +251,13 @@ export default function UnifiedLoginPage() {
               }`}
             >
               <ShieldAlert className="w-4 h-4" />
-              <span>⚙️ Admin</span>
+              <span>⚙️ {t.roleAdmin.split(' ')[0]}</span>
             </button>
           </div>
         </div>
 
         <div className="pt-1 text-center text-[10px] text-slate-400">
-          Kisan Credit Card (KCC) & National APMC Trade Enrolled | Visual Security Verification
+          {t.tradeEnrolledNotice}
         </div>
       </div>
     </div>

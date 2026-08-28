@@ -55,7 +55,7 @@ export default function UnifiedProfilePage() {
       });
       await refreshUser();
       setIsEditing(false);
-      showToast('Profile updated successfully!', 'success');
+      showToast(t.profileSavedSuccess, 'success');
     } catch (err: any) {
       showToast(err.message || 'Failed to update profile', 'error');
     } finally {
@@ -69,14 +69,14 @@ export default function UnifiedProfilePage() {
         <div className="w-14 h-14 bg-amber-100 text-amber-900 rounded-full flex items-center justify-center mx-auto">
           <LogIn className="w-8 h-8" />
         </div>
-        <h2 className="text-xl font-black text-slate-900">Sign In Required</h2>
-        <p className="text-xs text-slate-600">Please sign in to view and manage your profile details.</p>
+        <h2 className="text-xl font-black text-slate-900">{t.commonLoginRequired}</h2>
+        <p className="text-xs text-slate-600">{t.profileSubtitle}</p>
         <div className="pt-2">
           <Link
             href="/login"
             className="block w-full bg-gradient-to-r from-amber-400 to-yellow-500 text-slate-950 font-black py-3 rounded-2xl text-xs transition shadow"
           >
-            Go to Sign In
+            {t.btnSignIn}
           </Link>
         </div>
       </div>
@@ -85,170 +85,105 @@ export default function UnifiedProfilePage() {
 
   const isFarmer = user.role === 'FARMER';
   const isBuyer = user.role === 'BUYER';
+  const roleLabel = isFarmer ? t.roleFarmer : isBuyer ? t.roleBuyer : t.roleAdmin;
 
   return (
     <div className="max-w-2xl mx-auto space-y-6 animate-in fade-in duration-300">
       <div>
         <h1 className="text-2xl md:text-3xl font-black text-slate-900 tracking-tight">
-          User Account & Trade Verification
+          {t.profileTitle}
         </h1>
-        <p className="text-xs text-slate-500 mt-0.5">Manage your credentials, trading location, and contact information</p>
+        <p className="text-xs text-slate-500 mt-0.5">{t.profileSubtitle}</p>
       </div>
 
       <div className="bg-white rounded-3xl p-6 md:p-8 border border-amber-200 shadow-sm space-y-6">
         <div className="flex items-center gap-4">
           <div className={`w-16 h-16 rounded-2xl flex items-center justify-center font-bold text-xl shadow-inner ${
-            isFarmer ? 'bg-amber-100 text-amber-900' : isBuyer ? 'bg-amber-100 text-amber-900' : 'bg-slate-900 text-amber-400'
+            isFarmer ? 'bg-amber-100 text-amber-900' : isBuyer ? 'bg-slate-100 text-slate-900' : 'bg-slate-900 text-amber-400'
           }`}>
-            {isFarmer ? <Sprout className="w-9 h-9" /> : isBuyer ? <Building2 className="w-9 h-9" /> : <ShieldAlert className="w-9 h-9" />}
+            {isFarmer ? <Sprout className="w-8 h-8" /> : isBuyer ? <Building2 className="w-8 h-8" /> : <ShieldAlert className="w-8 h-8" />}
           </div>
 
-          <div className="space-y-1">
-            <div className="flex items-center gap-2">
-              <h2 className="text-xl font-black text-slate-900">{user.name}</h2>
-              {user.isVerified && (
-                <span className="bg-amber-100 text-amber-900 text-[10px] font-black px-2 py-0.5 rounded-full flex items-center gap-1 border border-amber-300">
-                  <ShieldCheck className="w-3.5 h-3.5 text-amber-700" /> VERIFIED
-                </span>
-              )}
+          <div className="flex-1">
+            <h2 className="text-xl font-black text-slate-900">{user.name}</h2>
+            <div className="flex items-center gap-2 mt-1">
+              <span className="bg-amber-100 text-amber-900 text-[10px] font-black px-2.5 py-0.5 rounded-full uppercase">
+                {roleLabel}
+              </span>
+              <span className="text-xs text-slate-400 flex items-center gap-1">
+                <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+                {t.verificationBadge}
+              </span>
             </div>
-            <p className="text-xs text-slate-500">Account Type: <strong className="text-slate-800">{user.role}</strong></p>
           </div>
         </div>
 
-        {/* Credentials Pill */}
-        <div className="p-4 bg-amber-50/50 rounded-2xl border border-amber-200/80 space-y-1.5 text-xs">
-          <div className="flex items-center gap-2 text-slate-800 font-bold">
-            <Award className="w-4 h-4 text-amber-600 shrink-0" />
-            <span>
-              {isFarmer
-                ? 'Kisan Credit Card (KCC) & National APMC Trade Enrolled'
-                : isBuyer
-                ? 'FSSAI & Wholesale Trading License Enrolled'
-                : 'National Platform Administrative Access'}
-            </span>
+        <form onSubmit={handleSaveProfile} className="space-y-4 pt-2 border-t border-amber-100">
+          <div>
+            <label className="block text-xs font-bold text-slate-700 mb-1">{t.phoneOrEmailLabel}</label>
+            <input
+              type="text"
+              disabled
+              value={user.phone || user.email || ''}
+              className="w-full px-3.5 py-2.5 bg-slate-100 border border-slate-200 rounded-xl text-xs font-mono text-slate-600 cursor-not-allowed"
+            />
           </div>
-          <p className="text-[11px] text-slate-500">
-            {isFarmer
-              ? 'Verified agricultural producer eligible for zero-commission direct buyer transactions.'
-              : isBuyer
-              ? 'Authorized institutional procurer authorized for bulk farm-gate settlement.'
-              : 'Authorized oversight official for market price feeds and APMC compliance.'}
-          </p>
-        </div>
 
-        {/* Profile Details / Edit Form */}
-        {isEditing ? (
-          <form onSubmit={handleSaveProfile} className="space-y-4 pt-2 border-t border-amber-100">
+          <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1">Full Legal Name</label>
+              <label className="block text-xs font-bold text-slate-700 mb-1">{t.districtLabel}</label>
               <input
                 type="text"
-                required
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                className="w-full px-3.5 py-2.5 bg-amber-50/40 border border-amber-200 rounded-xl text-xs font-semibold focus:bg-white focus:ring-2 focus:ring-amber-500 focus:outline-none"
+                value={district}
+                onChange={(e) => setDistrict(e.target.value)}
+                placeholder="e.g. Nashik"
+                className="w-full px-3.5 py-2.5 bg-amber-50/40 border border-amber-200 rounded-xl text-xs font-semibold focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500"
               />
             </div>
-
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">District / City</label>
-                <input
-                  type="text"
-                  required
-                  value={district}
-                  onChange={(e) => setDistrict(e.target.value)}
-                  className="w-full px-3.5 py-2.5 bg-amber-50/40 border border-amber-200 rounded-xl text-xs font-semibold focus:bg-white focus:ring-2 focus:ring-amber-500 focus:outline-none"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">State</label>
-                <input
-                  type="text"
-                  required
-                  value={state}
-                  onChange={(e) => setState(e.target.value)}
-                  className="w-full px-3.5 py-2.5 bg-amber-50/40 border border-amber-200 rounded-xl text-xs font-semibold focus:bg-white focus:ring-2 focus:ring-amber-500 focus:outline-none"
-                />
-              </div>
-            </div>
-
             <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1">
-                {isFarmer ? 'Farm-Gate Pickup Location' : 'Procurement Warehouse / Office Address'}
-              </label>
+              <label className="block text-xs font-bold text-slate-700 mb-1">{t.stateLabel}</label>
               <input
                 type="text"
-                required
-                value={location}
-                onChange={(e) => setLocation(e.target.value)}
-                className="w-full px-3.5 py-2.5 bg-amber-50/40 border border-amber-200 rounded-xl text-xs font-semibold focus:bg-white focus:ring-2 focus:ring-amber-500 focus:outline-none"
+                value={state}
+                onChange={(e) => setState(e.target.value)}
+                placeholder="e.g. Maharashtra"
+                className="w-full px-3.5 py-2.5 bg-amber-50/40 border border-amber-200 rounded-xl text-xs font-semibold focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500"
               />
             </div>
+          </div>
 
-            <div className="flex gap-3 pt-2">
-              <button
-                type="button"
-                onClick={() => setIsEditing(false)}
-                className="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                disabled={isSaving}
-                className="flex-1 py-2.5 bg-gradient-to-r from-amber-400 via-amber-500 to-yellow-500 hover:from-amber-300 hover:to-yellow-400 text-slate-950 rounded-xl text-xs font-black shadow-md transition flex items-center justify-center gap-1.5"
-              >
-                {isSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
-                Save Changes
-              </button>
-            </div>
-          </form>
-        ) : (
-          <div className="space-y-3.5 pt-2 border-t border-amber-100 text-xs text-slate-700">
-            {user.phone && (
-              <div className="flex items-center gap-3">
-                <Phone className="w-4 h-4 text-amber-600" />
-                <span className="font-bold text-slate-900">{user.phone}</span>
-              </div>
-            )}
+          <div>
+            <label className="block text-xs font-bold text-slate-700 mb-1">{t.addressLabel}</label>
+            <input
+              type="text"
+              value={location}
+              onChange={(e) => setLocation(e.target.value)}
+              placeholder="e.g. Farm Gate, Village Niphad, Nashik"
+              className="w-full px-3.5 py-2.5 bg-amber-50/40 border border-amber-200 rounded-xl text-xs font-semibold focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500"
+            />
+          </div>
 
-            {user.email && (
-              <div className="flex items-center gap-3">
-                <Mail className="w-4 h-4 text-amber-600" />
-                <span className="font-bold text-slate-900">{user.email}</span>
-              </div>
-            )}
-
-            <div className="flex items-start gap-3">
-              <MapPin className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
-              <div>
-                <span className="font-bold text-slate-900">{user.location || 'Location not specified'}</span>
-                <span className="text-[11px] text-slate-500 block">
-                  {user.district ? `${user.district}, ` : ''}{user.state || 'India'}
-                </span>
-              </div>
-            </div>
+          <div className="flex items-center justify-between pt-4 border-t border-amber-100">
+            <button
+              type="button"
+              onClick={logout}
+              className="text-xs font-bold text-rose-700 hover:text-rose-800 flex items-center gap-1.5"
+            >
+              <LogOut className="w-3.5 h-3.5" />
+              {t.navLogout}
+            </button>
 
             <button
-              onClick={() => setIsEditing(true)}
-              className="mt-2 text-xs text-amber-800 font-extrabold hover:underline"
+              type="submit"
+              disabled={isSaving}
+              className="bg-gradient-to-r from-amber-400 to-yellow-500 hover:from-amber-300 hover:to-yellow-400 text-slate-950 font-black px-6 py-2.5 rounded-xl text-xs shadow-md shadow-amber-500/20 transition flex items-center gap-1.5"
             >
-              Edit Location Details →
+              {isSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
+              {t.btnSaveProfile}
             </button>
           </div>
-        )}
+        </form>
       </div>
-
-      <button
-        onClick={logout}
-        className="w-full py-3.5 bg-rose-50 hover:bg-rose-100 text-rose-700 rounded-2xl text-xs font-bold border border-rose-200 transition flex items-center justify-center gap-1.5"
-      >
-        <LogOut className="w-4 h-4" />
-        {t.navLogout}
-      </button>
     </div>
   );
 }

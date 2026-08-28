@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { useLanguage } from '../../lib/language-context';
 
 interface PricePoint {
   date: string;
@@ -14,10 +15,13 @@ interface PriceChartProps {
 }
 
 export function PriceChart({ data, cropName }: PriceChartProps) {
+  const { t, language, translateCrop, formatCurrency } = useLanguage();
+  const localizedCropName = translateCrop(cropName);
+
   if (!data || data.length === 0) {
     return (
       <div className="h-44 flex items-center justify-center bg-amber-50/50 rounded-2xl border border-dashed border-amber-200 text-xs text-amber-600">
-        No price history points available for {cropName}
+        {t.noHistoryData} ({localizedCropName})
       </div>
     );
   }
@@ -42,16 +46,18 @@ export function PriceChart({ data, cropName }: PriceChartProps) {
   }, '');
 
   const areaD = `${pathD} L ${points[points.length - 1].x} ${height - padding} L ${points[0].x} ${height - padding} Z`;
+  const latestPrice = data[data.length - 1]?.modalPrice || 0;
+  const locale = language === 'hi' ? 'hi-IN' : language === 'te' ? 'te-IN' : 'en-IN';
 
   return (
     <div className="w-full bg-white p-4 md:p-5 rounded-3xl border border-amber-200/80 shadow-sm space-y-2">
       <div className="flex items-center justify-between">
         <span className="text-xs font-black text-slate-900 tracking-tight flex items-center gap-1.5">
           <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
-          7-Day Mandi Price Trend ({cropName})
+          {t.priceChartTitle} ({localizedCropName})
         </span>
         <span className="text-[11px] font-black text-amber-700 bg-amber-50 border border-amber-200 px-2.5 py-0.5 rounded-full">
-          Latest: ₹{data[data.length - 1]?.modalPrice?.toLocaleString('en-IN')}/Qtl
+          {t.latestPriceLabel}: {formatCurrency(latestPrice)}{t.pricesSubtitle ? (language === 'hi' ? '/क्विंटल' : language === 'te' ? '/క్వింటాల్' : '/Qtl') : '/Qtl'}
         </span>
       </div>
 
@@ -101,7 +107,7 @@ export function PriceChart({ data, cropName }: PriceChartProps) {
                 fill="#92400e"
                 fontWeight="bold"
               >
-                {new Date(p.date).toLocaleDateString('en-IN', { weekday: 'narrow', day: 'numeric' })}
+                {new Date(p.date).toLocaleDateString(locale, { weekday: 'narrow', day: 'numeric' })}
               </text>
             </g>
           ))}

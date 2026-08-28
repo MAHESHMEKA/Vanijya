@@ -14,7 +14,7 @@
 
 ---
 
-## ⚡ Key Features & Highlights
+## Key Features & Highlights
 
 1. **🌟 Consolidated Single Web Portal (`apps/web` on `:3000`):**
    - Unified role-aware Next.js 14 application serving public visitors, farmers, institutional buyers, and administrators.
@@ -46,22 +46,22 @@
 
 ---
 
-## 🌐 Application Endpoints
+## Application Endpoints
 
 | Portal / Feature | URL | Description |
 | :--- | :--- | :--- |
-| 🌾 **Unified Web Portal** | [**http://localhost:3000**](http://localhost:3000) | Public landing page with live mandi tickers & features |
-| 📊 **Public Price Discovery** | [**http://localhost:3000/prices**](http://localhost:3000/prices) | Live rates, 7-day trend chart & arbitrage (No login needed) |
-| 🔐 **Common Sign In** | [**http://localhost:3000/login**](http://localhost:3000/login) | Unified login with visual alphanumeric CAPTCHA verification |
-| 📊 **Smart Dashboard** | [**http://localhost:3000/dashboard**](http://localhost:3000/dashboard) | Role-aware command center (Farmer, Buyer, Admin) |
-| 📦 **Farmer Lots & Bids** | [**http://localhost:3000/my-lots**](http://localhost:3000/my-lots) | Category tabs: All, Active Bidding, Sold, Open, Cancelled |
-| 💼 **Buyer Active Bids** | [**http://localhost:3000/my-bids**](http://localhost:3000/my-bids) | Buyer bids management with Modify Quantity & Cancel Bid |
-| 🛒 **Marketplace** | [**http://localhost:3000/browse-lots**](http://localhost:3000/browse-lots) | Sourcing lots with direct farm-gate price discovery |
-| ⚙️ **Backend API & Swagger Docs** | [**http://localhost:4000/api/docs**](http://localhost:4000/api/docs) | 29 NestJS REST APIs & Swagger interactive docs |
+|  **Unified Web Portal** | [**http://localhost:3000**](http://localhost:3000) | Public landing page with live mandi tickers & features |
+|  **Public Price Discovery** | [**http://localhost:3000/prices**](http://localhost:3000/prices) | Live rates, 7-day trend chart & arbitrage (No login needed) |
+|  **Common Sign In** | [**http://localhost:3000/login**](http://localhost:3000/login) | Unified login with visual alphanumeric CAPTCHA verification |
+|  **Smart Dashboard** | [**http://localhost:3000/dashboard**](http://localhost:3000/dashboard) | Role-aware command center (Farmer, Buyer, Admin) |
+|  **Farmer Lots & Bids** | [**http://localhost:3000/my-lots**](http://localhost:3000/my-lots) | Category tabs: All, Active Bidding, Sold, Open, Cancelled |
+|  **Buyer Active Bids** | [**http://localhost:3000/my-bids**](http://localhost:3000/my-bids) | Buyer bids management with Modify Quantity & Cancel Bid |
+|  **Marketplace** | [**http://localhost:3000/browse-lots**](http://localhost:3000/browse-lots) | Sourcing lots with direct farm-gate price discovery |
+|  **Backend API & Swagger Docs** | [**http://localhost:4000/api/docs**](http://localhost:4000/api/docs) | 29 NestJS REST APIs & Swagger interactive docs |
 
 ---
 
-## 🔑 Pre-Configured Demo Credentials
+## Pre-Configured Demo Credentials
 
 On the unified login page ([`http://localhost:3000/login`](http://localhost:3000/login)), click any role tab to auto-fill credentials:
 
@@ -73,7 +73,7 @@ On the unified login page ([`http://localhost:3000/login`](http://localhost:3000
 
 ---
 
-## 🚀 Quick Start Guide
+## Quick Start Guide
 
 ### Option 1: 1-Click Launch on Windows (Recommended)
 Double-click the launcher script in the project root:
@@ -111,7 +111,7 @@ npm run dev
 
 ---
 
-## 🧪 Automated Testing
+## Automated Testing
 
 All 59 automated unit and integration tests pass with 100% success rate:
 ```bash
@@ -125,9 +125,9 @@ Snapshots:   0 total
 Time:        9.8 s
 ```
 
----
 
-## 📂 Project Architecture
+
+## Project Architecture
 
 ```
 Vanijya/

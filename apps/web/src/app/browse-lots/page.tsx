@@ -19,7 +19,7 @@ import {
 
 export default function BrowseLotsPage() {
   const { user } = useAuth();
-  const { t } = useLanguage();
+  const { t, translateCrop, formatCurrency, formatUnit } = useLanguage();
   const [lots, setLots] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedCrop, setSelectedCrop] = useState('ALL');
@@ -84,7 +84,7 @@ export default function BrowseLotsPage() {
                   : 'bg-white text-slate-700 border-amber-200 hover:bg-amber-50/50'
               }`}
             >
-              {crop === 'ALL' ? t.filterAllCrops : crop}
+              {crop === 'ALL' ? t.filterAllCrops : translateCrop(crop)}
             </button>
           ))}
         </div>
@@ -98,57 +98,51 @@ export default function BrowseLotsPage() {
       ) : filteredLots.length === 0 ? (
         <div className="bg-white p-10 rounded-3xl border border-amber-200 text-center space-y-3 max-w-md mx-auto">
           <ShoppingBag className="w-10 h-10 text-amber-300 mx-auto" />
-          <h2 className="text-base font-black text-slate-900">No Crop Lots Matching Filter</h2>
-          <p className="text-xs text-slate-500">Try clearing filters or search query to view available harvest lots.</p>
+          <h3 className="text-sm font-black text-slate-800">{t.commonNoData}</h3>
+          <p className="text-xs text-slate-500">{t.buyerMarketplaceSubtitle}</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {filteredLots.map((lot) => (
             <div
               key={lot.id}
-              className="bg-white p-5 rounded-3xl border border-amber-200 shadow-sm hover:border-amber-500 hover:shadow-md transition space-y-4 flex flex-col justify-between transition-card"
+              className="bg-white rounded-3xl border border-amber-200 p-5 space-y-4 shadow-sm hover:shadow-md transition flex flex-col justify-between"
             >
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <div>
-                    <span className="text-base font-black text-slate-900 tracking-tight">
-                      {lot.crop?.name || 'Crop'} ({lot.quantity} {lot.unit || 'Qtl'})
-                    </span>
-                    <p className="text-[11px] text-slate-500 font-semibold">
-                      Producer: {lot.farmer?.name || 'Verified Farmer'}
-                    </p>
-                  </div>
+                  <span className="font-black text-base text-slate-900">
+                    {translateCrop(lot.crop?.name || lot.cropName || 'Crop')}
+                  </span>
                   <StatusBadge status={lot.status} />
                 </div>
 
-                <div className="grid grid-cols-2 gap-2 text-xs bg-amber-50/50 p-3 rounded-2xl border border-amber-100">
-                  <div>
-                    <span className="text-slate-400 font-bold block text-[10px]">Expected Rate</span>
-                    <span className="font-black text-slate-900 text-sm">₹{lot.expectedPrice}/Qtl</span>
+                <div className="bg-amber-50/40 p-3.5 rounded-2xl border border-amber-100 space-y-1.5 text-xs text-slate-600">
+                  <div className="flex justify-between">
+                    <span>{t.commonQuantity}:</span>
+                    <strong className="text-slate-900">{lot.quantity} {formatUnit(lot.unit)}</strong>
                   </div>
-                  <div>
-                    <span className="text-slate-400 font-bold block text-[10px]">Quality Grade</span>
-                    <span className="font-black text-amber-800 text-sm">{lot.qualityGrade || 'GRADE_A'}</span>
+                  <div className="flex justify-between">
+                    <span>{t.farmerAskingRate}:</span>
+                    <strong className="text-amber-900 font-black text-sm">{formatCurrency(lot.expectedPrice)}/Qtl</strong>
                   </div>
-                </div>
-
-                <div className="flex items-center gap-2 text-xs text-slate-500">
-                  <MapPin className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                  <span className="truncate">{lot.location || 'Nashik Farm Gate'}</span>
+                  <div className="flex justify-between">
+                    <span>{t.commonGrade}:</span>
+                    <span className="text-slate-800 font-semibold">{lot.qualityGrade || 'Grade A'}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>{t.commonLocation}:</span>
+                    <span className="text-slate-800 truncate">{lot.location || 'Nashik'}</span>
+                  </div>
                 </div>
               </div>
 
-              <div className="pt-3 border-t border-amber-100 flex items-center justify-between">
-                <span className="text-[11px] text-slate-400">
-                  {lot.bids?.length || 0} active bid{lot.bids?.length !== 1 ? 's' : ''}
-                </span>
-                <Link
-                  href={`/browse-lots/${lot.id}`}
-                  className="bg-gradient-to-r from-amber-400 to-yellow-500 hover:from-amber-300 hover:to-yellow-400 text-slate-950 font-black px-4 py-2 rounded-xl text-xs flex items-center gap-1.5 shadow-md shadow-amber-500/20 transition"
-                >
-                  {t.btnPlaceBid} <ArrowRight className="w-3.5 h-3.5" />
-                </Link>
-              </div>
+              <Link
+                href={`/browse-lots/${lot.id}`}
+                className="w-full bg-gradient-to-r from-amber-400 via-amber-500 to-yellow-500 hover:from-amber-300 hover:to-yellow-400 text-slate-950 font-black py-2.5 rounded-xl text-xs flex items-center justify-center gap-1.5 shadow-md shadow-amber-500/20 transition"
+              >
+                <span>{t.btnPlaceBid}</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </Link>
             </div>
           ))}
         </div>

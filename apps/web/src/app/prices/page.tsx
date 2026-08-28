@@ -23,7 +23,7 @@ import {
 
 export default function PublicPricesPage() {
   const { isAuthenticated, user } = useAuth();
-  const { t } = useLanguage();
+  const { t, translateCrop, formatCurrency, formatUnit } = useLanguage();
 
   const [selectedCrop, setSelectedCrop] = useState('Tomato');
   const [crops, setCrops] = useState<{ id: string; name: string; category?: string }[]>([
@@ -74,7 +74,7 @@ export default function PublicPricesPage() {
               volatility: 'LOW',
             },
             sellingWindow: {
-              recommendation: 'Sell within next 24-48 Hours',
+              recommendation: t.sellNowAdvisory,
               confidence: 'HIGH',
               reasoning: 'Modal rate is trading above weekly average with low supply volatility. Optimal momentum window.',
             },
@@ -99,163 +99,205 @@ export default function PublicPricesPage() {
             { date: '2026-08-21', modalPrice: base - 40 },
             { date: '2026-08-22', modalPrice: base - 10 },
             { date: '2026-08-23', modalPrice: base + 15 },
-            { date: '2026-08-24', modalPrice: base + 30 },
-            { date: '2026-08-25', modalPrice: base + 45 },
-            { date: '2026-08-26', modalPrice: base + 70 },
+            { date: '2026-08-24', modalPrice: base + 5 },
+            { date: '2026-08-25', modalPrice: base + 25 },
+            { date: '2026-08-26', modalPrice: base + 33 },
           ];
           setTrendData(points);
         }
       })
       .finally(() => setLoading(false));
-  }, [selectedCrop]);
+  }, [selectedCrop, t]);
+
+  const modalPrice = data?.todayPrice?.modalPrice || 2233;
+  const minPrice = data?.todayPrice?.minPrice || 1950;
+  const maxPrice = data?.todayPrice?.maxPrice || 2450;
+  const sma7 = data?.analytics?.sma7 || 2213;
+  const trend = data?.analytics?.trend || 'BULLISH';
+  const volatility = data?.analytics?.volatility || 'LOW';
+  const nearby = data?.comparison?.bestNearbyMarket;
+  const sellingWindowRec = data?.sellingWindow?.recommendation || t.sellNowAdvisory;
 
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-amber-200/80 pb-4">
-        <div>
-          <div className="inline-flex items-center gap-1.5 bg-amber-100 text-amber-900 border border-amber-300 text-[11px] font-black px-2.5 py-0.5 rounded-full uppercase">
-            <ShieldCheck className="w-3.5 h-3.5 text-amber-700" />
-            Public Market Intelligence Feed
-          </div>
-          <h1 className="text-2xl md:text-3xl font-black text-slate-900 tracking-tight mt-1.5">
-            {t.pricesTitle}
-          </h1>
-          <p className="text-xs text-slate-500 mt-0.5">{t.pricesSubtitle}</p>
-        </div>
-
-        {/* Sell CTA button */}
-        <Link
-          href={isAuthenticated && user?.role === 'FARMER' ? '/create-lot' : '/login'}
-          className="bg-gradient-to-r from-amber-400 to-yellow-500 hover:from-amber-300 hover:to-yellow-400 text-slate-950 font-black px-5 py-2.5 rounded-2xl text-xs flex items-center gap-2 shadow-md shadow-amber-500/20 transition transform active:scale-95 self-start md:self-auto"
-        >
-          <Sprout className="w-4 h-4 text-slate-950" />
-          {t.btnStartSelling}
-        </Link>
+      <div className="border-b border-amber-200/80 pb-4">
+        <h1 className="text-2xl md:text-3xl font-black text-slate-900 tracking-tight">
+          {t.pricesTitle}
+        </h1>
+        <p className="text-xs md:text-sm text-slate-500 mt-1">
+          {t.pricesSubtitle}
+        </p>
       </div>
 
-      {/* Commodity Selector Pills */}
+      {/* Crop Selector Tabs */}
       <div className="space-y-2">
         <label className="block text-xs font-bold text-slate-700">
-          {t.selectCrop}
+          {t.selectCropLabel}:
         </label>
-        <div className="flex gap-2 overflow-x-auto pb-2 no-scrollbar">
+        <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
           {crops.map((crop) => (
             <button
               key={crop.id}
               onClick={() => setSelectedCrop(crop.name)}
-              className={`px-4 py-2 rounded-2xl text-xs font-black transition shrink-0 border ${
+              className={`px-4 py-2 rounded-2xl text-xs font-bold whitespace-nowrap transition-all shadow-sm ${
                 selectedCrop === crop.name
-                  ? 'bg-gradient-to-r from-amber-400 via-amber-500 to-yellow-500 text-slate-950 border-amber-500 shadow-md shadow-amber-500/20'
-                  : 'bg-white text-slate-700 border-amber-200 hover:bg-amber-50/50'
+                  ? 'bg-gradient-to-r from-amber-400 via-amber-500 to-yellow-500 text-slate-950 font-black shadow-md shadow-amber-500/20'
+                  : 'bg-white border border-amber-200 text-slate-700 hover:bg-amber-50'
               }`}
             >
-              {crop.name}
+              {translateCrop(crop.name)}
             </button>
           ))}
         </div>
       </div>
 
-      {/* Loading Skeleton */}
       {loading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <CardSkeleton />
-          <CardSkeleton />
-        </div>
+        <CardSkeleton count={3} />
       ) : (
-        <div className="space-y-6">
-          {/* Top 3 KPI Grid */}
+        <>
+          {/* Main Price Intelligence Grid */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {/* 1. Today Benchmark Price */}
-            <div className="bg-white p-5 rounded-3xl border border-amber-200 shadow-sm space-y-3 transition-card">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-slate-500 uppercase tracking-wide">
-                  {t.todayRate}
-                </span>
-                <span className="bg-amber-100 text-amber-900 text-[10px] font-black px-2 py-0.5 rounded-full border border-amber-300">
-                  Agmarknet Live
+            {/* Card 1: Today's Modal Price */}
+            <div className="bg-white p-5 rounded-3xl border border-amber-200 shadow-sm space-y-3">
+              <div className="flex items-center justify-between text-xs text-slate-500 font-bold">
+                <span>{t.todayRate}</span>
+                <span className="bg-amber-100 text-amber-900 text-[10px] px-2 py-0.5 rounded-full font-black">
+                  {translateCrop(selectedCrop)}
                 </span>
               </div>
 
               <div>
-                <div className="text-3xl font-black text-slate-900 tracking-tight">
-                  ₹{data?.todayPrice?.modalPrice?.toLocaleString('en-IN') || 2233}{' '}
-                  <span className="text-sm font-semibold text-slate-400">/ Qtl</span>
-                </div>
-                <p className="text-[11px] text-slate-500 mt-1">
-                  Range: ₹{data?.todayPrice?.minPrice} – ₹{data?.todayPrice?.maxPrice} | Arrivals: {data?.todayPrice?.arrivalQuantity || 450} Qtl
-                </p>
+                <span className="text-3xl font-black text-slate-950 tracking-tight">
+                  {formatCurrency(modalPrice)}
+                </span>
+                <span className="text-xs text-slate-500 font-medium ml-1.5">{t.todayBenchmark ? (t.todayBenchmark.includes('क्विंटल') ? '/क्विंटल' : t.todayBenchmark.includes('క్వింటాల్') ? '/క్వింటాల్' : '/Qtl') : '/Qtl'}</span>
               </div>
 
-              <div className="pt-2 border-t border-amber-100 flex items-center justify-between text-xs font-bold">
-                <span className="text-slate-500">{t.weeklyAvg}:</span>
-                <span className="text-slate-900">₹{data?.analytics?.sma7 || 2213}/Qtl</span>
+              <div className="flex items-center justify-between pt-2 border-t border-amber-100 text-xs">
+                <span className="text-slate-600">{t.minRate}: <strong>{formatCurrency(minPrice)}</strong></span>
+                <span className="text-slate-600">{t.maxRate}: <strong>{formatCurrency(maxPrice)}</strong></span>
               </div>
             </div>
 
-            {/* 2. Best Selling Window Recommendation */}
-            <div className="bg-gradient-to-br from-amber-950 to-amber-900 text-white p-5 rounded-3xl shadow-md border border-amber-500/30 space-y-3 transition-card">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-1.5 text-xs font-black text-yellow-300">
-                  <Sparkles className="w-4 h-4" />
-                  <span>{t.sellingWindow}</span>
-                </div>
-                <span className="bg-gradient-to-r from-amber-400 to-yellow-400 text-slate-950 text-[9px] font-black px-2.5 py-0.5 rounded-full uppercase">
-                  {data?.sellingWindow?.confidence || 'HIGH'} CONFIDENCE
-                </span>
+            {/* Card 2: 7-Day SMA & Trend */}
+            <div className="bg-white p-5 rounded-3xl border border-amber-200 shadow-sm space-y-3">
+              <div className="flex items-center justify-between text-xs text-slate-500 font-bold">
+                <span>{t.weeklyAvg}</span>
+                <span className="text-[10px] text-slate-400 font-semibold">{t.sma7Label}</span>
               </div>
 
               <div>
-                <div className="text-xl font-black text-white leading-tight">
-                  {data?.sellingWindow?.recommendation || 'Sell within next 24-48 Hours'}
-                </div>
-                <p className="text-xs text-amber-200 mt-1 leading-snug">
-                  {data?.sellingWindow?.reasoning || 'Price is trading above 7-day moving average with positive momentum.'}
-                </p>
+                <span className="text-3xl font-black text-slate-950 tracking-tight">
+                  {formatCurrency(sma7)}
+                </span>
+                <span className="text-xs text-slate-500 font-medium ml-1.5">/ Qtl</span>
               </div>
 
-              <div className="pt-2 border-t border-amber-800/80 flex items-center justify-between text-xs text-amber-300">
-                <span>Momentum: <strong>{data?.analytics?.trend || 'BULLISH'}</strong></span>
-                <span>Delta: <strong>+{data?.analytics?.percentChange || 6.8}%</strong></span>
+              <div className="flex items-center justify-between pt-2 border-t border-amber-100 text-xs">
+                <span className="text-slate-600 flex items-center gap-1">
+                  {trend === 'BULLISH' ? (
+                    <>
+                      <TrendingUp className="w-3.5 h-3.5 text-emerald-600" />
+                      <span className="text-emerald-700 font-bold">{t.trendBullish}</span>
+                    </>
+                  ) : trend === 'BEARISH' ? (
+                    <>
+                      <TrendingDown className="w-3.5 h-3.5 text-rose-600" />
+                      <span className="text-rose-700 font-bold">{t.trendBearish}</span>
+                    </>
+                  ) : (
+                    <>
+                      <Minus className="w-3.5 h-3.5 text-amber-600" />
+                      <span className="text-amber-700 font-bold">{t.trendStable}</span>
+                    </>
+                  )}
+                </span>
+                <span className="text-[10px] text-slate-400 font-bold">
+                  {volatility === 'LOW' ? t.lowVolatility : volatility === 'MODERATE' ? t.moderateVolatility : t.highVolatility}
+                </span>
               </div>
             </div>
 
-            {/* 3. Spatial Arbitrage / Nearby APMC Comparison */}
-            <div className="bg-white p-5 rounded-3xl border border-amber-200 shadow-sm space-y-3 transition-card">
+            {/* Card 3: Best Selling Window */}
+            <div className="bg-gradient-to-br from-amber-500 to-yellow-500 p-5 rounded-3xl text-slate-950 shadow-md space-y-2 flex flex-col justify-between">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-slate-500 uppercase tracking-wide">
-                  {t.nearbyArbitrage}
+                <span className="text-[11px] font-black uppercase tracking-wider text-amber-950">
+                  {t.sellingWindowCardTitle}
                 </span>
-                <span className="text-amber-700 text-xs font-black">
-                  +{data?.comparison?.bestNearbyMarket?.netGainPerQtl || 96} {t.netGain}
+                <span className="bg-slate-950 text-amber-300 text-[9px] font-black px-2 py-0.5 rounded-full">
+                  {t.optimalBadge}
                 </span>
               </div>
 
-              <div>
-                <div className="text-xl font-black text-slate-900">
-                  {data?.comparison?.bestNearbyMarket?.marketName || 'Lasalgaon APMC'}
-                </div>
-                <p className="text-xs text-slate-500 mt-0.5">
-                  Rate: ₹{data?.comparison?.bestNearbyMarket?.modalPrice || 2380}/Qtl | Distance: {data?.comparison?.bestNearbyMarket?.distanceKm || 24} km
-                </p>
+              <div className="text-lg font-black leading-tight text-slate-950">
+                {sellingWindowRec}
               </div>
 
-              <div className="pt-2 border-t border-amber-100 text-xs text-slate-600 space-y-1">
-                <div className="flex justify-between">
-                  <span>Transport Cost:</span>
-                  <span className="font-bold text-rose-600">-₹{data?.comparison?.bestNearbyMarket?.transportCostPerQtl || 12}/Qtl</span>
-                </div>
-                <div className="flex justify-between font-bold text-amber-700">
-                  <span>Net Arbitrage Benefit:</span>
-                  <span>+₹{data?.comparison?.bestNearbyMarket?.netGainPerQtl || 96}/Qtl</span>
-                </div>
-              </div>
+              <p className="text-[11px] text-slate-900/80 font-medium pt-1 border-t border-amber-600/30">
+                {t.reasoningLabel}: Modal price momentum is positive relative to weekly APMC volume.
+              </p>
             </div>
           </div>
 
-          {/* 7-Day Trend SVG Graph */}
+          {/* Spatial Arbitrage Optimization Card */}
+          {nearby && (
+            <div className="bg-gradient-to-r from-amber-950 via-slate-900 to-amber-900 text-white p-6 rounded-3xl border border-amber-500/30 shadow-xl space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Sparkles className="w-5 h-5 text-yellow-400" />
+                  <h3 className="font-black text-sm md:text-base text-white tracking-tight">
+                    {t.spatialArbitrageCardTitle}
+                  </h3>
+                </div>
+                <span className="bg-yellow-400 text-slate-950 text-[10px] font-black px-2.5 py-0.5 rounded-full">
+                  +{formatCurrency(nearby.netGainPerQtl || 96)} {t.netGain}
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 text-xs pt-1">
+                <div className="bg-white/5 p-3 rounded-2xl border border-amber-500/20">
+                  <span className="text-[10px] text-amber-200 block">{t.nearbyBetterMarket}</span>
+                  <strong className="text-white text-sm block mt-0.5">{nearby.marketName}</strong>
+                </div>
+                <div className="bg-white/5 p-3 rounded-2xl border border-amber-500/20">
+                  <span className="text-[10px] text-amber-200 block">{t.distanceKm}</span>
+                  <strong className="text-white text-sm block mt-0.5">{nearby.distanceKm} km</strong>
+                </div>
+                <div className="bg-white/5 p-3 rounded-2xl border border-amber-500/20">
+                  <span className="text-[10px] text-amber-200 block">{t.transportCost}</span>
+                  <strong className="text-white text-sm block mt-0.5">{formatCurrency(nearby.transportCostPerQtl || 12)}/Qtl</strong>
+                </div>
+                <div className="bg-white/5 p-3 rounded-2xl border border-amber-500/20">
+                  <span className="text-[10px] text-amber-200 block">{t.netGainPerQtl}</span>
+                  <strong className="text-yellow-300 text-sm block mt-0.5">+{formatCurrency(nearby.netGainPerQtl || 96)}/Qtl</strong>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* 7-Day SVG Price Trend Chart */}
           <PriceChart data={trendData} cropName={selectedCrop} />
-        </div>
+
+          {/* Direct CTA to Publish Lot */}
+          <div className="bg-gradient-to-r from-amber-50 to-yellow-50 p-6 rounded-3xl border border-amber-300 shadow-sm flex flex-col md:flex-row items-center justify-between gap-4">
+            <div className="space-y-1 text-center md:text-left">
+              <h4 className="font-black text-slate-900 text-base">
+                {t.listHarvestCTA}
+              </h4>
+              <p className="text-xs text-slate-600 max-w-xl">
+                {t.listHarvestDesc}
+              </p>
+            </div>
+            <Link
+              href={isAuthenticated && user?.role === 'FARMER' ? '/create-lot' : '/login'}
+              className="bg-gradient-to-r from-amber-400 via-amber-500 to-yellow-500 hover:from-amber-300 hover:to-yellow-400 text-slate-950 font-black px-6 py-3 rounded-2xl text-xs flex items-center gap-2 shadow-md shadow-amber-500/25 transition shrink-0"
+            >
+              <Sprout className="w-4 h-4" />
+              {t.btnListCropNow}
+            </Link>
+          </div>
+        </>
       )}
     </div>
   );

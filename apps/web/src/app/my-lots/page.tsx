@@ -7,7 +7,6 @@ import { useAuth } from '../../lib/auth-context';
 import { useLanguage } from '../../lib/language-context';
 import { StatusBadge } from '../../components/ui/status-badge';
 import { CardSkeleton } from '../../components/ui/skeleton';
-import { formatINR } from '@vanijya/shared-utils';
 import {
   Package,
   PlusCircle,
@@ -32,7 +31,7 @@ type LotTab = 'ALL' | 'BIDDING' | 'SOLD' | 'OPEN' | 'CANCELLED';
 
 export default function MyLotsPage() {
   const { user, isAuthenticated } = useAuth();
-  const { t } = useLanguage();
+  const { t, translateCrop, formatCurrency, formatUnit, formatDateLocalized } = useLanguage();
   const [lots, setLots] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<LotTab>('ALL');
@@ -61,14 +60,14 @@ export default function MyLotsPage() {
         <div className="w-14 h-14 bg-amber-100 text-amber-900 rounded-full flex items-center justify-center mx-auto">
           <LogIn className="w-8 h-8" />
         </div>
-        <h2 className="text-xl font-black text-slate-900">Farmer Login Required</h2>
-        <p className="text-xs text-slate-600">Please sign in to view your published crop lots and received bids.</p>
+        <h2 className="text-xl font-black text-slate-900">{t.commonLoginRequired}</h2>
+        <p className="text-xs text-slate-600">{t.loginSubtitle}</p>
         <div className="pt-2">
           <Link
             href="/login"
             className="block w-full bg-gradient-to-r from-amber-400 to-yellow-500 text-slate-950 font-black py-3 rounded-2xl text-xs transition shadow"
           >
-            Go to Sign In
+            {t.btnSignIn}
           </Link>
         </div>
       </div>
@@ -95,7 +94,7 @@ export default function MyLotsPage() {
           <h1 className="text-2xl md:text-3xl font-black text-slate-900 tracking-tight">
             {t.activeLotsTitle}
           </h1>
-          <p className="text-xs text-slate-500 mt-0.5">Manage harvest listings, review incoming offers, and finalize deals</p>
+          <p className="text-xs text-slate-500 mt-0.5">{t.myLotsSubtitle}</p>
         </div>
 
         <Link
@@ -118,7 +117,7 @@ export default function MyLotsPage() {
           }`}
         >
           <Layers className="w-3.5 h-3.5" />
-          All Listings
+          {t.tabAll}
           <span className={`text-[10px] px-2 py-0.2 rounded-full ${activeTab === 'ALL' ? 'bg-slate-950 text-amber-400' : 'bg-amber-100 text-slate-700'}`}>
             {countAll}
           </span>
@@ -133,7 +132,7 @@ export default function MyLotsPage() {
           }`}
         >
           <Flame className="w-3.5 h-3.5 text-orange-600 fill-orange-500" />
-          Active Bidding
+          {t.tabBidding}
           <span className={`text-[10px] px-2 py-0.2 rounded-full ${activeTab === 'BIDDING' ? 'bg-slate-950 text-amber-400' : 'bg-amber-100 text-slate-700'}`}>
             {countBidding}
           </span>
@@ -148,8 +147,8 @@ export default function MyLotsPage() {
           }`}
         >
           <CheckCircle2 className="w-3.5 h-3.5" />
-          Sold & Finalized
-          <span className={`text-[10px] px-2 py-0.2 rounded-full ${activeTab === 'SOLD' ? 'bg-slate-950 text-emerald-300' : 'bg-emerald-50 text-emerald-800'}`}>
+          {t.tabSold}
+          <span className={`text-[10px] px-2 py-0.2 rounded-full ${activeTab === 'SOLD' ? 'bg-white text-emerald-800' : 'bg-amber-100 text-slate-700'}`}>
             {countSold}
           </span>
         </button>
@@ -158,13 +157,13 @@ export default function MyLotsPage() {
           onClick={() => setActiveTab('OPEN')}
           className={`flex items-center gap-1.5 px-4 py-2 rounded-2xl text-xs font-black transition-all ${
             activeTab === 'OPEN'
-              ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20'
+              ? 'bg-amber-100 text-amber-950 border border-amber-300 shadow-sm'
               : 'bg-white border border-amber-200 text-slate-600 hover:bg-amber-50'
           }`}
         >
-          <Clock className="w-3.5 h-3.5" />
-          Open (Awaiting Bids)
-          <span className={`text-[10px] px-2 py-0.2 rounded-full ${activeTab === 'OPEN' ? 'bg-slate-950 text-amber-400' : 'bg-amber-100 text-slate-700'}`}>
+          <Clock className="w-3.5 h-3.5 text-amber-600" />
+          {t.tabOpen}
+          <span className={`text-[10px] px-2 py-0.2 rounded-full ${activeTab === 'OPEN' ? 'bg-amber-900 text-white' : 'bg-amber-100 text-slate-700'}`}>
             {countOpen}
           </span>
         </button>
@@ -173,175 +172,164 @@ export default function MyLotsPage() {
           onClick={() => setActiveTab('CANCELLED')}
           className={`flex items-center gap-1.5 px-4 py-2 rounded-2xl text-xs font-black transition-all ${
             activeTab === 'CANCELLED'
-              ? 'bg-slate-700 text-white shadow-md'
+              ? 'bg-rose-100 text-rose-900 border border-rose-300 shadow-sm'
               : 'bg-white border border-amber-200 text-slate-600 hover:bg-amber-50'
           }`}
         >
-          <XCircle className="w-3.5 h-3.5" />
-          Cancelled
-          <span className={`text-[10px] px-2 py-0.2 rounded-full ${activeTab === 'CANCELLED' ? 'bg-slate-950 text-slate-300' : 'bg-slate-100 text-slate-600'}`}>
+          <XCircle className="w-3.5 h-3.5 text-rose-600" />
+          {t.tabCancelled}
+          <span className={`text-[10px] px-2 py-0.2 rounded-full ${activeTab === 'CANCELLED' ? 'bg-rose-900 text-white' : 'bg-amber-100 text-slate-700'}`}>
             {countCancelled}
           </span>
         </button>
       </div>
 
       {loading ? (
-        <div className="space-y-4">
-          <CardSkeleton />
-          <CardSkeleton />
-        </div>
+        <CardSkeleton count={3} />
       ) : filteredLots.length === 0 ? (
-        <div className="bg-white p-10 rounded-3xl border border-amber-200 shadow-sm text-center space-y-4 max-w-lg mx-auto">
-          <div className="w-16 h-16 bg-amber-50 text-amber-700 rounded-3xl flex items-center justify-center mx-auto">
-            <Package className="w-8 h-8" />
+        <div className="bg-white p-12 rounded-3xl border border-amber-200 text-center space-y-3">
+          <div className="w-12 h-12 bg-amber-100 text-amber-900 rounded-2xl flex items-center justify-center mx-auto">
+            <Package className="w-6 h-6" />
           </div>
-          <div className="space-y-1">
-            <h2 className="text-lg font-black text-slate-900">
-              {activeTab === 'ALL' ? 'No Crop Lots Published' : `No Lots with Status "${activeTab}"`}
-            </h2>
-            <p className="text-xs text-slate-500">
-              {activeTab === 'BIDDING'
-                ? 'Lots currently receiving offers from buyers will appear here in real time.'
-                : activeTab === 'SOLD'
-                ? 'Completed sales and finalized contracts will appear in this category.'
-                : 'List your harvested produce with expected prices to receive direct offers from verified buyers.'}
-            </p>
+          <h3 className="text-base font-black text-slate-900">
+            {activeTab === 'BIDDING' ? t.noBiddingTitle : activeTab === 'SOLD' ? t.noSoldTitle : t.noLotsTitle}
+          </h3>
+          <p className="text-xs text-slate-500 max-w-sm mx-auto">
+            {activeTab === 'BIDDING' ? t.noBiddingDesc : activeTab === 'SOLD' ? t.noSoldDesc : t.noLotsDesc}
+          </p>
+          <div className="pt-2">
+            <Link
+              href="/create-lot"
+              className="inline-flex items-center gap-2 bg-gradient-to-r from-amber-400 to-yellow-500 text-slate-950 font-black px-5 py-2.5 rounded-2xl text-xs shadow-md shadow-amber-500/20"
+            >
+              <PlusCircle className="w-4 h-4" /> {t.btnPublishLot}
+            </Link>
           </div>
-          <Link
-            href="/create-lot"
-            className="inline-flex items-center gap-2 bg-gradient-to-r from-amber-400 to-yellow-500 text-slate-950 font-black px-6 py-3 rounded-2xl text-xs shadow-md transition"
-          >
-            <PlusCircle className="w-4 h-4 text-slate-950" />
-            Publish Crop Lot
-          </Link>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {filteredLots.map((lot) => {
-            const bidsCount = lot.bids?.length || lot._count?.bids || 0;
-            const highestBid = lot.highestBid || (lot.bids && lot.bids.length > 0 ? Math.max(...lot.bids.map((b: any) => b.price)) : null);
             const isBidding = lot.status === 'BIDDING';
             const isSold = lot.status === 'SOLD';
+            const bids = lot.bids || [];
+            const highestBid = bids.reduce((max: number, b: any) => (b.price > max ? b.price : max), 0);
+            const txn = lot.transaction;
+            const buyerName = txn?.buyer?.name || 'Verified Wholesale Buyer';
+            const totalDealValue = txn?.totalAmount || (lot.expectedPrice * lot.quantity);
+            const paymentStatus = txn?.payment?.status || 'PENDING';
 
             return (
               <div
                 key={lot.id}
-                className={`bg-white p-5 rounded-3xl border shadow-sm transition space-y-4 flex flex-col justify-between transition-card ${
+                className={`bg-white rounded-3xl border p-5 space-y-4 shadow-sm hover:shadow-md transition relative flex flex-col justify-between ${
                   isBidding
-                    ? 'border-orange-300 ring-2 ring-orange-400/20'
+                    ? 'border-2 border-orange-400 bg-gradient-to-br from-orange-50/30 via-white to-amber-50/30'
                     : isSold
-                    ? 'border-emerald-300 bg-gradient-to-b from-white to-emerald-50/20'
-                    : 'border-amber-200 hover:border-amber-500 hover:shadow-md'
+                    ? 'border-2 border-emerald-400 bg-gradient-to-br from-emerald-50/30 via-white to-green-50/30'
+                    : 'border-amber-200'
                 }`}
               >
                 <div className="space-y-3">
-                  <div className="flex items-center justify-between">
+                  {/* Top Bar: Title & Status */}
+                  <div className="flex items-center justify-between gap-2">
                     <div className="flex items-center gap-2">
-                      <span className="text-base font-black text-slate-900 tracking-tight">
-                        {lot.crop?.name || 'Crop'} ({lot.quantity} {lot.unit || 'Qtl'})
-                      </span>
-                      {isBidding && (
-                        <span className="bg-orange-500 text-slate-950 text-[10px] font-black px-2 py-0.5 rounded-full flex items-center gap-1 animate-pulse">
-                          <Flame className="w-3 h-3 fill-slate-950" /> LIVE OFFERS
-                        </span>
-                      )}
+                      <div className={`w-9 h-9 rounded-2xl flex items-center justify-center font-black ${
+                        isBidding ? 'bg-orange-100 text-orange-800' : isSold ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-900'
+                      }`}>
+                        <Package className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <h3 className="font-black text-slate-900 text-base leading-tight">
+                          {translateCrop(lot.crop?.name || lot.cropName || 'Crop')}
+                        </h3>
+                        <p className="text-[10px] text-slate-400 flex items-center gap-1 mt-0.5">
+                          <MapPin className="w-3 h-3 text-amber-700" />
+                          {lot.location || 'Nashik Yard'}
+                        </p>
+                      </div>
                     </div>
+
                     <StatusBadge status={lot.status} />
                   </div>
 
-                  {/* ACTIVE BIDDING SPECIFIC VIEW */}
+                  {/* ACTIVE BIDDING DEDICATED VIEW */}
                   {isBidding && (
-                    <div className="p-3.5 bg-gradient-to-r from-orange-50 to-amber-50 rounded-2xl border border-orange-200 space-y-2">
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs font-black text-orange-950 flex items-center gap-1.5">
-                          <Flame className="w-4 h-4 text-orange-600 fill-orange-500" />
-                          Actively Receiving Buyer Offers
-                        </span>
-                        <span className="bg-orange-500 text-slate-950 font-black text-[10px] px-2.5 py-0.5 rounded-full">
-                          {bidsCount} Bid{bidsCount > 1 ? 's' : ''} Received
-                        </span>
+                    <div className="bg-white p-3.5 rounded-2xl border border-orange-200 space-y-2">
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="text-slate-500 font-bold">{t.askingRateLabel}:</span>
+                        <strong className="text-slate-800">{formatCurrency(lot.expectedPrice)}/Qtl</strong>
                       </div>
-                      <div className="grid grid-cols-2 gap-2 text-xs pt-1 border-t border-orange-200/60">
-                        <div>
-                          <span className="text-slate-500 text-[10px] font-bold block">Asking Price</span>
-                          <span className="font-black text-slate-900">₹{lot.expectedPrice}/Qtl</span>
-                        </div>
-                        <div>
-                          <span className="text-orange-900 text-[10px] font-bold block">Top Buyer Offer</span>
-                          <span className="font-black text-orange-800 text-sm">
-                            {highestBid ? `₹${highestBid}/Qtl` : 'Offers Arriving'}
-                          </span>
-                        </div>
+                      <div className="flex items-center justify-between text-xs pt-1 border-t border-orange-100">
+                        <span className="text-orange-600 font-black flex items-center gap-1">
+                          <Flame className="w-3.5 h-3.5 fill-orange-500 text-orange-600" />
+                          {t.topBuyerOfferLabel}:
+                        </span>
+                        <strong className="text-orange-700 text-sm font-black">
+                          {highestBid > 0 ? `${formatCurrency(highestBid)}/Qtl` : '₹0'}
+                        </strong>
+                      </div>
+                      <div className="text-[10px] text-orange-950 font-bold bg-orange-50 px-2 py-1 rounded-xl text-center">
+                        🔥 {bids.length} {t.offersCountLabel}
                       </div>
                     </div>
                   )}
 
-                  {/* SOLD SPECIFIC VIEW */}
-                  {isSold && lot.transaction && (
-                    <div className="p-3.5 bg-emerald-50 rounded-2xl border border-emerald-300 space-y-2 text-xs">
-                      <div className="flex items-center justify-between">
-                        <span className="font-black text-emerald-950 flex items-center gap-1.5">
-                          <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                          Finalized Sale Contract
-                        </span>
-                        <span className="bg-emerald-600 text-white font-black text-[10px] px-2.5 py-0.5 rounded-full">
-                          SOLD
-                        </span>
+                  {/* SOLD DEDICATED VIEW */}
+                  {isSold && (
+                    <div className="bg-white p-3.5 rounded-2xl border border-emerald-200 space-y-2">
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="text-slate-500 font-bold">{t.buyerLabel}:</span>
+                        <strong className="text-slate-900 font-bold flex items-center gap-1">
+                          <UserCheck className="w-3 h-3 text-emerald-600" />
+                          {buyerName}
+                        </strong>
                       </div>
-                      <div className="grid grid-cols-3 gap-1 pt-1 border-t border-emerald-200">
-                        <div>
-                          <span className="text-slate-400 text-[9px] font-bold block">Accepted Price</span>
-                          <span className="font-black text-emerald-900">₹{lot.transaction.agreedPrice}/Qtl</span>
-                        </div>
-                        <div>
-                          <span className="text-slate-400 text-[9px] font-bold block">Sold Qty</span>
-                          <span className="font-black text-slate-900">{lot.transaction.quantity} Qtl</span>
-                        </div>
-                        <div>
-                          <span className="text-slate-400 text-[9px] font-bold block">Contract Value</span>
-                          <span className="font-black text-emerald-800">{formatINR(lot.transaction.totalAmount)}</span>
-                        </div>
+                      <div className="flex items-center justify-between text-xs pt-1 border-t border-emerald-100">
+                        <span className="text-slate-500 font-bold">{t.contractTotalLabel}:</span>
+                        <strong className="text-emerald-700 text-sm font-black">
+                          {formatCurrency(totalDealValue)}
+                        </strong>
                       </div>
-                      <div className="pt-1 flex items-center justify-between text-[11px] text-emerald-900 font-bold border-t border-emerald-200">
-                        <span>Buyer: {lot.transaction.buyer?.name || 'FreshCart Agro Ltd.'}</span>
-                        <span className="flex items-center gap-1">
-                          Payment: <strong className="text-emerald-700">{lot.transaction.payment?.status || 'PAID'}</strong>
-                        </span>
+                      <div className="flex items-center justify-between text-xs pt-1 border-t border-emerald-100">
+                        <span className="text-slate-500 font-bold">{t.paymentStatusLabel}:</span>
+                        <StatusBadge status={paymentStatus} type="payment" />
                       </div>
                     </div>
                   )}
 
-                  {/* Standard Pricing Grid if Open or Cancelled */}
+                  {/* STANDARD DETAILS (for Open / Cancelled) */}
                   {!isBidding && !isSold && (
-                    <div className="grid grid-cols-2 gap-2 text-xs bg-amber-50/50 p-3 rounded-2xl border border-amber-100">
-                      <div>
-                        <span className="text-slate-400 font-bold block text-[10px]">Expected Rate</span>
-                        <span className="font-black text-slate-900">₹{lot.expectedPrice}/Qtl</span>
+                    <div className="bg-amber-50/40 p-3 rounded-2xl border border-amber-100 space-y-1.5 text-xs text-slate-600">
+                      <div className="flex justify-between">
+                        <span>{t.commonQuantity}:</span>
+                        <strong className="text-slate-900">{lot.quantity} {formatUnit(lot.unit)}</strong>
                       </div>
-                      <div>
-                        <span className="text-slate-400 font-bold block text-[10px]">Quality Grade</span>
-                        <span className="font-black text-amber-800">{lot.qualityGrade || 'GRADE_A'}</span>
+                      <div className="flex justify-between">
+                        <span>{t.askingRateLabel}:</span>
+                        <strong className="text-amber-900 font-bold">{formatCurrency(lot.expectedPrice)}/Qtl</strong>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>{t.commonGrade}:</span>
+                        <span className="text-slate-800 font-semibold">{lot.qualityGrade || 'Grade A'}</span>
                       </div>
                     </div>
                   )}
-
-                  <div className="flex items-center gap-2 text-xs text-slate-500">
-                    <MapPin className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                    <span className="truncate">{lot.location || 'Nashik Farm Gate'}</span>
-                  </div>
                 </div>
 
-                <div className="pt-3 border-t border-amber-100 flex items-center justify-between">
-                  <span className="text-[11px] text-slate-400 font-medium">
-                    Listed: {new Date(lot.createdAt).toLocaleDateString('en-IN')}
-                  </span>
+                {/* Footer Action Button */}
+                <div className="pt-2 border-t border-amber-100/80">
                   <Link
                     href={`/my-lots/${lot.id}`}
-                    className={`inline-flex items-center gap-1.5 text-xs font-black ${
-                      isBidding ? 'text-orange-800 hover:text-orange-950' : 'text-amber-800 hover:text-amber-950'
+                    className={`w-full py-2.5 px-4 rounded-xl text-xs font-black transition flex items-center justify-center gap-1.5 shadow-sm ${
+                      isBidding
+                        ? 'bg-gradient-to-r from-orange-500 to-amber-500 text-slate-950 hover:opacity-90 shadow-orange-500/20'
+                        : isSold
+                        ? 'bg-emerald-700 hover:bg-emerald-800 text-white shadow-emerald-700/20'
+                        : 'bg-amber-100 hover:bg-amber-200 text-amber-950 border border-amber-300'
                     }`}
                   >
-                    {isBidding ? 'Review & Accept Offers' : isSold ? 'View Sale Receipt' : 'View Offers & Details'} <ArrowRight className="w-3.5 h-3.5" />
+                    <span>{isBidding ? t.btnViewOffers : isSold ? t.btnViewContract : t.commonViewDetails}</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
                   </Link>
                 </div>
               </div>
