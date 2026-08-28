@@ -1,16 +1,28 @@
-import { Controller, Post, Body, Get, UseGuards, HttpCode, HttpStatus } from '@nestjs/common';
+import { Controller, Post, Body, Get, UseGuards, HttpCode, HttpStatus, Req } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
+import { CaptchaService, CaptchaResponse } from './captcha.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { AuthResponseDto, UserProfileDto } from './dto/auth-response.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { CurrentUser } from './decorators/current-user.decorator';
+import { Request } from 'express';
 
 @ApiTags('Authentication')
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+    private readonly captchaService: CaptchaService,
+  ) {}
+
+  @Get('captcha')
+  @ApiOperation({ summary: 'Generate a new visual alphanumeric CAPTCHA challenge' })
+  @ApiResponse({ status: 200, description: 'Visual CAPTCHA challenge generated with base64 SVG image' })
+  getCaptcha(): CaptchaResponse {
+    return this.captchaService.generateCaptcha();
+  }
 
   @Post('register')
   @ApiOperation({ summary: 'Register a new Farmer, Buyer, or Admin' })
@@ -22,11 +34,13 @@ export class AuthController {
 
   @Post('login')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Login with phone/email and password' })
-  @ApiResponse({ status: 200, type: AuthResponseDto, description: 'Login successful' })
-  @ApiResponse({ status: 401, description: 'Invalid credentials' })
-  login(@Body() dto: LoginDto): Promise<AuthResponseDto> {
-    return this.authService.login(dto);
+  @ApiOperation({ summary: 'Login with phone/email, password, and visual CAPTCHA verification' })
+  @ApiResponse({ status: 200, type: AuthResponseDto, description: 'Login successful with JWT token' })
+  @ApiResponse({ status: 401, description: 'Invalid credentials or CAPTCHA verification failure' })
+  login(@Body() dto: LoginDto, @Req() req: Request): Promise<AuthResponseDto> {
+    const rawIp = req.headers['x-forwarded-for'] || req.socket?.remoteAddress || req.ip;
+    const remoteIp = Array.isArray(rawIp) ? rawIp[0] : typeof rawIp === 'string' ? rawIp.split(',')[0].trim() : undefined;
+    return this.authService.login(dto, remoteIp);
   }
 
   @Get('me')

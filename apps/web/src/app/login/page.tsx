@@ -1,11 +1,12 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../../lib/auth-context';
 import { useLanguage } from '../../lib/language-context';
 import { useToast } from '../../components/ui/toast';
+import { Captcha, CaptchaHandle } from '../../components/security/captcha';
 import {
   LogIn,
   ShieldCheck,
@@ -13,10 +14,10 @@ import {
   Loader2,
   Lock,
   Phone,
-  UserCheck,
   Building2,
   Sprout,
   ShieldAlert,
+  AlertTriangle,
 } from 'lucide-react';
 
 export default function UnifiedLoginPage() {
@@ -24,12 +25,19 @@ export default function UnifiedLoginPage() {
   const { login, isAuthenticated, user } = useAuth();
   const { t } = useLanguage();
   const { showToast } = useToast();
+  const captchaRef = useRef<CaptchaHandle>(null);
 
   const [identifier, setIdentifier] = useState('9876543210');
   const [password, setPassword] = useState('Farmer@123');
   const [selectedRole, setSelectedRole] = useState<'FARMER' | 'BUYER' | 'ADMIN'>('FARMER');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  // Visual Alphanumeric CAPTCHA state
+  const [captchaData, setCaptchaData] = useState<{ captchaId: string; captchaAnswer: string }>({
+    captchaId: '',
+    captchaAnswer: '',
+  });
 
   if (isAuthenticated && user) {
     return (
@@ -55,6 +63,7 @@ export default function UnifiedLoginPage() {
 
   const handleRoleSelect = (role: 'FARMER' | 'BUYER' | 'ADMIN') => {
     setSelectedRole(role);
+    setErrorMessage(null);
     if (role === 'FARMER') {
       setIdentifier('9876543210');
       setPassword('Farmer@123');
@@ -69,20 +78,49 @@ export default function UnifiedLoginPage() {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!captchaData.captchaAnswer || captchaData.captchaAnswer.trim() === '') {
+      setErrorMessage('Please enter the CAPTCHA.');
+      showToast('Please enter the CAPTCHA.', 'error');
+      return;
+    }
+
     setIsSubmitting(true);
     setErrorMessage(null);
 
     try {
-      const loggedInUser = await login(identifier, password, selectedRole);
+      const loggedInUser = await login(
+        identifier,
+        password,
+        selectedRole,
+        captchaData.captchaId,
+        captchaData.captchaAnswer,
+      );
       showToast(`Welcome back, ${loggedInUser.name}!`, 'success');
       router.push('/dashboard');
     } catch (err: any) {
-      setErrorMessage(err.message || 'Login failed. Please check your credentials.');
-      showToast(err.message || 'Authentication error', 'error');
+      const msg = err.message || 'Login failed. Please check your credentials.';
+      setErrorMessage(msg);
+      showToast(msg, 'error');
+
+      // If CAPTCHA error or failed attempt, refresh challenge for security
+      if (
+        msg.toLowerCase().includes('captcha') ||
+        msg.toLowerCase().includes('security') ||
+        msg.toLowerCase().includes('attempt')
+      ) {
+        captchaRef.current?.refresh();
+      }
     } finally {
       setIsSubmitting(false);
     }
   };
+
+  const isLoginDisabled =
+    isSubmitting ||
+    !identifier.trim() ||
+    !password.trim() ||
+    !captchaData.captchaAnswer.trim();
 
   return (
     <div className="max-w-md mx-auto space-y-5 animate-in fade-in duration-300">
@@ -95,14 +133,82 @@ export default function UnifiedLoginPage() {
           <div className="w-12 h-12 bg-gradient-to-br from-amber-400 to-yellow-500 text-slate-950 rounded-2xl flex items-center justify-center mx-auto mb-2 font-bold shadow-md shadow-amber-500/25">
             <LogIn className="w-6 h-6" />
           </div>
-          <h1 className="text-2xl font-black text-slate-900 tracking-tight">{t.loginTitle}</h1>
-          <p className="text-xs text-slate-500">{t.loginSubtitle}</p>
+          <h1 className="text-2xl font-black text-slate-900 tracking-tight">Secure Marketplace Login</h1>
+          <p className="text-xs text-slate-500">Sign in to access unified agriculture trade operations</p>
         </div>
 
-        {/* Role Selector Tabs */}
-        <div className="space-y-1.5">
-          <label className="block text-xs font-bold text-slate-700">
-            {t.roleSelectLabel}
+        {errorMessage && (
+          <div className="p-3 bg-rose-50 border border-rose-200 text-rose-800 text-xs rounded-xl font-medium flex items-center gap-2">
+            <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0" />
+            <span>{errorMessage}</span>
+          </div>
+        )}
+
+        <form onSubmit={handleLogin} className="space-y-4 pt-1">
+          {/* Mobile Number or Email */}
+          <div>
+            <label className="block text-xs font-bold text-slate-700 mb-1.5 flex items-center gap-1.5">
+              <Phone className="w-3.5 h-3.5 text-amber-700" />
+              Mobile Number or Email Address
+            </label>
+            <input
+              type="text"
+              required
+              value={identifier}
+              onChange={(e) => setIdentifier(e.target.value)}
+              placeholder="e.g. 9876543210 or buyer@freshcart.com"
+              className="w-full px-3.5 py-2.5 bg-amber-50/40 border border-amber-200 rounded-xl text-sm font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500"
+            />
+          </div>
+
+          {/* Password */}
+          <div>
+            <label className="block text-xs font-bold text-slate-700 mb-1.5 flex items-center gap-1.5">
+              <Lock className="w-3.5 h-3.5 text-amber-700" />
+              Password
+            </label>
+            <input
+              type="password"
+              required
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="••••••••"
+              className="w-full px-3.5 py-2.5 bg-amber-50/40 border border-amber-200 rounded-xl text-sm font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500"
+            />
+          </div>
+
+          {/* Visual Alphanumeric CAPTCHA Security Verification */}
+          <Captcha
+            ref={captchaRef}
+            onCaptchaChange={setCaptchaData}
+            disabled={isSubmitting}
+          />
+
+          {/* Sign In Button */}
+          <button
+            type="submit"
+            disabled={isLoginDisabled}
+            className={`w-full font-black py-3.5 rounded-2xl text-sm transition transform flex items-center justify-center gap-2 shadow-md ${
+              isLoginDisabled
+                ? 'bg-slate-200 text-slate-400 cursor-not-allowed border border-slate-300'
+                : 'bg-gradient-to-r from-amber-400 via-amber-500 to-yellow-500 hover:from-amber-300 hover:to-yellow-400 text-slate-950 shadow-amber-500/25 active:scale-95'
+            }`}
+          >
+            {isSubmitting ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                Signing in...
+              </>
+            ) : (
+              'Sign In to Vanijya'
+            )}
+          </button>
+        </form>
+
+        {/* 1-Click Demo Personas */}
+        <div className="pt-2 border-t border-amber-100 space-y-2">
+          <label className="block text-[11px] font-bold text-slate-500 text-center">
+            Choose account type / 1-Click Demo Fill:
           </label>
           <div className="grid grid-cols-3 gap-2">
             <button
@@ -115,7 +221,7 @@ export default function UnifiedLoginPage() {
               }`}
             >
               <Sprout className="w-4 h-4" />
-              <span>{t.roleFarmer}</span>
+              <span>🌾 Farmer</span>
             </button>
 
             <button
@@ -128,7 +234,7 @@ export default function UnifiedLoginPage() {
               }`}
             >
               <Building2 className="w-4 h-4" />
-              <span>{t.roleBuyer}</span>
+              <span>🏢 Buyer</span>
             </button>
 
             <button
@@ -141,66 +247,13 @@ export default function UnifiedLoginPage() {
               }`}
             >
               <ShieldAlert className="w-4 h-4" />
-              <span>{t.roleAdmin}</span>
+              <span>⚙️ Admin</span>
             </button>
           </div>
         </div>
 
-        {errorMessage && (
-          <div className="p-3 bg-rose-50 border border-rose-200 text-rose-800 text-xs rounded-xl font-medium">
-            {errorMessage}
-          </div>
-        )}
-
-        <form onSubmit={handleLogin} className="space-y-4 pt-1">
-          <div>
-            <label className="block text-xs font-bold text-slate-700 mb-1.5 flex items-center gap-1.5">
-              <Phone className="w-3.5 h-3.5 text-amber-700" />
-              {t.phoneOrEmailLabel}
-            </label>
-            <input
-              type="text"
-              required
-              value={identifier}
-              onChange={(e) => setIdentifier(e.target.value)}
-              placeholder="e.g. 9876543210 or buyer@freshcart.com"
-              className="w-full px-3.5 py-2.5 bg-amber-50/40 border border-amber-200 rounded-xl text-sm font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500"
-            />
-          </div>
-
-          <div>
-            <label className="block text-xs font-bold text-slate-700 mb-1.5 flex items-center gap-1.5">
-              <Lock className="w-3.5 h-3.5 text-amber-700" />
-              {t.passwordLabel}
-            </label>
-            <input
-              type="password"
-              required
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="••••••••"
-              className="w-full px-3.5 py-2.5 bg-amber-50/40 border border-amber-200 rounded-xl text-sm font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500"
-            />
-          </div>
-
-          <button
-            type="submit"
-            disabled={isSubmitting}
-            className="w-full bg-gradient-to-r from-amber-400 via-amber-500 to-yellow-500 hover:from-amber-300 hover:to-yellow-400 text-slate-950 font-black py-3.5 rounded-2xl text-sm shadow-md shadow-amber-500/25 transition transform active:scale-95 flex items-center justify-center gap-2"
-          >
-            {isSubmitting ? (
-              <>
-                <Loader2 className="w-4 h-4 animate-spin" />
-                {t.signingIn}
-              </>
-            ) : (
-              t.btnSignIn
-            )}
-          </button>
-        </form>
-
-        <div className="pt-2 text-center text-xs text-slate-400">
-          Kisan Credit Card (KCC) & National APMC Trade Enrolled
+        <div className="pt-1 text-center text-[10px] text-slate-400">
+          Kisan Credit Card (KCC) & National APMC Trade Enrolled | Visual Security Verification
         </div>
       </div>
     </div>

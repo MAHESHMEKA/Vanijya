@@ -3,11 +3,12 @@
 
 ---
 
-## 1. Authentication & Users
+## 1. Authentication & Security Verification
 
 | Method | Endpoint | Description | Role / Auth |
 | :--- | :--- | :--- | :--- |
-| `POST` | `/auth/login` | Authenticate with phone/email and password, returns JWT token | Public |
+| `GET` | `/auth/captcha` | **Visual Alphanumeric CAPTCHA:** Generates distorted SVG security image + challenge ID | Public |
+| `POST` | `/auth/login` | Authenticate with phone/email, password, and CAPTCHA challenge answer $\rightarrow$ returns JWT | Public |
 | `GET` | `/auth/me` | Fetch authenticated user profile and verification status | Bearer JWT |
 | `GET` | `/users/me` | Retrieve profile details | Bearer JWT |
 | `PATCH` | `/users/me` | Update name, district, state, location | Bearer JWT |

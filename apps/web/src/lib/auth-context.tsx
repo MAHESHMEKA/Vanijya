@@ -21,7 +21,13 @@ interface AuthContextType {
   token: string | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  login: (identifier: string, password: string, selectedRole?: 'FARMER' | 'BUYER' | 'ADMIN') => Promise<User>;
+  login: (
+    identifier: string,
+    password: string,
+    selectedRole?: 'FARMER' | 'BUYER' | 'ADMIN',
+    captchaId?: string,
+    captchaAnswer?: string,
+  ) => Promise<User>;
   logout: () => void;
   refreshUser: () => Promise<void>;
 }
@@ -63,11 +69,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     loadSession();
   }, []);
 
-  const login = async (identifier: string, password: string, selectedRole?: 'FARMER' | 'BUYER' | 'ADMIN'): Promise<User> => {
+  const login = async (
+    identifier: string,
+    password: string,
+    selectedRole?: 'FARMER' | 'BUYER' | 'ADMIN',
+    captchaId?: string,
+    captchaAnswer?: string,
+  ): Promise<User> => {
     try {
       const res = await api.post<{ accessToken: string; user: User }>('/auth/login', {
         identifier,
         password,
+        captchaId,
+        captchaAnswer,
       });
 
       let loggedInUser = res.user;
