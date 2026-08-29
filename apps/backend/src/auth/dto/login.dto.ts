@@ -1,5 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsNotEmpty, IsOptional, IsString } from 'class-validator';
+import { IsEnum, IsNotEmpty, IsOptional, IsString } from 'class-validator';
+import { Role } from '@prisma/client';
 
 export class LoginDto {
   @ApiProperty({ example: '9876543210', description: 'Phone number or email address' })
@@ -27,4 +28,13 @@ export class LoginDto {
   @IsString()
   @IsOptional()
   captchaAnswer?: string;
+
+  @ApiPropertyOptional({
+    enum: Role,
+    example: Role.FARMER,
+    description: 'Optional selected role on login form to verify account match',
+  })
+  @IsEnum(Role)
+  @IsOptional()
+  role?: Role;
 }

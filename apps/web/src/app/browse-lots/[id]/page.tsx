@@ -21,6 +21,8 @@ import {
   Loader2,
   CheckCircle2,
   Info,
+  DollarSign,
+  AlertTriangle,
 } from 'lucide-react';
 
 export default function BuyerLotDetailPage() {
@@ -52,6 +54,10 @@ export default function BuyerLotDetailPage() {
       .finally(() => setLoading(false));
   }, [id]);
 
+  const numPrice = parseFloat(bidPrice) || 0;
+  const numQuantity = parseFloat(bidQuantity) || 0;
+  const totalValue = numPrice * numQuantity;
+
   const handlePlaceBid = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!isAuthenticated) {
@@ -60,11 +66,27 @@ export default function BuyerLotDetailPage() {
       return;
     }
 
+    if (user?.profileCompletionStatus === 'INCOMPLETE') {
+      showToast(t.errProfileIncompleteBid, 'error');
+      router.push('/profile');
+      return;
+    }
+
+    if (numPrice <= 0 || numQuantity <= 0) {
+      showToast('Price and quantity must be greater than 0', 'error');
+      return;
+    }
+
+    if (lot && numQuantity > lot.quantity) {
+      showToast(`Quantity cannot exceed available lot quantity (${lot.quantity} ${lot.unit || 'QUINTAL'})`, 'error');
+      return;
+    }
+
     setIsSubmitting(true);
     try {
       await api.post(`/lots/${id}/bids`, {
-        price: parseFloat(bidPrice),
-        quantity: parseFloat(bidQuantity),
+        price: numPrice,
+        quantity: numQuantity,
         message: bidMessage,
       });
 
@@ -137,6 +159,16 @@ export default function BuyerLotDetailPage() {
               <span className="text-slate-500 font-bold">{t.commonLocation}:</span>
               <span className="text-slate-800 font-bold">{lot.location || 'Nashik'}</span>
             </div>
+
+            {lot.farmer && (
+              <div className="bg-slate-50 p-3 rounded-2xl border border-slate-200 flex justify-between items-center">
+                <span className="text-slate-500 font-bold">{t.commonFarmer}:</span>
+                <span className="text-slate-900 font-bold flex items-center gap-1">
+                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+                  {lot.farmer.name} ({lot.farmer.district || 'Verified'})
+                </span>
+              </div>
+            )}
           </div>
         </div>
 
@@ -170,11 +202,25 @@ export default function BuyerLotDetailPage() {
                 type="number"
                 required
                 min="1"
+                max={lot.quantity}
                 value={bidQuantity}
                 onChange={(e) => setBidQuantity(e.target.value)}
                 placeholder="100"
                 className="w-full px-3.5 py-2.5 bg-amber-50/40 border border-amber-200 rounded-xl text-xs font-bold focus:bg-white focus:ring-2 focus:ring-amber-500 focus:outline-none"
               />
+            </div>
+
+            {/* Live Calculation Box */}
+            <div className="p-3 bg-gradient-to-br from-amber-50 to-yellow-50 rounded-2xl border border-amber-300 flex items-center justify-between">
+              <div>
+                <span className="text-[10px] uppercase font-black text-amber-900 block">{t.bidTotalValueLabel}</span>
+                <span className="text-[11px] text-slate-600">
+                  {formatCurrency(numPrice)} × {numQuantity} {formatUnit(lot.unit)}
+                </span>
+              </div>
+              <strong className="text-base font-black text-slate-950">
+                {formatCurrency(totalValue)}
+              </strong>
             </div>
 
             <div>
@@ -190,7 +236,7 @@ export default function BuyerLotDetailPage() {
 
             <button
               type="submit"
-              disabled={isSubmitting}
+              disabled={isSubmitting || lot.status !== 'OPEN' && lot.status !== 'BIDDING'}
               className="w-full bg-gradient-to-r from-amber-400 via-amber-500 to-yellow-500 hover:from-amber-300 hover:to-yellow-400 text-slate-950 font-black py-3.5 rounded-2xl text-xs shadow-md shadow-amber-500/25 transition transform active:scale-95 flex items-center justify-center gap-2"
             >
               {isSubmitting ? (

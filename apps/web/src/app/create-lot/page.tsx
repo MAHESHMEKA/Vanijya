@@ -15,11 +15,13 @@ import {
   Sparkles,
   MapPin,
   LogIn,
+  AlertTriangle,
+  ArrowRight,
 } from 'lucide-react';
 
 export default function CreateLotPage() {
   const router = useRouter();
-  const { user, isAuthenticated, login } = useAuth();
+  const { user, isAuthenticated } = useAuth();
   const { t, translateCrop } = useLanguage();
   const { showToast } = useToast();
 
@@ -77,8 +79,50 @@ export default function CreateLotPage() {
     );
   }
 
+  // Profile completion check
+  const isProfileIncomplete = user.profileCompletionStatus === 'INCOMPLETE';
+
+  if (isProfileIncomplete) {
+    return (
+      <div className="max-w-xl mx-auto space-y-5 animate-in fade-in duration-300">
+        <Link href="/dashboard" className="inline-flex items-center gap-1 text-xs text-amber-800 font-bold hover:underline">
+          <ArrowLeft className="w-3.5 h-3.5" /> {t.commonBack}
+        </Link>
+
+        <div className="bg-white p-6 md:p-8 rounded-3xl border-2 border-amber-400 shadow-md space-y-5 text-center">
+          <div className="w-14 h-14 bg-amber-100 text-amber-900 rounded-full flex items-center justify-center mx-auto">
+            <AlertTriangle className="w-7 h-7 text-amber-700" />
+          </div>
+          <div>
+            <h1 className="text-xl font-black text-slate-900 tracking-tight">
+              {t.profileCompletionBannerTitle}
+            </h1>
+            <p className="text-xs text-slate-600 max-w-md mx-auto mt-1">
+              {t.errProfileIncompleteLot}
+            </p>
+          </div>
+
+          <div className="pt-2">
+            <Link
+              href="/profile"
+              className="inline-flex items-center gap-2 bg-gradient-to-r from-amber-400 to-yellow-500 hover:from-amber-300 hover:to-yellow-400 text-slate-950 font-black px-6 py-3 rounded-2xl text-xs shadow-md shadow-amber-500/25 transition"
+            >
+              {t.btnCompleteProfile} <ArrowRight className="w-4 h-4" />
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (parseFloat(quantity) <= 0 || parseFloat(expectedPrice) <= 0) {
+      showToast('Quantity and price must be greater than 0', 'error');
+      return;
+    }
+
     setIsSubmitting(true);
 
     const chosenCrop = crops.find((c) => c.name === selectedCropName) || crops.find((c) => c.id === cropId) || crops[0];

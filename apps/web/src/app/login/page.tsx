@@ -18,6 +18,11 @@ import {
   Sprout,
   ShieldAlert,
   AlertTriangle,
+  Eye,
+  EyeOff,
+  UserPlus,
+  Clock,
+  XCircle,
 } from 'lucide-react';
 
 export default function UnifiedLoginPage() {
@@ -29,9 +34,11 @@ export default function UnifiedLoginPage() {
 
   const [identifier, setIdentifier] = useState('9876543210');
   const [password, setPassword] = useState('Farmer@123');
+  const [showPassword, setShowPassword] = useState(false);
   const [selectedRole, setSelectedRole] = useState<'FARMER' | 'BUYER' | 'ADMIN'>('FARMER');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [errorType, setErrorType] = useState<'GENERAL' | 'PENDING' | 'REJECTED'>('GENERAL');
 
   // Visual Alphanumeric CAPTCHA state
   const [captchaData, setCaptchaData] = useState<{ captchaId: string; captchaAnswer: string }>({
@@ -64,6 +71,7 @@ export default function UnifiedLoginPage() {
   const handleRoleSelect = (role: 'FARMER' | 'BUYER' | 'ADMIN') => {
     setSelectedRole(role);
     setErrorMessage(null);
+    setErrorType('GENERAL');
     if (role === 'FARMER') {
       setIdentifier('9876543210');
       setPassword('Farmer@123');
@@ -79,29 +87,49 @@ export default function UnifiedLoginPage() {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    if (!identifier.trim()) {
+      setErrorMessage(t.errInvalidCredentials);
+      setErrorType('GENERAL');
+      return;
+    }
+    if (!password.trim()) {
+      setErrorMessage(t.errInvalidCredentials);
+      setErrorType('GENERAL');
+      return;
+    }
     if (!captchaData.captchaAnswer || captchaData.captchaAnswer.trim() === '') {
       setErrorMessage(t.errCaptchaRequired);
+      setErrorType('GENERAL');
       showToast(t.errCaptchaRequired, 'error');
       return;
     }
 
     setIsSubmitting(true);
     setErrorMessage(null);
+    setErrorType('GENERAL');
 
     try {
       const loggedInUser = await login(
-        identifier,
+        identifier.trim(),
         password,
         selectedRole,
         captchaData.captchaId,
-        captchaData.captchaAnswer,
+        captchaData.captchaAnswer.trim().toUpperCase(),
       );
       showToast(`${t.commonWelcomeBack}, ${loggedInUser.name}!`, 'success');
       router.push('/dashboard');
     } catch (err: any) {
       const rawMsg = err.message || '';
       let msg = t.errInvalidCredentials;
-      if (rawMsg.toLowerCase().includes('captcha') || rawMsg.toLowerCase().includes('security')) {
+      let type: 'GENERAL' | 'PENDING' | 'REJECTED' = 'GENERAL';
+
+      if (rawMsg.toLowerCase().includes('awaiting admin approval') || rawMsg.toLowerCase().includes('pending')) {
+        msg = t.errAccountPendingApproval;
+        type = 'PENDING';
+      } else if (rawMsg.toLowerCase().includes('rejected')) {
+        msg = rawMsg;
+        type = 'REJECTED';
+      } else if (rawMsg.toLowerCase().includes('captcha') || rawMsg.toLowerCase().includes('security')) {
         if (rawMsg.toLowerCase().includes('expired')) {
           msg = t.errCaptchaExpired;
         } else if (rawMsg.toLowerCase().includes('too many')) {
@@ -109,8 +137,12 @@ export default function UnifiedLoginPage() {
         } else {
           msg = t.errCaptchaInvalid;
         }
+      } else if (rawMsg.toLowerCase().includes('registered as') || rawMsg.toLowerCase().includes('account type')) {
+        msg = rawMsg;
       }
+
       setErrorMessage(msg);
+      setErrorType(type);
       showToast(msg, 'error');
 
       // Refresh CAPTCHA challenge for security
@@ -132,6 +164,24 @@ export default function UnifiedLoginPage() {
         <ArrowLeft className="w-3.5 h-3.5" /> {t.navHome}
       </Link>
 
+      {/* Top Toggle: Sign In vs Create Account */}
+      <div className="bg-amber-100/70 p-1.5 rounded-2xl border border-amber-200 grid grid-cols-2 gap-1 text-xs font-bold">
+        <button
+          type="button"
+          className="py-2 px-3 rounded-xl bg-white text-slate-900 shadow-sm flex items-center justify-center gap-1.5 font-black"
+        >
+          <LogIn className="w-3.5 h-3.5 text-amber-700" />
+          {t.navLogin}
+        </button>
+        <Link
+          href="/signup"
+          className="py-2 px-3 rounded-xl text-slate-600 hover:text-slate-900 hover:bg-white/60 transition flex items-center justify-center gap-1.5 text-center"
+        >
+          <UserPlus className="w-3.5 h-3.5 text-amber-700" />
+          {t.btnCreateAccount}
+        </Link>
+      </div>
+
       <div className="bg-white p-6 md:p-8 rounded-3xl border border-amber-200 shadow-md space-y-5">
         <div className="text-center space-y-1">
           <div className="w-12 h-12 bg-gradient-to-br from-amber-400 to-yellow-500 text-slate-950 rounded-2xl flex items-center justify-center mx-auto mb-2 font-bold shadow-md shadow-amber-500/25">
@@ -141,10 +191,34 @@ export default function UnifiedLoginPage() {
           <p className="text-xs text-slate-500">{t.loginSubtitle}</p>
         </div>
 
+        {/* Dynamic Error & Status Notices */}
         {errorMessage && (
-          <div className="p-3 bg-rose-50 border border-rose-200 text-rose-800 text-xs rounded-xl font-medium flex items-center gap-2">
-            <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0" />
-            <span>{errorMessage}</span>
+          <div
+            className={`p-3.5 rounded-2xl border text-xs font-medium space-y-1 ${
+              errorType === 'PENDING'
+                ? 'bg-amber-50 border-amber-300 text-amber-950'
+                : errorType === 'REJECTED'
+                ? 'bg-rose-50 border-rose-300 text-rose-950'
+                : 'bg-rose-50 border-rose-200 text-rose-800'
+            }`}
+          >
+            <div className="flex items-center gap-2 font-bold">
+              {errorType === 'PENDING' ? (
+                <Clock className="w-4 h-4 text-amber-700 shrink-0" />
+              ) : errorType === 'REJECTED' ? (
+                <XCircle className="w-4 h-4 text-rose-700 shrink-0" />
+              ) : (
+                <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0" />
+              )}
+              <span>
+                {errorType === 'PENDING'
+                  ? t.pendingApprovalBadge
+                  : errorType === 'REJECTED'
+                  ? t.statusRejected
+                  : 'Authentication Notice'}
+              </span>
+            </div>
+            <p className="text-[11px] leading-relaxed pl-6">{errorMessage}</p>
           </div>
         )}
 
@@ -159,26 +233,42 @@ export default function UnifiedLoginPage() {
               type="text"
               required
               value={identifier}
-              onChange={(e) => setIdentifier(e.target.value)}
+              onChange={(e) => {
+                setIdentifier(e.target.value);
+                setErrorMessage(null);
+              }}
               placeholder={t.identifierPlaceholder}
               className="w-full px-3.5 py-2.5 bg-amber-50/40 border border-amber-200 rounded-xl text-sm font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500"
             />
           </div>
 
-          {/* Password */}
+          {/* Password with Visibility Toggle */}
           <div>
             <label className="block text-xs font-bold text-slate-700 mb-1.5 flex items-center gap-1.5">
               <Lock className="w-3.5 h-3.5 text-amber-700" />
               {t.passwordLabel}
             </label>
-            <input
-              type="password"
-              required
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder={t.passwordPlaceholder}
-              className="w-full px-3.5 py-2.5 bg-amber-50/40 border border-amber-200 rounded-xl text-sm font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500"
-            />
+            <div className="relative">
+              <input
+                type={showPassword ? 'text' : 'password'}
+                required
+                value={password}
+                onChange={(e) => {
+                  setPassword(e.target.value);
+                  setErrorMessage(null);
+                }}
+                placeholder={t.passwordPlaceholder}
+                className="w-full px-3.5 py-2.5 pr-10 bg-amber-50/40 border border-amber-200 rounded-xl text-sm font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700"
+                tabIndex={-1}
+              >
+                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
+            </div>
           </div>
 
           {/* Visual Alphanumeric CAPTCHA Security Verification */}
@@ -208,6 +298,18 @@ export default function UnifiedLoginPage() {
             )}
           </button>
         </form>
+
+        {/* Create Account Link Banner */}
+        <div className="bg-amber-50/60 p-3.5 rounded-2xl border border-amber-200 text-center space-y-1.5">
+          <span className="text-xs text-slate-600 block">New to Vanijya? Register your farm or enterprise:</span>
+          <Link
+            href="/signup"
+            className="inline-flex items-center gap-1.5 text-xs font-black text-amber-900 hover:underline"
+          >
+            <UserPlus className="w-3.5 h-3.5" />
+            {t.btnCreateAccount} &rarr;
+          </Link>
+        </div>
 
         {/* 1-Click Demo Personas */}
         <div className="pt-2 border-t border-amber-100 space-y-2">

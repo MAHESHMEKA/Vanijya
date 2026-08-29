@@ -6,6 +6,7 @@ import { usePathname } from 'next/navigation';
 import { useAuth } from '../../lib/auth-context';
 import { useLanguage } from '../../lib/language-context';
 import { LanguageSelector } from './language-selector';
+import { NotificationBell } from './notification-bell';
 import {
   Sprout,
   TrendingUp,
@@ -48,7 +49,7 @@ export function TopNav() {
       { label: t.navMarketplace, href: '/browse-lots', icon: ShoppingCart },
       { label: t.navPrices, href: '/prices', icon: TrendingUp },
       { label: t.navMyBids, href: '/my-bids', icon: Gavel },
-      { label: t.navPurchases, href: '/transactions', icon: FileCheck },
+      { label: t.navPurchases, href: '/purchases', icon: FileCheck },
       { label: t.navProfile, href: '/profile', icon: User },
     ];
   } else if (user.role === 'ADMIN') {
@@ -60,7 +61,12 @@ export function TopNav() {
     ];
   }
 
-  const roleLabel = user?.role === 'FARMER' ? t.roleFarmer.split(' ')[0] : user?.role === 'BUYER' ? t.roleBuyer.split(' ')[0] : t.roleAdmin.split(' ')[0];
+  const roleLabel =
+    user?.role === 'FARMER'
+      ? t.roleFarmer.split(' ')[0]
+      : user?.role === 'BUYER'
+      ? t.roleBuyer.split(' ')[0]
+      : t.roleAdmin.split(' ')[0];
 
   return (
     <header className="sticky top-0 z-50 bg-slate-950 text-white shadow-xl border-b border-amber-500/20">
@@ -85,7 +91,9 @@ export function TopNav() {
         <nav className="hidden md:flex items-center gap-1.5">
           {navItems.map((item) => {
             const Icon = item.icon;
-            const isActive = pathname === item.href || (item.href !== '/' && item.href !== '/dashboard' && pathname.startsWith(item.href));
+            const isActive =
+              pathname === item.href ||
+              (item.href !== '/' && item.href !== '/dashboard' && pathname.startsWith(item.href));
 
             return (
               <Link
@@ -104,18 +112,24 @@ export function TopNav() {
           })}
         </nav>
 
-        {/* Language Selector + User Session */}
+        {/* Language Selector + Notifications + User Session */}
         <div className="flex items-center gap-2">
           <LanguageSelector />
 
           {isAuthenticated && user ? (
             <div className="flex items-center gap-1.5">
+              <div className="bg-slate-900 rounded-xl border border-amber-500/30">
+                <NotificationBell />
+              </div>
+
               <Link
                 href="/profile"
                 className="flex items-center gap-1.5 bg-slate-900 hover:bg-slate-800 px-3 py-1.5 rounded-full text-xs font-semibold border border-amber-500/30 transition"
               >
                 <ShieldCheck className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-                <span className="max-w-[110px] truncate text-slate-200">{user.name.split(' ')[0]}</span>
+                <span className="max-w-[110px] truncate text-slate-200">
+                  {user.name.split(' ')[0]}
+                </span>
                 <span className="bg-amber-400 text-slate-950 text-[9px] font-black px-1.5 py-0.2 rounded-full uppercase">
                   {roleLabel}
                 </span>

@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { LotsService } from './lots.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { AuditService } from '../audit/audit.service';
+import { UsersService } from '../users/users.service';
 import { CropLotStatus, QualityGrade, Role } from '@prisma/client';
 import { BadRequestException, ForbiddenException, NotFoundException } from '@nestjs/common';
 
@@ -27,12 +28,26 @@ describe('LotsService', () => {
     getRecent: jest.fn().mockResolvedValue([]),
   };
 
+  const mockUsersService = {
+    getProfile: jest.fn().mockResolvedValue({
+      id: 'farmer-1',
+      name: 'Ramesh Patel',
+      role: 'FARMER',
+      district: 'Nashik',
+      state: 'Maharashtra',
+      location: 'Village Pimpalgaon, Nashik',
+      profileCompletionStatus: 'COMPLETE',
+      profileCompletionPercentage: 100,
+    }),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         LotsService,
         { provide: PrismaService, useValue: mockPrismaService },
         { provide: AuditService, useValue: mockAuditService },
+        { provide: UsersService, useValue: mockUsersService },
       ],
     }).compile();
 
@@ -85,6 +100,29 @@ describe('LotsService', () => {
           location: 'Nashik',
         }),
       ).rejects.toThrow(NotFoundException);
+    });
+
+    it('should reject creation if farmer profile is incomplete', async () => {
+      mockUsersService.getProfile.mockResolvedValueOnce({
+        id: 'farmer-2',
+        name: 'Incomplete Farmer',
+        role: 'FARMER',
+        district: null,
+        state: null,
+        location: null,
+        profileCompletionStatus: 'INCOMPLETE',
+        missingFields: ['district', 'state', 'location'],
+      });
+
+      await expect(
+        service.create('farmer-2', {
+          cropId: 'crop-1',
+          quantity: 50,
+          expectedPrice: 2200,
+          qualityGrade: QualityGrade.GRADE_A,
+          location: 'Nashik',
+        }),
+      ).rejects.toThrow(BadRequestException);
     });
   });
 

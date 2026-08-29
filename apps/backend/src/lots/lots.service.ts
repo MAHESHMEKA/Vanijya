@@ -4,6 +4,7 @@ import { CreateCropLotDto, UpdateCropLotDto, QueryLotsDto } from './dto/create-l
 import { CropLotStatus, Role, AuditAction } from '@prisma/client';
 import { FALLBACK_CROPS } from '../crops/crops.service';
 import { AuditService } from '../audit/audit.service';
+import { UsersService } from '../users/users.service';
 
 export const FALLBACK_LOTS: any[] = [
   {
@@ -122,6 +123,7 @@ export class LotsService {
   constructor(
     private prisma: PrismaService,
     private auditService: AuditService,
+    private usersService: UsersService,
   ) {}
 
   private enrichLot(lot: any) {
@@ -138,6 +140,22 @@ export class LotsService {
   }
 
   async create(farmerId: string, dto: CreateCropLotDto) {
+    // 1. Profile Completion Gate Check
+    const profile = await this.usersService.getProfile(farmerId).catch(() => null);
+    if (profile && profile.profileCompletionStatus === 'INCOMPLETE') {
+      const missing = profile.missingFields?.join(', ') || 'required fields';
+      throw new BadRequestException(
+        `Please complete your profile details (${missing}) before publishing a crop lot.`,
+      );
+    }
+
+    if (Number(dto.quantity) <= 0) {
+      throw new BadRequestException('Quantity must be greater than 0.');
+    }
+    if (Number(dto.expectedPrice) <= 0) {
+      throw new BadRequestException('Expected price must be greater than 0.');
+    }
+
     if (!this.prisma.isConnected) {
       const crop =
         FALLBACK_CROPS.find(
@@ -162,10 +180,10 @@ export class LotsService {
         crop,
         farmer: {
           id: farmerId,
-          name: 'Ramesh Patel',
-          phone: '9876543210',
-          district: 'Nashik',
-          state: 'Maharashtra',
+          name: profile?.name || 'Ramesh Patel',
+          phone: profile?.phone || '9876543210',
+          district: profile?.district || 'Nashik',
+          state: profile?.state || 'Maharashtra',
           isVerified: true,
         },
         bids: [],
@@ -196,9 +214,9 @@ export class LotsService {
         data: {
           farmerId,
           cropId: dto.cropId,
-          quantity: dto.quantity,
+          quantity: Number(dto.quantity),
           unit: dto.unit || 'QUINTAL',
-          expectedPrice: dto.expectedPrice,
+          expectedPrice: Number(dto.expectedPrice),
           qualityGrade: dto.qualityGrade,
           location: dto.location,
           harvestDate: dto.harvestDate ? new Date(dto.harvestDate) : new Date(),
@@ -230,7 +248,7 @@ export class LotsService {
 
       return this.enrichLot(created);
     } catch (err) {
-      if (err instanceof NotFoundException) throw err;
+      if (err instanceof NotFoundException || err instanceof BadRequestException) throw err;
       return this.create(farmerId, dto);
     }
   }
@@ -366,6 +384,9 @@ export class LotsService {
       if (lot.farmerId !== userId && userRole !== Role.ADMIN) {
         throw new ForbiddenException('You are not authorized to modify this lot.');
       }
+      if (lot.status === CropLotStatus.SOLD) {
+        throw new BadRequestException('Sold lots cannot be modified.');
+      }
       Object.assign(lot, dto, { updatedAt: new Date() });
       return this.enrichLot(lot);
     }
@@ -386,6 +407,7 @@ export class LotsService {
       });
       return this.enrichLot(updated);
     } catch (err) {
+      if (err instanceof NotFoundException || err instanceof ForbiddenException || err instanceof BadRequestException) throw err;
       const lot = FALLBACK_LOTS.find((l) => l.id === lotId);
       if (lot) {
         Object.assign(lot, dto, { updatedAt: new Date() });
@@ -399,6 +421,12 @@ export class LotsService {
     if (!this.prisma.isConnected) {
       const lot = FALLBACK_LOTS.find((l) => l.id === lotId);
       if (!lot) throw new NotFoundException(`Crop Lot with ID ${lotId} not found.`);
+      if (lot.farmerId !== userId && userRole !== Role.ADMIN) {
+        throw new ForbiddenException('You are not authorized to cancel this lot.');
+      }
+      if (lot.status === CropLotStatus.SOLD) {
+        throw new BadRequestException('A sold lot cannot be cancelled.');
+      }
       lot.status = CropLotStatus.CANCELLED;
       return this.enrichLot(lot);
     }
@@ -421,6 +449,7 @@ export class LotsService {
       });
       return this.enrichLot(updated);
     } catch (err) {
+      if (err instanceof NotFoundException || err instanceof ForbiddenException || err instanceof BadRequestException) throw err;
       const lot = FALLBACK_LOTS.find((l) => l.id === lotId);
       if (lot) {
         lot.status = CropLotStatus.CANCELLED;

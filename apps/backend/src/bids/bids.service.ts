@@ -1,10 +1,12 @@
 import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateBidDto } from './dto/create-bid.dto';
-import { BidStatus, CropLotStatus, PaymentStatus, Role, TransactionStatus, AuditAction } from '@prisma/client';
+import { BidStatus, CropLotStatus, PaymentStatus, Role, TransactionStatus, AuditAction, NotificationType } from '@prisma/client';
 import { FALLBACK_LOTS } from '../lots/lots.service';
 import { FALLBACK_USERS } from '../auth/auth.service';
 import { AuditService } from '../audit/audit.service';
+import { NotificationsService } from '../notifications/notifications.service';
+import { UsersService } from '../users/users.service';
 
 export const FALLBACK_BIDS: any[] = [
   {
@@ -71,9 +73,27 @@ export class BidsService {
   constructor(
     private prisma: PrismaService,
     private auditService: AuditService,
+    private notificationsService: NotificationsService,
+    private usersService: UsersService,
   ) {}
 
   async createBid(lotId: string, buyerId: string, dto: CreateBidDto) {
+    // 1. Profile Completion Gate Check
+    const profile = await this.usersService.getProfile(buyerId).catch(() => null);
+    if (profile && profile.profileCompletionStatus === 'INCOMPLETE') {
+      const missing = profile.missingFields?.join(', ') || 'required fields';
+      throw new BadRequestException(
+        `Please complete your buyer profile details (${missing}) before placing a bid.`,
+      );
+    }
+
+    if (Number(dto.price) <= 0) {
+      throw new BadRequestException('Bid price must be greater than 0.');
+    }
+    if (Number(dto.quantity) <= 0) {
+      throw new BadRequestException('Bid quantity must be greater than 0.');
+    }
+
     if (!this.prisma.isConnected) {
       return this.createBidInMemory(lotId, buyerId, dto);
     }
@@ -81,15 +101,15 @@ export class BidsService {
     try {
       const lot = await this.prisma.cropLot.findUnique({
         where: { id: lotId },
+        include: { crop: true, farmer: true },
       });
       if (!lot) throw new NotFoundException(`Crop lot with ID ${lotId} not found.`);
       if (lot.farmerId === buyerId) throw new BadRequestException('You cannot place a bid on your own crop lot.');
       if (lot.status !== CropLotStatus.OPEN && lot.status !== CropLotStatus.BIDDING) {
         throw new BadRequestException(`Cannot place a bid on lot with status ${lot.status}.`);
       }
-      if (dto.price <= 0) throw new BadRequestException('Bid price must be greater than 0.');
-      if (dto.quantity <= 0 || dto.quantity > lot.quantity) {
-        throw new BadRequestException(`Bid quantity must be between 1 and ${lot.quantity} ${lot.unit}.`);
+      if (dto.quantity > lot.quantity) {
+        throw new BadRequestException(`Bid quantity cannot exceed available lot quantity (${lot.quantity} ${lot.unit}).`);
       }
 
       const [bid] = await this.prisma.$transaction([
@@ -97,8 +117,8 @@ export class BidsService {
           data: {
             lotId,
             buyerId,
-            price: dto.price,
-            quantity: dto.quantity,
+            price: Number(dto.price),
+            quantity: Number(dto.quantity),
             message: dto.message,
             status: BidStatus.PENDING,
           },
@@ -131,6 +151,16 @@ export class BidsService {
         price: dto.price,
         newQuantity: dto.quantity,
         metadata: { cropName: bid.lot?.crop?.name, message: dto.message },
+      });
+
+      // Send persistent notification to the farmer
+      await this.notificationsService.create({
+        recipientId: lot.farmerId,
+        type: NotificationType.BID_RECEIVED,
+        title: 'New Sourcing Bid Received',
+        message: `${bid.buyer?.name || 'A buyer'} placed an offer of ₹${dto.price.toLocaleString('en-IN')}/Qtl for ${dto.quantity} ${lot.unit} of ${lot.crop?.name || 'your crop'}.`,
+        entityType: 'LOT',
+        entityId: lotId,
       });
 
       return bid;
@@ -226,6 +256,15 @@ export class BidsService {
       metadata: { cropName: lot.crop?.name, message: dto.message },
     });
 
+    await this.notificationsService.create({
+      recipientId: lot.farmerId,
+      type: NotificationType.BID_RECEIVED,
+      title: 'New Sourcing Bid Received',
+      message: `${buyerUser.name} placed an offer of ₹${dto.price.toLocaleString('en-IN')}/Qtl for ${dto.quantity} ${lot.unit} of ${lot.crop?.name || 'crop'}.`,
+      entityType: 'LOT',
+      entityId: lotId,
+    });
+
     return newBid;
   }
 
@@ -241,7 +280,7 @@ export class BidsService {
     try {
       const bid = await this.prisma.bid.findUnique({
         where: { id: bidId },
-        include: { lot: { include: { crop: true } } },
+        include: { lot: { include: { crop: true, farmer: true } }, buyer: true },
       });
 
       if (!bid) throw new NotFoundException(`Bid with ID ${bidId} not found.`);
@@ -251,25 +290,23 @@ export class BidsService {
       }
 
       if (bid.status !== BidStatus.PENDING) {
-        throw new BadRequestException(`Cannot modify quantity of a bid with status ${bid.status}. Only PENDING bids can be modified.`);
+        throw new BadRequestException(`Only pending bids can be modified. Current status: ${bid.status}.`);
       }
 
       if (bid.lot.status === CropLotStatus.SOLD || bid.lot.status === CropLotStatus.CANCELLED) {
-        throw new BadRequestException(`Cannot modify bid because the crop lot is already ${bid.lot.status}.`);
+        throw new BadRequestException(`Cannot modify bid because the lot is ${bid.lot.status}.`);
       }
 
-      if (newQuantity > bid.lot.quantity) {
-        throw new BadRequestException(`Requested quantity (${newQuantity} ${bid.lot.unit}) exceeds available lot quantity (${bid.lot.quantity} ${bid.lot.unit}).`);
+      if (Number(newQuantity) > bid.lot.quantity) {
+        throw new BadRequestException(
+          `Modified quantity cannot exceed available lot quantity (${bid.lot.quantity} ${bid.lot.unit}).`,
+        );
       }
 
       const oldQuantity = bid.quantity;
-
-      const updatedBid = await this.prisma.bid.update({
+      const updated = await this.prisma.bid.update({
         where: { id: bidId },
-        data: {
-          quantity: newQuantity,
-          updatedAt: new Date(),
-        },
+        data: { quantity: Number(newQuantity) },
         include: {
           buyer: {
             select: { id: true, name: true, district: true, state: true, isVerified: true },
@@ -283,22 +320,30 @@ export class BidsService {
       await this.auditService.log({
         actorId: buyerId,
         action: AuditAction.QUANTITY_MODIFIED,
-        bidId,
         lotId: bid.lotId,
-        oldQuantity,
-        newQuantity,
+        bidId: bid.id,
         price: bid.price,
+        oldQuantity,
+        newQuantity: Number(newQuantity),
         metadata: {
-          cropName: bid.lot?.crop?.name,
-          change: `${oldQuantity} -> ${newQuantity} ${bid.lot.unit}`,
+          cropName: bid.lot.crop?.name,
+          buyerName: bid.buyer?.name,
         },
       });
 
-      return updatedBid;
+      // Send persistent notification to the farmer
+      await this.notificationsService.create({
+        recipientId: bid.lot.farmerId,
+        type: NotificationType.BID_MODIFIED,
+        title: 'Bid Quantity Modified',
+        message: `${bid.buyer?.name || 'Buyer'} modified bid quantity from ${oldQuantity} to ${newQuantity} ${bid.lot.unit} on ${bid.lot.crop?.name || 'your crop'}.`,
+        entityType: 'LOT',
+        entityId: bid.lotId,
+      });
+
+      return updated;
     } catch (err) {
-      if (err instanceof NotFoundException || err instanceof BadRequestException || err instanceof ForbiddenException) {
-        throw err;
-      }
+      if (err instanceof NotFoundException || err instanceof ForbiddenException || err instanceof BadRequestException) throw err;
       return this.updateBidQuantityInMemory(bidId, buyerId, userRole, newQuantity);
     }
   }
@@ -312,17 +357,18 @@ export class BidsService {
     }
 
     if (bid.status !== BidStatus.PENDING) {
-      throw new BadRequestException(`Cannot modify quantity of a bid with status ${bid.status}. Only PENDING bids can be modified.`);
+      throw new BadRequestException(`Only pending bids can be modified. Current status: ${bid.status}.`);
     }
 
-    const lot = FALLBACK_LOTS.find((l) => l.id === bid.lotId) || bid.lot;
+    const lot = FALLBACK_LOTS.find((l) => l.id === bid.lotId);
     if (lot && (lot.status === CropLotStatus.SOLD || lot.status === CropLotStatus.CANCELLED)) {
-      throw new BadRequestException(`Cannot modify bid because the crop lot is already ${lot.status}.`);
+      throw new BadRequestException(`Cannot modify bid because the lot is ${lot.status}.`);
     }
 
-    const lotMaxQty = lot ? lot.quantity : 100;
-    if (newQuantity > lotMaxQty) {
-      throw new BadRequestException(`Requested quantity (${newQuantity}) exceeds available lot quantity (${lotMaxQty}).`);
+    if (lot && Number(newQuantity) > lot.quantity) {
+      throw new BadRequestException(
+        `Modified quantity cannot exceed available lot quantity (${lot.quantity} ${lot.unit || 'QUINTAL'}).`,
+      );
     }
 
     const oldQuantity = bid.quantity;
@@ -331,25 +377,33 @@ export class BidsService {
 
     if (lot && lot.bids) {
       const lotBid = lot.bids.find((b: any) => b.id === bidId);
-      if (lotBid) {
-        lotBid.quantity = Number(newQuantity);
-        lotBid.updatedAt = new Date();
-      }
+      if (lotBid) lotBid.quantity = Number(newQuantity);
     }
 
     await this.auditService.log({
       actorId: buyerId,
       action: AuditAction.QUANTITY_MODIFIED,
-      bidId,
       lotId: bid.lotId,
+      bidId: bid.id,
+      price: bid.price,
       oldQuantity,
       newQuantity: Number(newQuantity),
-      price: bid.price,
       metadata: {
-        cropName: lot?.crop?.name || 'Crop',
-        change: `${oldQuantity} -> ${newQuantity}`,
+        cropName: bid.lot?.crop?.name,
+        buyerName: bid.buyer?.name,
       },
     });
+
+    if (bid.lot?.farmer?.id || lot?.farmerId) {
+      await this.notificationsService.create({
+        recipientId: bid.lot?.farmer?.id || lot?.farmerId,
+        type: NotificationType.BID_MODIFIED,
+        title: 'Bid Quantity Modified',
+        message: `${bid.buyer?.name || 'Buyer'} modified bid quantity from ${oldQuantity} to ${newQuantity} Qtl on ${bid.lot?.crop?.name || 'your lot'}.`,
+        entityType: 'LOT',
+        entityId: bid.lotId,
+      });
+    }
 
     return bid;
   }
@@ -362,7 +416,7 @@ export class BidsService {
     try {
       const bid = await this.prisma.bid.findUnique({
         where: { id: bidId },
-        include: { lot: { include: { crop: true } } },
+        include: { lot: { include: { crop: true, farmer: true } }, buyer: true },
       });
 
       if (!bid) throw new NotFoundException(`Bid with ID ${bidId} not found.`);
@@ -372,64 +426,43 @@ export class BidsService {
       }
 
       if (bid.status !== BidStatus.PENDING) {
-        throw new BadRequestException(`Cannot cancel bid with status ${bid.status}. Only PENDING bids can be cancelled.`);
+        throw new BadRequestException(`Only pending bids can be cancelled. Current status: ${bid.status}.`);
       }
 
-      if (bid.lot.status === CropLotStatus.SOLD) {
-        throw new BadRequestException('Cannot cancel bid because the crop lot has already been SOLD.');
-      }
-
-      const updatedBid = await this.prisma.bid.update({
+      const updated = await this.prisma.bid.update({
         where: { id: bidId },
-        data: {
-          status: BidStatus.WITHDRAWN,
-          updatedAt: new Date(),
-        },
+        data: { status: BidStatus.WITHDRAWN },
         include: {
-          buyer: {
-            select: { id: true, name: true, district: true, state: true, isVerified: true },
-          },
-          lot: {
-            include: { crop: true },
-          },
+          buyer: { select: { id: true, name: true, district: true } },
+          lot: { include: { crop: true } },
         },
       });
-
-      // If no other pending bids exist on lot, transition status back to OPEN
-      const otherPendingBids = await this.prisma.bid.count({
-        where: {
-          lotId: bid.lotId,
-          id: { not: bidId },
-          status: BidStatus.PENDING,
-        },
-      });
-
-      if (otherPendingBids === 0 && bid.lot.status === CropLotStatus.BIDDING) {
-        await this.prisma.cropLot.update({
-          where: { id: bid.lotId },
-          data: { status: CropLotStatus.OPEN },
-        });
-      }
 
       await this.auditService.log({
         actorId: buyerId,
         action: AuditAction.BID_CANCELLED,
-        bidId,
         lotId: bid.lotId,
-        oldStatus: BidStatus.PENDING,
-        newStatus: BidStatus.WITHDRAWN,
+        bidId: bid.id,
         price: bid.price,
         metadata: {
-          cropName: bid.lot?.crop?.name,
-          reason: 'Cancelled by buyer before farmer acceptance',
+          cropName: bid.lot.crop?.name,
+          buyerName: bid.buyer?.name,
         },
       });
 
-      return updatedBid;
+      // Send persistent notification to the farmer
+      await this.notificationsService.create({
+        recipientId: bid.lot.farmerId,
+        type: NotificationType.BID_CANCELLED,
+        title: 'Bid Withdrawn by Buyer',
+        message: `${bid.buyer?.name || 'Buyer'} has withdrawn their pending offer on ${bid.lot.crop?.name || 'your crop'}.`,
+        entityType: 'LOT',
+        entityId: bid.lotId,
+      });
+
+      return updated;
     } catch (err) {
-      if (err instanceof NotFoundException || err instanceof BadRequestException || err instanceof ForbiddenException) {
-        throw err;
-      }
+      if (err instanceof NotFoundException || err instanceof ForbiddenException || err instanceof BadRequestException) throw err;
       return this.cancelBidInMemory(bidId, buyerId, userRole);
     }
   }
@@ -443,179 +476,106 @@ export class BidsService {
     }
 
     if (bid.status !== BidStatus.PENDING) {
-      throw new BadRequestException(`Cannot cancel bid with status ${bid.status}. Only PENDING bids can be cancelled.`);
-    }
-
-    const lot = FALLBACK_LOTS.find((l) => l.id === bid.lotId) || bid.lot;
-    if (lot && lot.status === CropLotStatus.SOLD) {
-      throw new BadRequestException('Cannot cancel bid because the crop lot has already been SOLD.');
+      throw new BadRequestException(`Only pending bids can be cancelled. Current status: ${bid.status}.`);
     }
 
     bid.status = BidStatus.WITHDRAWN;
     bid.updatedAt = new Date();
 
+    const lot = FALLBACK_LOTS.find((l) => l.id === bid.lotId);
     if (lot && lot.bids) {
       const lotBid = lot.bids.find((b: any) => b.id === bidId);
-      if (lotBid) {
-        lotBid.status = BidStatus.WITHDRAWN;
-        lotBid.updatedAt = new Date();
-      }
-
-      const activeBids = lot.bids.filter((b: any) => b.status === BidStatus.PENDING);
-      if (activeBids.length === 0 && lot.status === CropLotStatus.BIDDING) {
-        lot.status = CropLotStatus.OPEN;
-      }
+      if (lotBid) lotBid.status = BidStatus.WITHDRAWN;
     }
 
     await this.auditService.log({
       actorId: buyerId,
       action: AuditAction.BID_CANCELLED,
-      bidId,
       lotId: bid.lotId,
-      oldStatus: BidStatus.PENDING,
-      newStatus: BidStatus.WITHDRAWN,
+      bidId: bid.id,
       price: bid.price,
       metadata: {
-        cropName: lot?.crop?.name || 'Crop',
-        reason: 'Cancelled by buyer before farmer acceptance',
+        cropName: bid.lot?.crop?.name,
+        buyerName: bid.buyer?.name,
       },
     });
+
+    if (bid.lot?.farmer?.id || lot?.farmerId) {
+      await this.notificationsService.create({
+        recipientId: bid.lot?.farmer?.id || lot?.farmerId,
+        type: NotificationType.BID_CANCELLED,
+        title: 'Bid Withdrawn by Buyer',
+        message: `${bid.buyer?.name || 'Buyer'} has withdrawn their pending offer on ${bid.lot?.crop?.name || 'your crop'}.`,
+        entityType: 'LOT',
+        entityId: bid.lotId,
+      });
+    }
 
     return bid;
   }
 
-  async getLotBids(lotId: string) {
+  async acceptBid(bidId: string, farmerId: string, userRole: Role) {
     if (!this.prisma.isConnected) {
-      return FALLBACK_BIDS.filter((b) => b.lotId === lotId);
-    }
-
-    try {
-      return await this.prisma.bid.findMany({
-        where: { lotId },
-        orderBy: { price: 'desc' },
-        include: {
-          buyer: {
-            select: {
-              id: true,
-              name: true,
-              district: true,
-              state: true,
-              isVerified: true,
-            },
-          },
-        },
-      });
-    } catch (err) {
-      return FALLBACK_BIDS.filter((b) => b.lotId === lotId);
-    }
-  }
-
-  async getMyBids(userId: string, role: Role) {
-    if (!this.prisma.isConnected) {
-      if (role === Role.BUYER) {
-        return FALLBACK_BIDS.filter((b) => b.buyerId === userId);
-      }
-      return FALLBACK_BIDS.filter((b) => b.lot?.farmerId === userId);
-    }
-
-    try {
-      if (role === Role.BUYER) {
-        return await this.prisma.bid.findMany({
-          where: { buyerId: userId },
-          orderBy: { createdAt: 'desc' },
-          include: {
-            lot: {
-              include: {
-                crop: true,
-                farmer: {
-                  select: {
-                    id: true,
-                    name: true,
-                    district: true,
-                    state: true,
-                    isVerified: true,
-                  },
-                },
-              },
-            },
-          },
-        });
-      }
-
-      return await this.prisma.bid.findMany({
-        where: {
-          lot: { farmerId: userId },
-        },
-        orderBy: { createdAt: 'desc' },
-        include: {
-          buyer: {
-            select: {
-              id: true,
-              name: true,
-              district: true,
-              state: true,
-              isVerified: true,
-            },
-          },
-          lot: {
-            include: { crop: true },
-          },
-        },
-      });
-    } catch (err) {
-      if (role === Role.BUYER) {
-        return FALLBACK_BIDS.filter((b) => b.buyerId === userId);
-      }
-      return FALLBACK_BIDS.filter((b) => b.lot?.farmerId === userId);
-    }
-  }
-
-  async acceptBid(bidId: string, userId: string, userRole: Role) {
-    if (!this.prisma.isConnected) {
-      return this.acceptBidInMemory(bidId, userId, userRole);
+      return this.acceptBidInMemory(bidId, farmerId, userRole);
     }
 
     try {
       const bid = await this.prisma.bid.findUnique({
         where: { id: bidId },
-        include: { lot: { include: { crop: true } } },
+        include: {
+          lot: {
+            include: { crop: true, bids: true },
+          },
+          buyer: true,
+        },
       });
+
       if (!bid) throw new NotFoundException(`Bid with ID ${bidId} not found.`);
-      if (bid.lot.farmerId !== userId && userRole !== Role.ADMIN) {
-        throw new ForbiddenException('You are not authorized to accept bids for this lot.');
+
+      if (bid.lot.farmerId !== farmerId && userRole !== Role.ADMIN) {
+        throw new ForbiddenException('Only the lot owner or admin can accept bids.');
       }
+
       if (bid.status !== BidStatus.PENDING) {
-        throw new BadRequestException(`Cannot accept a bid with status ${bid.status}.`);
+        throw new BadRequestException(`Only pending bids can be accepted. Current status: ${bid.status}.`);
       }
 
-      const totalAmount = Math.round(bid.price * bid.quantity * 100) / 100;
+      if (bid.lot.status === CropLotStatus.SOLD) {
+        throw new BadRequestException('This crop lot is already sold and finalized.');
+      }
 
-      return await this.prisma.$transaction(async (tx) => {
-        const acceptedBid = await tx.bid.update({
+      const totalAmount = bid.price * bid.quantity;
+
+      const [acceptedBid, updatedLot, transaction, payment] = await this.prisma.$transaction(async (tx) => {
+        // 1. Accept selected bid
+        const accepted = await tx.bid.update({
           where: { id: bidId },
-          data: { status: BidStatus.ACCEPTED, updatedAt: new Date() },
+          data: { status: BidStatus.ACCEPTED },
         });
 
+        // 2. Reject other pending bids on this lot
         await tx.bid.updateMany({
           where: {
             lotId: bid.lotId,
             id: { not: bidId },
             status: BidStatus.PENDING,
           },
-          data: { status: BidStatus.REJECTED, updatedAt: new Date() },
+          data: { status: BidStatus.REJECTED },
         });
 
-        await tx.cropLot.update({
+        // 3. Mark lot as SOLD
+        const lot = await tx.cropLot.update({
           where: { id: bid.lotId },
           data: { status: CropLotStatus.SOLD },
         });
 
-        const transaction = await tx.transaction.create({
+        // 4. Create Transaction
+        const txn = await tx.transaction.create({
           data: {
             lotId: bid.lotId,
-            buyerId: bid.buyerId,
-            farmerId: bid.lot.farmerId,
             acceptedBidId: bid.id,
+            farmerId: bid.lot.farmerId,
+            buyerId: bid.buyerId,
             agreedPrice: bid.price,
             quantity: bid.quantity,
             totalAmount,
@@ -623,47 +583,84 @@ export class BidsService {
           },
         });
 
-        const payment = await tx.payment.create({
+        // 5. Create Payment record in PENDING state
+        const pay = await tx.payment.create({
           data: {
-            transactionId: transaction.id,
+            transactionId: txn.id,
             amount: totalAmount,
             status: PaymentStatus.PENDING,
           },
         });
 
-        await this.auditService.log({
-          actorId: userId,
-          action: AuditAction.BID_ACCEPTED,
-          bidId,
-          lotId: bid.lotId,
-          price: bid.price,
-          newQuantity: bid.quantity,
-          metadata: {
-            cropName: bid.lot?.crop?.name,
-            totalAmount,
-            buyerId: bid.buyerId,
-          },
-        });
-
-        return { acceptedBid, transaction, payment };
+        return [accepted, lot, txn, pay];
       });
-    } catch (err) {
-      if (err instanceof NotFoundException || err instanceof ForbiddenException || err instanceof BadRequestException) {
-        throw err;
+
+      await this.auditService.log({
+        actorId: farmerId,
+        action: AuditAction.BID_ACCEPTED,
+        lotId: bid.lotId,
+        bidId: bid.id,
+        price: bid.price,
+        newQuantity: bid.quantity,
+        metadata: {
+          transactionId: transaction.id,
+          totalAmount,
+          cropName: bid.lot.crop?.name,
+        },
+      });
+
+      // Send persistent notification to the winning buyer
+      await this.notificationsService.create({
+        recipientId: bid.buyerId,
+        type: NotificationType.BID_ACCEPTED,
+        title: 'Offer Accepted! Purchase Contract Created',
+        message: `Your bid of ₹${bid.price.toLocaleString('en-IN')}/Qtl for ${bid.quantity} ${bid.lot.unit} of ${bid.lot.crop?.name || 'crop'} was accepted! Total: ₹${totalAmount.toLocaleString('en-IN')}.`,
+        entityType: 'TRANSACTION',
+        entityId: transaction.id,
+      });
+
+      // Notify competing bidders
+      const otherBids = bid.lot.bids.filter((b) => b.id !== bidId && b.status === BidStatus.PENDING);
+      for (const other of otherBids) {
+        await this.notificationsService.create({
+          recipientId: other.buyerId,
+          type: NotificationType.BID_REJECTED,
+          title: 'Bid Update: Deal Finalized with Competing Offer',
+          message: `The farmer accepted another offer for the ${bid.lot.crop?.name || 'crop'} lot. Your bid has been closed.`,
+          entityType: 'LOT',
+          entityId: bid.lotId,
+        });
       }
-      return this.acceptBidInMemory(bidId, userId, userRole);
+
+      return {
+        bid: acceptedBid,
+        lot: updatedLot,
+        transaction,
+        payment,
+      };
+    } catch (err) {
+      if (err instanceof NotFoundException || err instanceof ForbiddenException || err instanceof BadRequestException) throw err;
+      return this.acceptBidInMemory(bidId, farmerId, userRole);
     }
   }
 
-  private async acceptBidInMemory(bidId: string, userId: string, userRole: Role) {
+  private async acceptBidInMemory(bidId: string, farmerId: string, userRole: Role) {
     const bid = FALLBACK_BIDS.find((b) => b.id === bidId);
     if (!bid) throw new NotFoundException(`Bid with ID ${bidId} not found.`);
-    const lot = FALLBACK_LOTS.find((l) => l.id === bid.lotId) || bid.lot;
-    if (lot && lot.farmerId !== userId && userRole !== Role.ADMIN) {
-      throw new ForbiddenException('You are not authorized to accept bids for this lot.');
+
+    const lot = FALLBACK_LOTS.find((l) => l.id === bid.lotId);
+    if (!lot) throw new NotFoundException(`Associated crop lot not found.`);
+
+    if (lot.farmerId !== farmerId && userRole !== Role.ADMIN) {
+      throw new ForbiddenException('Only the lot owner or admin can accept bids.');
     }
+
     if (bid.status !== BidStatus.PENDING) {
-      throw new BadRequestException(`Cannot accept a bid with status ${bid.status}.`);
+      throw new BadRequestException(`Only pending bids can be accepted. Current status: ${bid.status}.`);
+    }
+
+    if (lot.status === CropLotStatus.SOLD) {
+      throw new BadRequestException('This crop lot is already sold.');
     }
 
     bid.status = BidStatus.ACCEPTED;
@@ -676,74 +673,73 @@ export class BidsService {
       }
     });
 
-    if (lot) lot.status = CropLotStatus.SOLD;
+    lot.status = CropLotStatus.SOLD;
+    lot.updatedAt = new Date();
 
-    const totalAmount = Math.round(bid.price * bid.quantity * 100) / 100;
-    const transaction = {
+    const totalAmount = bid.price * bid.quantity;
+    const newTxn = {
       id: `txn-${Date.now()}`,
-      lotId: bid.lotId,
-      buyerId: bid.buyerId,
-      farmerId: lot ? lot.farmerId : userId,
+      lotId: lot.id,
       acceptedBidId: bid.id,
+      farmerId: lot.farmerId,
+      buyerId: bid.buyerId,
       agreedPrice: bid.price,
       quantity: bid.quantity,
       totalAmount,
       status: TransactionStatus.INITIATED,
       createdAt: new Date(),
-      lot: {
-        id: lot.id,
-        crop: lot.crop,
-        quantity: lot.quantity,
-        expectedPrice: lot.expectedPrice,
-        location: lot.location,
-      },
+      updatedAt: new Date(),
+      farmer: lot.farmer,
       buyer: bid.buyer,
-      farmer: lot ? lot.farmer : { name: 'Ramesh Patel' },
+      lot,
+      payment: {
+        id: `pay-${Date.now()}`,
+        amount: totalAmount,
+        status: PaymentStatus.PENDING,
+        paymentReference: null,
+      },
     };
-    FALLBACK_TRANSACTIONS.unshift(transaction);
 
-    const payment = {
-      id: `pay-${Date.now()}`,
-      transactionId: transaction.id,
-      amount: totalAmount,
-      status: PaymentStatus.PENDING,
-      createdAt: new Date(),
-    };
-    FALLBACK_PAYMENTS.unshift(payment);
+    FALLBACK_TRANSACTIONS.unshift(newTxn);
+    lot.transaction = newTxn;
 
     await this.auditService.log({
-      actorId: userId,
+      actorId: farmerId,
       action: AuditAction.BID_ACCEPTED,
-      bidId,
       lotId: bid.lotId,
+      bidId: bid.id,
       price: bid.price,
       newQuantity: bid.quantity,
       metadata: {
-        cropName: lot?.crop?.name || 'Crop',
+        transactionId: newTxn.id,
         totalAmount,
-        buyerId: bid.buyerId,
+        cropName: lot.crop?.name,
       },
     });
 
+    await this.notificationsService.create({
+      recipientId: bid.buyerId,
+      type: NotificationType.BID_ACCEPTED,
+      title: 'Offer Accepted! Purchase Contract Created',
+      message: `Your bid of ₹${bid.price.toLocaleString('en-IN')}/Qtl for ${bid.quantity} Qtl of ${lot.crop?.name || 'crop'} was accepted! Total: ₹${totalAmount.toLocaleString('en-IN')}.`,
+      entityType: 'TRANSACTION',
+      entityId: newTxn.id,
+    });
+
     return {
-      acceptedBid: bid,
-      transaction,
-      payment,
+      bid,
+      lot,
+      transaction: newTxn,
+      payment: newTxn.payment,
     };
   }
 
-  async rejectBid(bidId: string, userId: string, userRole: Role) {
+  async rejectBid(bidId: string, farmerId: string, userRole: Role) {
     if (!this.prisma.isConnected) {
       const bid = FALLBACK_BIDS.find((b) => b.id === bidId);
       if (!bid) throw new NotFoundException(`Bid with ID ${bidId} not found.`);
       bid.status = BidStatus.REJECTED;
       bid.updatedAt = new Date();
-      await this.auditService.log({
-        actorId: userId,
-        action: AuditAction.BID_REJECTED,
-        bidId,
-        lotId: bid.lotId,
-      });
       return bid;
     }
 
@@ -753,30 +749,94 @@ export class BidsService {
         include: { lot: true },
       });
       if (!bid) throw new NotFoundException(`Bid with ID ${bidId} not found.`);
-      if (bid.lot.farmerId !== userId && userRole !== Role.ADMIN) {
-        throw new ForbiddenException('You are not authorized to reject bids for this lot.');
+      if (bid.lot.farmerId !== farmerId && userRole !== Role.ADMIN) {
+        throw new ForbiddenException('Only the lot owner or admin can reject bids.');
       }
-      const updatedBid = await this.prisma.bid.update({
+      return await this.prisma.bid.update({
         where: { id: bidId },
-        data: { status: BidStatus.REJECTED, updatedAt: new Date() },
+        data: { status: BidStatus.REJECTED },
       });
-
-      await this.auditService.log({
-        actorId: userId,
-        action: AuditAction.BID_REJECTED,
-        bidId,
-        lotId: bid.lotId,
-      });
-
-      return updatedBid;
     } catch (err) {
       const bid = FALLBACK_BIDS.find((b) => b.id === bidId);
       if (bid) {
         bid.status = BidStatus.REJECTED;
-        bid.updatedAt = new Date();
         return bid;
       }
       throw err;
     }
+  }
+
+  async findByLot(lotId: string) {
+    if (!this.prisma.isConnected) {
+      return FALLBACK_BIDS.filter((b) => b.lotId === lotId);
+    }
+    try {
+      return await this.prisma.bid.findMany({
+        where: { lotId },
+        orderBy: { price: 'desc' },
+        include: {
+          buyer: {
+            select: { id: true, name: true, district: true, state: true, isVerified: true },
+          },
+        },
+      });
+    } catch (err) {
+      return FALLBACK_BIDS.filter((b) => b.lotId === lotId);
+    }
+  }
+
+  async getLotBids(lotId: string) {
+    return this.findByLot(lotId);
+  }
+
+  async findMyBids(buyerId: string) {
+    if (!this.prisma.isConnected) {
+      return FALLBACK_BIDS.filter((b) => b.buyerId === buyerId);
+    }
+    try {
+      return await this.prisma.bid.findMany({
+        where: { buyerId },
+        orderBy: { createdAt: 'desc' },
+        include: {
+          lot: {
+            include: {
+              crop: true,
+              farmer: {
+                select: { id: true, name: true, phone: true, district: true, state: true },
+              },
+            },
+          },
+        },
+      });
+    } catch (err) {
+      return FALLBACK_BIDS.filter((b) => b.buyerId === buyerId);
+    }
+  }
+
+  async getMyBids(userId: string, role?: Role) {
+    if (role === Role.FARMER) {
+      if (!this.prisma.isConnected) {
+        return FALLBACK_BIDS.filter((b) => {
+          const lot = FALLBACK_LOTS.find((l) => l.id === b.lotId);
+          return lot?.farmerId === userId;
+        });
+      }
+      try {
+        return await this.prisma.bid.findMany({
+          where: { lot: { farmerId: userId } },
+          orderBy: { createdAt: 'desc' },
+          include: {
+            buyer: { select: { id: true, name: true, district: true, state: true } },
+            lot: { include: { crop: true } },
+          },
+        });
+      } catch {
+        return FALLBACK_BIDS.filter((b) => {
+          const lot = FALLBACK_LOTS.find((l) => l.id === b.lotId);
+          return lot?.farmerId === userId;
+        });
+      }
+    }
+    return this.findMyBids(userId);
   }
 }

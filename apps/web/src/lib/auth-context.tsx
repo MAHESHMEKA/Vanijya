@@ -1,19 +1,37 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { api } from './api';
 
 export interface User {
   id: string;
   name: string;
-  phone?: string;
-  email?: string;
+  phone?: string | null;
+  email?: string | null;
   role: 'FARMER' | 'BUYER' | 'ADMIN';
-  district?: string;
-  state?: string;
-  location?: string;
+  verificationStatus?: 'PENDING' | 'VERIFIED' | 'REJECTED';
+  approvalStatus?: 'PENDING' | 'APPROVED' | 'REJECTED';
+  rejectionReason?: string | null;
+  district?: string | null;
+  state?: string | null;
+  village?: string | null;
+  location?: string | null;
+  primaryCrop?: string | null;
+  farmSize?: number | null;
+  preferredLanguage?: string | null;
+  organization?: string | null;
+  contactPerson?: string | null;
+  businessType?: string | null;
+  warehouseLocation?: string | null;
+  gstin?: string | null;
+  fssai?: string | null;
+  kccNumber?: string | null;
+  apmcLicense?: string | null;
   isVerified?: boolean;
+  profileCompletionPercentage?: number;
+  profileCompletionStatus?: 'COMPLETE' | 'INCOMPLETE';
+  missingFields?: string[];
 }
 
 interface AuthContextType {
@@ -48,14 +66,35 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
 
-  const loadSession = async () => {
+  const loadSession = useCallback(async () => {
     try {
       const storedToken = localStorage.getItem('vanijya_token');
       const storedUser = localStorage.getItem('vanijya_user');
 
-      if (storedToken && storedUser) {
+      if (storedToken) {
         setToken(storedToken);
-        setUser(JSON.parse(storedUser));
+        if (storedUser) {
+          try {
+            setUser(JSON.parse(storedUser));
+          } catch {}
+        }
+
+        // Validate token against backend /auth/me
+        try {
+          const freshUser = await api.get<User>('/auth/me');
+          if (freshUser) {
+            setUser(freshUser);
+            localStorage.setItem('vanijya_user', JSON.stringify(freshUser));
+          }
+        } catch (err: any) {
+          // Token expired or invalid
+          if (err.statusCode === 401 || err.message?.includes('401') || err.message?.includes('expired')) {
+            localStorage.removeItem('vanijya_token');
+            localStorage.removeItem('vanijya_user');
+            setToken(null);
+            setUser(null);
+          }
+        }
       }
     } catch {
       localStorage.removeItem('vanijya_token');
@@ -63,11 +102,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     loadSession();
-  }, []);
+  }, [loadSession]);
 
   const login = async (
     identifier: string,
@@ -82,14 +121,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         password,
         captchaId,
         captchaAnswer,
+        role: selectedRole,
       });
 
-      let loggedInUser = res.user;
-
-      // If user chose a specific role and it's valid, respect the role context
-      if (selectedRole && loggedInUser.role !== selectedRole && loggedInUser.role === 'ADMIN') {
-        loggedInUser = { ...loggedInUser, role: selectedRole };
-      }
+      const loggedInUser = res.user;
 
       setToken(res.accessToken);
       setUser(loggedInUser);
@@ -114,8 +149,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const refreshUser = async () => {
     try {
       const updatedUser = await api.get<User>('/users/me');
-      setUser(updatedUser);
-      localStorage.setItem('vanijya_user', JSON.stringify(updatedUser));
+      if (updatedUser) {
+        setUser(updatedUser);
+        localStorage.setItem('vanijya_user', JSON.stringify(updatedUser));
+      }
     } catch {
       // Ignore if offline
     }

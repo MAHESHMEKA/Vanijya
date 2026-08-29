@@ -25,10 +25,10 @@ export class AuthController {
   }
 
   @Post('register')
-  @ApiOperation({ summary: 'Register a new Farmer, Buyer, or Admin' })
-  @ApiResponse({ status: 201, type: AuthResponseDto, description: 'User successfully registered' })
+  @ApiOperation({ summary: 'Register a new Farmer or Buyer for admin verification' })
+  @ApiResponse({ status: 201, description: 'Application successfully submitted for admin approval' })
   @ApiResponse({ status: 409, description: 'Phone or email already registered' })
-  register(@Body() dto: RegisterDto): Promise<AuthResponseDto> {
+  register(@Body() dto: RegisterDto) {
     return this.authService.register(dto);
   }
 

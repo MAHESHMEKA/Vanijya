@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { AuditAction, Role } from '@prisma/client';
-import { FALLBACK_USERS } from '../auth/auth.service';
+import { FALLBACK_USERS } from '../auth/fallback-users';
 
 export interface AuditEntry {
   id?: string;

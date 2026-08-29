@@ -1,4 +1,4 @@
-import { Controller, Get, Query, UseGuards } from '@nestjs/common';
+import { Controller, Get, Patch, Post, Body, Param, Query, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { AdminService } from './admin.service';
 import { TransactionsService } from '../transactions/transactions.service';
@@ -6,7 +6,8 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
-import { Role } from '@prisma/client';
+import { Role, ApprovalStatus } from '@prisma/client';
+import { RejectUserDto } from './dto/reject-user.dto';
 
 @ApiTags('Admin Command & Monitoring')
 @Controller('admin')
@@ -24,6 +25,43 @@ export class AdminController {
   @ApiResponse({ status: 200, description: 'Admin statistics returned' })
   getDashboardStats() {
     return this.adminService.getDashboardStats();
+  }
+
+  @Get('registrations')
+  @ApiOperation({ summary: 'Get registration requests with filters (role, status, search, sort)' })
+  @ApiResponse({ status: 200, description: 'List of user registration requests' })
+  getRegistrations(
+    @Query('role') role?: Role,
+    @Query('status') status?: ApprovalStatus,
+    @Query('search') search?: string,
+    @Query('sort') sort?: 'asc' | 'desc',
+  ) {
+    return this.adminService.getRegistrations({ role, status, search, sort });
+  }
+
+  @Get('registrations/:id')
+  @ApiOperation({ summary: 'Get full registration details for applicant review' })
+  @ApiResponse({ status: 200, description: 'Applicant dossier returned' })
+  getRegistrationById(@Param('id') id: string) {
+    return this.adminService.getRegistrationById(id);
+  }
+
+  @Patch('users/:id/approve')
+  @ApiOperation({ summary: 'Approve a farmer or buyer registration request' })
+  @ApiResponse({ status: 200, description: 'User approved and notified' })
+  approveUser(@Param('id') userId: string, @CurrentUser('id') adminId: string) {
+    return this.adminService.approveUser(userId, adminId);
+  }
+
+  @Patch('users/:id/reject')
+  @ApiOperation({ summary: 'Reject a farmer or buyer registration request with reason' })
+  @ApiResponse({ status: 200, description: 'User rejected and notified' })
+  rejectUser(
+    @Param('id') userId: string,
+    @CurrentUser('id') adminId: string,
+    @Body() dto: RejectUserDto,
+  ) {
+    return this.adminService.rejectUser(userId, adminId, dto.reason);
   }
 
   @Get('lots')

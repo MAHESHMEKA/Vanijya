@@ -1,12 +1,16 @@
-import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { UpdatePaymentStatusDto } from './dto/update-payment-status.dto';
-import { PaymentStatus, Role, TransactionStatus } from '@prisma/client';
+import { PaymentStatus, Role, TransactionStatus, NotificationType } from '@prisma/client';
 import { FALLBACK_PAYMENTS, FALLBACK_TRANSACTIONS } from '../bids/bids.service';
+import { NotificationsService } from '../notifications/notifications.service';
 
 @Injectable()
 export class PaymentsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private notificationsService: NotificationsService,
+  ) {}
 
   async getPaymentByTransaction(transactionId: string, userId: string, role: Role) {
     if (!this.prisma.isConnected) {
@@ -71,12 +75,26 @@ export class PaymentsService {
         throw new ForbiddenException('You are not authorized to update this payment.');
       }
 
+      if (pay.status === PaymentStatus.PAID && dto.status !== PaymentStatus.PAID) {
+        throw new BadRequestException('Settled payments cannot be reverted to pending or initiated.');
+      }
+
       pay.status = dto.status;
       if (dto.paymentReference) pay.paymentReference = dto.paymentReference;
       pay.paidAt = new Date();
 
       if (dto.status === PaymentStatus.PAID && txn) {
         txn.status = TransactionStatus.COMPLETED;
+        if (txn.farmerId) {
+          await this.notificationsService.create({
+            recipientId: txn.farmerId,
+            type: NotificationType.PAYMENT_PAID,
+            title: 'Payment Received & Settled',
+            message: `Payment of ₹${(txn.totalAmount || pay.amount).toLocaleString('en-IN')} has been settled by the buyer (Ref: ${dto.paymentReference || 'UTR-891244'}).`,
+            entityType: 'TRANSACTION',
+            entityId: transactionId,
+          });
+        }
       }
 
       return pay;
@@ -85,7 +103,7 @@ export class PaymentsService {
     try {
       const payment = await this.prisma.payment.findUnique({
         where: { transactionId },
-        include: { transaction: true },
+        include: { transaction: { include: { lot: { include: { crop: true } } } } },
       });
 
       if (!payment) {
@@ -98,6 +116,11 @@ export class PaymentsService {
         payment.transaction.farmerId !== userId
       ) {
         throw new ForbiddenException('You are not authorized to update this payment.');
+      }
+
+      // Validate state transition
+      if (payment.status === PaymentStatus.PAID && dto.status !== PaymentStatus.PAID) {
+        throw new BadRequestException('Settled payments cannot be reverted.');
       }
 
       const updatedPayment = await this.prisma.payment.update({
@@ -113,10 +136,21 @@ export class PaymentsService {
           where: { id: transactionId },
           data: { status: TransactionStatus.COMPLETED },
         });
+
+        // Notify farmer
+        await this.notificationsService.create({
+          recipientId: payment.transaction.farmerId,
+          type: NotificationType.PAYMENT_PAID,
+          title: 'Payment Received & Settled',
+          message: `Payment of ₹${payment.amount.toLocaleString('en-IN')} for ${payment.transaction.lot?.crop?.name || 'crop'} has been marked as PAID (Ref: ${dto.paymentReference || updatedPayment.paymentReference || 'Bank UTR'}).`,
+          entityType: 'TRANSACTION',
+          entityId: transactionId,
+        });
       }
 
       return updatedPayment;
     } catch (err) {
+      if (err instanceof NotFoundException || err instanceof ForbiddenException || err instanceof BadRequestException) throw err;
       const pay = FALLBACK_PAYMENTS.find((p) => p.transactionId === transactionId);
       if (pay) {
         const txn = FALLBACK_TRANSACTIONS.find((t) => t.id === transactionId);

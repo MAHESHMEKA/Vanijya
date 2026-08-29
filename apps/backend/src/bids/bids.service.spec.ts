@@ -2,7 +2,9 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { BidsService } from './bids.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { AuditService } from '../audit/audit.service';
-import { BidStatus, CropLotStatus, PaymentStatus, Role, TransactionStatus, AuditAction } from '@prisma/client';
+import { NotificationsService } from '../notifications/notifications.service';
+import { UsersService } from '../users/users.service';
+import { BidStatus, CropLotStatus, PaymentStatus, Role, TransactionStatus, AuditAction, NotificationType } from '@prisma/client';
 import { BadRequestException, ForbiddenException, NotFoundException } from '@nestjs/common';
 
 describe('BidsService', () => {
@@ -34,6 +36,9 @@ describe('BidsService', () => {
     auditLog: {
       create: jest.fn(),
     },
+    notification: {
+      create: jest.fn(),
+    },
     $transaction: jest.fn(),
   };
 
@@ -42,12 +47,36 @@ describe('BidsService', () => {
     getRecent: jest.fn().mockResolvedValue([]),
   };
 
+  const mockNotificationsService = {
+    create: jest.fn().mockResolvedValue({ id: 'notif-1' }),
+    findAllForUser: jest.fn().mockResolvedValue([]),
+    getUnreadCount: jest.fn().mockResolvedValue(0),
+    markAsRead: jest.fn().mockResolvedValue({ success: true }),
+    markAllAsRead: jest.fn().mockResolvedValue({ success: true, count: 0 }),
+  };
+
+  const mockUsersService = {
+    getProfile: jest.fn().mockResolvedValue({
+      id: 'buyer-1',
+      name: 'FreshCart Agro Ltd.',
+      role: 'BUYER',
+      district: 'Mumbai',
+      state: 'Maharashtra',
+      location: 'Vashi APMC',
+      organization: 'FreshCart Agro Ltd',
+      profileCompletionStatus: 'COMPLETE',
+      profileCompletionPercentage: 100,
+    }),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         BidsService,
         { provide: PrismaService, useValue: mockPrismaService },
         { provide: AuditService, useValue: mockAuditService },
+        { provide: NotificationsService, useValue: mockNotificationsService },
+        { provide: UsersService, useValue: mockUsersService },
       ],
     }).compile();
 
@@ -100,6 +129,24 @@ describe('BidsService', () => {
         service.createBid('lot-1', 'buyer-1', { price: 2300, quantity: 50 }),
       ).rejects.toThrow(BadRequestException);
     });
+
+    it('should reject bids if buyer profile is incomplete', async () => {
+      mockUsersService.getProfile.mockResolvedValueOnce({
+        id: 'buyer-2',
+        name: 'Incomplete Buyer',
+        role: 'BUYER',
+        district: null,
+        state: null,
+        location: null,
+        organization: null,
+        profileCompletionStatus: 'INCOMPLETE',
+        missingFields: ['district', 'state', 'location', 'organization'],
+      });
+
+      await expect(
+        service.createBid('lot-1', 'buyer-2', { price: 2300, quantity: 50 }),
+      ).rejects.toThrow(BadRequestException);
+    });
   });
 
   describe('updateBidQuantity', () => {
@@ -108,7 +155,8 @@ describe('BidsService', () => {
         id: 'bid-1',
         buyerId: 'buyer-1',
         status: BidStatus.PENDING,
-        lot: { id: 'lot-1', quantity: 100, unit: 'QUINTAL', status: CropLotStatus.OPEN },
+        lot: { id: 'lot-1', quantity: 100, unit: 'QUINTAL', status: CropLotStatus.OPEN, farmer: { id: 'farmer-1' } },
+        buyer: { name: 'Buyer 1' },
       });
 
       await expect(
@@ -122,7 +170,8 @@ describe('BidsService', () => {
         buyerId: 'buyer-1',
         quantity: 80,
         status: BidStatus.PENDING,
-        lot: { id: 'lot-1', quantity: 100, unit: 'QUINTAL', status: CropLotStatus.OPEN },
+        lot: { id: 'lot-1', quantity: 100, unit: 'QUINTAL', status: CropLotStatus.OPEN, farmer: { id: 'farmer-1' } },
+        buyer: { name: 'Buyer 1' },
       });
 
       await expect(
@@ -136,7 +185,8 @@ describe('BidsService', () => {
         buyerId: 'buyer-1',
         quantity: 80,
         status: BidStatus.ACCEPTED,
-        lot: { id: 'lot-1', quantity: 100, unit: 'QUINTAL', status: CropLotStatus.SOLD },
+        lot: { id: 'lot-1', quantity: 100, unit: 'QUINTAL', status: CropLotStatus.SOLD, farmer: { id: 'farmer-1' } },
+        buyer: { name: 'Buyer 1' },
       });
 
       await expect(
@@ -152,7 +202,8 @@ describe('BidsService', () => {
         quantity: 80,
         price: 2250,
         status: BidStatus.PENDING,
-        lot: { id: 'lot-1', quantity: 100, unit: 'QUINTAL', status: CropLotStatus.OPEN, crop: { name: 'Tomato' } },
+        lot: { id: 'lot-1', quantity: 100, unit: 'QUINTAL', status: CropLotStatus.OPEN, crop: { name: 'Tomato' }, farmerId: 'farmer-1' },
+        buyer: { name: 'FreshCart Agro Ltd.' },
       });
 
       mockPrismaService.bid.update.mockResolvedValue({
@@ -170,6 +221,12 @@ describe('BidsService', () => {
           action: AuditAction.QUANTITY_MODIFIED,
           oldQuantity: 80,
           newQuantity: 60,
+        }),
+      );
+      expect(mockNotificationsService.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          recipientId: 'farmer-1',
+          type: NotificationType.BID_MODIFIED,
         }),
       );
     });
@@ -202,7 +259,7 @@ describe('BidsService', () => {
       ).rejects.toThrow(BadRequestException);
     });
 
-    it('should mark pending bid as WITHDRAWN and log audit record', async () => {
+    it('should mark pending bid as WITHDRAWN and log audit record and notify farmer', async () => {
       mockPrismaService.bid.findUnique.mockResolvedValue({
         id: 'bid-1',
         buyerId: 'buyer-1',
@@ -210,7 +267,8 @@ describe('BidsService', () => {
         price: 2250,
         quantity: 100,
         status: BidStatus.PENDING,
-        lot: { id: 'lot-1', status: CropLotStatus.BIDDING, crop: { name: 'Tomato' } },
+        lot: { id: 'lot-1', status: CropLotStatus.BIDDING, crop: { name: 'Tomato' }, farmerId: 'farmer-1' },
+        buyer: { name: 'FreshCart Agro Ltd.' },
       });
 
       mockPrismaService.bid.update.mockResolvedValue({
@@ -226,8 +284,12 @@ describe('BidsService', () => {
       expect(mockAuditService.log).toHaveBeenCalledWith(
         expect.objectContaining({
           action: AuditAction.BID_CANCELLED,
-          oldStatus: BidStatus.PENDING,
-          newStatus: BidStatus.WITHDRAWN,
+        }),
+      );
+      expect(mockNotificationsService.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          recipientId: 'farmer-1',
+          type: NotificationType.BID_CANCELLED,
         }),
       );
     });

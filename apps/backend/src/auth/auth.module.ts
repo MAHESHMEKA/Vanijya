@@ -7,6 +7,8 @@ import { CaptchaService } from './captcha.service';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { RolesGuard } from './guards/roles.guard';
+import { NotificationsModule } from '../notifications/notifications.module';
+import { AuditModule } from '../audit/audit.module';
 
 @Module({
   imports: [
@@ -15,6 +17,8 @@ import { RolesGuard } from './guards/roles.guard';
       secret: process.env.JWT_SECRET || 'vanijya_super_secret_jwt_key_sih2024',
       signOptions: { expiresIn: process.env.JWT_EXPIRES_IN || '7d' },
     }),
+    NotificationsModule,
+    AuditModule,
   ],
   controllers: [AuthController],
   providers: [AuthService, CaptchaService, JwtStrategy, JwtAuthGuard, RolesGuard],

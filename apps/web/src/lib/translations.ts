@@ -21,6 +21,27 @@ export interface UnifiedTranslations {
   roleBuyer: string;
   roleAdmin: string;
 
+  // Notification Center
+  notificationsTitle: string;
+  noNotifications: string;
+  markAllRead: string;
+  unreadCountLabel: string;
+  viewRelatedEntity: string;
+
+  // Profile Completion
+  profileCompletionBannerTitle: string;
+  profileCompletionBannerDesc: string;
+  btnCompleteProfile: string;
+  missingFieldsLabel: string;
+  profileCompleteBadge: string;
+  profileIncompleteBadge: string;
+  fieldDistrict: string;
+  fieldState: string;
+  fieldLocation: string;
+  fieldOrganization: string;
+  fieldName: string;
+  fieldContact: string;
+
   // Landing Page
   heroPill: string;
   heroHeadline: string;
@@ -107,6 +128,7 @@ export interface UnifiedTranslations {
   passwordPlaceholder: string;
   roleSelectLabel: string;
   btnSignIn: string;
+  btnCreateAccount: string;
   signingIn: string;
   securityVerification: string;
   securityCodeCaseNotice: string;
@@ -117,6 +139,75 @@ export interface UnifiedTranslations {
   captchaInputPlaceholder: string;
   chooseAccountTypeLabel: string;
   tradeEnrolledNotice: string;
+
+  // Signup & Registration Flow (/signup)
+  signupTitle: string;
+  signupSubtitle: string;
+  chooseAccountType: string;
+  accountTypeFarmer: string;
+  accountTypeBuyer: string;
+  accountTypeFarmerDesc: string;
+  accountTypeBuyerDesc: string;
+  stepPersonaSelect: string;
+  stepFillDetails: string;
+  stepPendingApproval: string;
+  confirmPasswordLabel: string;
+  confirmPasswordPlaceholder: string;
+  passwordStrengthWeak: string;
+  passwordStrengthMedium: string;
+  passwordStrengthStrong: string;
+  passwordMatchError: string;
+  passwordRuleNotice: string;
+  villageLabel: string;
+  villagePlaceholder: string;
+  primaryCropLabel: string;
+  farmSizeLabel: string;
+  preferredLanguageLabel: string;
+  contactPersonLabel: string;
+  businessTypeLabel: string;
+  warehouseLabel: string;
+  kccOptionalLabel: string;
+  apmcOptionalLabel: string;
+  gstinOptionalLabel: string;
+  fssaiOptionalLabel: string;
+  btnSubmitRegistration: string;
+  submittingRegistration: string;
+  registrationSubmittedTitle: string;
+  pendingApprovalBadge: string;
+  pendingApprovalDesc: string;
+  btnBackToLogin: string;
+  verifiedFarmerBadge: string;
+  verifiedBuyerBadge: string;
+
+  // Admin Registration Verification
+  tabRegistrations: string;
+  registrationsTitle: string;
+  registrationsSubtitle: string;
+  kpiPendingFarmers: string;
+  kpiPendingBuyers: string;
+  kpiApprovedToday: string;
+  kpiRejectedToday: string;
+  filterAllRoles: string;
+  filterAllApprovalStatuses: string;
+  searchRegistrationsPlaceholder: string;
+  btnViewApplication: string;
+  btnApproveApplication: string;
+  btnRejectApplication: string;
+  approveModalTitle: string;
+  approveModalConfirmDesc: string;
+  rejectModalTitle: string;
+  rejectModalDesc: string;
+  rejectionReasonPrompt: string;
+  rejectionReasonPlaceholder: string;
+  btnConfirmApprove: string;
+  btnConfirmReject: string;
+  appDossierTitle: string;
+  applicantDetails: string;
+  agriculturalProfile: string;
+  commercialProfile: string;
+  statusPendingApproval: string;
+  statusApproved: string;
+  statusRejected: string;
 
   // Farmer Flow
   farmerDashboardTitle: string;
@@ -207,6 +298,7 @@ export interface UnifiedTranslations {
   expectedRate: string;
   bidRateLabel: string;
   bidQtyLabel: string;
+  bidTotalValueLabel: string;
   messageLabel: string;
   messagePlaceholder: string;
   myBidsTitle: string;
@@ -278,6 +370,11 @@ export interface UnifiedTranslations {
   districtLabel: string;
   stateLabel: string;
   addressLabel: string;
+  orgLabel: string;
+  gstinLabel: string;
+  fssaiLabel: string;
+  kccLabel: string;
+  apmcLabel: string;
   btnSaveProfile: string;
   profileSavedSuccess: string;
 
@@ -311,6 +408,10 @@ export interface UnifiedTranslations {
   errCaptchaExpired: string;
   errTooManyAttempts: string;
   errServerError: string;
+  errProfileIncompleteLot: string;
+  errProfileIncompleteBid: string;
+  errAccountPendingApproval: string;
+  errAccountRejected: string;
 }
 
 export const translations: Record<Language, UnifiedTranslations> = {
@@ -333,6 +434,25 @@ export const translations: Record<Language, UnifiedTranslations> = {
     roleFarmer: 'Farmer (किसान)',
     roleBuyer: 'Buyer (व्यापारी / Procurer)',
     roleAdmin: 'Administrator (व्यवस्थापक)',
+
+    notificationsTitle: 'Notifications',
+    noNotifications: 'No notifications at this time',
+    markAllRead: 'Mark all as read',
+    unreadCountLabel: 'Unread',
+    viewRelatedEntity: 'View details',
+
+    profileCompletionBannerTitle: 'Complete Your Vanijya Profile',
+    profileCompletionBannerDesc: 'Required profile details must be completed to publish harvest lots or submit commercial sourcing bids.',
+    btnCompleteProfile: 'Complete Profile Details',
+    missingFieldsLabel: 'Missing details:',
+    profileCompleteBadge: 'Profile 100% Complete',
+    profileIncompleteBadge: 'Profile Incomplete',
+    fieldDistrict: 'District',
+    fieldState: 'State',
+    fieldLocation: 'Farm-Gate / Loading Location',
+    fieldOrganization: 'Company / Organization Name',
+    fieldName: 'Full Name',
+    fieldContact: 'Contact Number / Email',
 
     heroPill: 'Strengthening Market Linkages & Price Discovery',
     heroHeadline: 'Know the Best Price Before You Sell.',
@@ -417,6 +537,7 @@ export const translations: Record<Language, UnifiedTranslations> = {
     passwordPlaceholder: '••••••••',
     roleSelectLabel: 'Select Your Account Type',
     btnSignIn: 'Sign In to Vanijya',
+    btnCreateAccount: 'Create New Account',
     signingIn: 'Signing in...',
     securityVerification: 'Security Verification',
     securityCodeCaseNotice: 'Case-insensitive',
@@ -427,6 +548,73 @@ export const translations: Record<Language, UnifiedTranslations> = {
     captchaInputPlaceholder: 'e.g. K7P4X',
     chooseAccountTypeLabel: 'Choose account type / 1-Click Demo Fill:',
     tradeEnrolledNotice: 'Kisan Credit Card (KCC) & National APMC Trade Enrolled | Visual Security Verification',
+
+    signupTitle: 'Register on Vanijya National Portal',
+    signupSubtitle: 'Direct agricultural market linkages for Indian Farmers and Verified Commercial Buyers',
+    chooseAccountType: 'Choose Your Account Persona',
+    accountTypeFarmer: 'Farmer / Producer',
+    accountTypeBuyer: 'Institutional / Wholesale Buyer',
+    accountTypeFarmerDesc: 'Sell harvest directly at APMC benchmark rates with zero middleman commissions.',
+    accountTypeBuyerDesc: 'Source verified grade produce directly from farm-gates across India.',
+    stepPersonaSelect: '1. Select Persona',
+    stepFillDetails: '2. Register Details',
+    stepPendingApproval: '3. Admin Review',
+    confirmPasswordLabel: 'Confirm Password',
+    confirmPasswordPlaceholder: 'Re-enter your password',
+    passwordStrengthWeak: 'Weak Password (min 8 chars, mixed case, number & symbol required)',
+    passwordStrengthMedium: 'Medium Strength Password',
+    passwordStrengthStrong: 'Strong Secure Password',
+    passwordMatchError: 'Passwords do not match.',
+    passwordRuleNotice: 'Must be 8+ characters with uppercase, lowercase, number and symbol.',
+    villageLabel: 'Village / Gram Panchayat',
+    villagePlaceholder: 'e.g. Pimpalgaon Baswant',
+    primaryCropLabel: 'Primary Crop / Commodity',
+    farmSizeLabel: 'Farm Size (in Acres)',
+    preferredLanguageLabel: 'Preferred Portal Language',
+    contactPersonLabel: 'Authorized Contact Person',
+    businessTypeLabel: 'Business Category / Type',
+    warehouseLabel: 'Primary Warehouse / Hub Location',
+    kccOptionalLabel: 'Kisan Credit Card (KCC) Number (Optional)',
+    apmcOptionalLabel: 'APMC Mandi Registration Number (Optional)',
+    gstinOptionalLabel: 'GSTIN Registration (Optional)',
+    fssaiOptionalLabel: 'FSSAI Food Safety License (Optional)',
+    btnSubmitRegistration: 'Submit Application for Verification',
+    submittingRegistration: 'Submitting Application...',
+    registrationSubmittedTitle: 'Registration Submitted Successfully',
+    pendingApprovalBadge: 'Pending Admin Verification',
+    pendingApprovalDesc: 'Your Vanijya account application has been received and is awaiting review. You will be able to sign in once an administrator approves your registration.',
+    btnBackToLogin: 'Back to Sign In',
+    verifiedFarmerBadge: 'Verified Farmer',
+    verifiedBuyerBadge: 'Verified Buyer',
+
+    tabRegistrations: 'Registration Requests',
+    registrationsTitle: 'Applicant Verification Desk',
+    registrationsSubtitle: 'Review new Farmer and Commercial Buyer registration applications, verify credentials, and approve or reject access',
+    kpiPendingFarmers: 'Pending Farmers',
+    kpiPendingBuyers: 'Pending Buyers',
+    kpiApprovedToday: 'Approved Today',
+    kpiRejectedToday: 'Rejected Today',
+    filterAllRoles: 'All Account Types',
+    filterAllApprovalStatuses: 'All Verification Statuses',
+    searchRegistrationsPlaceholder: 'Search by applicant name, mobile, district, organization...',
+    btnViewApplication: 'Review Application',
+    btnApproveApplication: 'Approve User',
+    btnRejectApplication: 'Reject Request',
+    approveModalTitle: 'Confirm User Approval',
+    approveModalConfirmDesc: 'Are you sure you want to approve this applicant? They will immediately receive access to login and trade on the Vanijya portal.',
+    rejectModalTitle: 'Reject User Registration',
+    rejectModalDesc: 'Please provide a clear, constructive reason for rejection. The applicant will see this reason when attempting to sign in.',
+    rejectionReasonPrompt: 'Reason for Rejection (Required)',
+    rejectionReasonPlaceholder: 'e.g. Invalid land ownership record or unmatched GSTIN registration number.',
+    btnConfirmApprove: 'Confirm & Approve User',
+    btnConfirmReject: 'Confirm & Reject Application',
+    appDossierTitle: 'Applicant Verification Dossier',
+    applicantDetails: 'Identity & Contact',
+    agriculturalProfile: 'Agricultural Details',
+    commercialProfile: 'Commercial Profile',
+    statusPendingApproval: 'PENDING APPROVAL',
+    statusApproved: 'APPROVED & VERIFIED',
+    statusRejected: 'REJECTED',
 
     farmerDashboardTitle: 'Farmer Command Center',
     farmerWelcomeTitle: 'Namaste',
@@ -515,6 +703,7 @@ export const translations: Record<Language, UnifiedTranslations> = {
     expectedRate: 'Asking Price',
     bidRateLabel: 'Your Bid Rate (₹/Qtl)',
     bidQtyLabel: 'Quantity to Procure (Quintals)',
+    bidTotalValueLabel: 'Total Sourcing Value',
     messageLabel: 'Procurement Terms / Message (Optional)',
     messagePlaceholder: 'e.g. Ready for immediate loading and direct digital bank settlement',
     myBidsTitle: 'My Active Sourcing Bids',
@@ -584,6 +773,11 @@ export const translations: Record<Language, UnifiedTranslations> = {
     districtLabel: 'District',
     stateLabel: 'State',
     addressLabel: 'Address / Trade Yard Location',
+    orgLabel: 'Company / Organization Name',
+    gstinLabel: 'GSTIN Registration',
+    fssaiLabel: 'FSSAI License',
+    kccLabel: 'Kisan Credit Card (KCC) Number',
+    apmcLabel: 'APMC License Number',
     btnSaveProfile: 'Save Profile Changes',
     profileSavedSuccess: 'Profile details updated successfully!',
 
@@ -616,6 +810,10 @@ export const translations: Record<Language, UnifiedTranslations> = {
     errCaptchaExpired: 'CAPTCHA expired. Please refresh and try again.',
     errTooManyAttempts: 'Too many incorrect attempts. Please generate a new CAPTCHA.',
     errServerError: 'An unexpected error occurred. Please try again.',
+    errProfileIncompleteLot: 'Please complete your profile details (location, district, state) before publishing a crop lot.',
+    errProfileIncompleteBid: 'Please complete your profile details (organization, district, state, location) before placing a bid.',
+    errAccountPendingApproval: 'Your account is awaiting admin approval. You will be able to sign in once an administrator approves your registration.',
+    errAccountRejected: 'Your account registration was rejected.',
   },
 
   hi: {
@@ -637,6 +835,25 @@ export const translations: Record<Language, UnifiedTranslations> = {
     roleFarmer: 'किसान',
     roleBuyer: 'थोक खरीदार / व्यापारी',
     roleAdmin: 'व्यवस्थापक',
+
+    notificationsTitle: 'सूचनाएं (Notifications)',
+    noNotifications: 'इस समय कोई नई सूचना नहीं है',
+    markAllRead: 'सभी को पढ़ा हुआ चिह्नित करें',
+    unreadCountLabel: 'अपठित',
+    viewRelatedEntity: 'विवरण देखें',
+
+    profileCompletionBannerTitle: 'अपनी वाणिज्य प्रोफ़ाइल पूरी करें',
+    profileCompletionBannerDesc: 'फसल लिस्ट करने या खरीद बोली लगाने के लिए आवश्यक प्रोफ़ाइल विवरण पूर्ण होना अनिवार्य है।',
+    btnCompleteProfile: 'प्रोफ़ाइल विवरण पूर्ण करें',
+    missingFieldsLabel: 'अपूर्ण विवरण:',
+    profileCompleteBadge: 'प्रोफ़ाइल १००% पूर्ण',
+    profileIncompleteBadge: 'प्रोफ़ाइल अपूर्ण',
+    fieldDistrict: 'जिला',
+    fieldState: 'राज्य',
+    fieldLocation: 'खेत / प्रेषण स्थान',
+    fieldOrganization: 'कंपनी / संस्था का नाम',
+    fieldName: 'पूरा नाम',
+    fieldContact: 'संपर्क नंबर / ईमेल',
 
     heroPill: 'मजबूत बाजार संपर्क एवं पारदर्शी मूल्य निर्धारण',
     heroHeadline: 'फसल बेचने से पहले जानें सही और सर्वोत्तम भाव।',
@@ -721,6 +938,7 @@ export const translations: Record<Language, UnifiedTranslations> = {
     passwordPlaceholder: '••••••••',
     roleSelectLabel: 'अपना खाता प्रकार चुनें',
     btnSignIn: 'वाणिज्य में साइन इन करें',
+    btnCreateAccount: 'नया खाता बनाएं',
     signingIn: 'साइन इन हो रहा है...',
     securityVerification: 'सुरक्षा सत्यापन',
     securityCodeCaseNotice: 'अक्षर छोटे-बड़े मान्य',
@@ -731,6 +949,73 @@ export const translations: Record<Language, UnifiedTranslations> = {
     captchaInputPlaceholder: 'उदा. K7P4X',
     chooseAccountTypeLabel: 'खाता प्रकार चुनें / 1-क्लिक डेमो भरें:',
     tradeEnrolledNotice: 'किसान क्रेडिट कार्ड (KCC) एवं राष्ट्रीय कृषि व्यापार पंजीकृत | दृश्य सुरक्षा सत्यापन',
+
+    signupTitle: 'वाणिज्य राष्ट्रीय पोर्टल पर पंजीकरण',
+    signupSubtitle: 'भारतीय किसानों और सत्यापित थोक खरीदारों के लिए सीधा कृषि बाजार संपर्क',
+    chooseAccountType: 'अपना खाता प्रकार चुनें',
+    accountTypeFarmer: 'किसान / उत्पादक',
+    accountTypeBuyer: 'संस्थागत / थोक खरीदार',
+    accountTypeFarmerDesc: 'बिना किसी बिचौलिए की दलाली के सीधे लाभकारी मंडी भाव पर फसल बेचें।',
+    accountTypeBuyerDesc: 'देश भर के किसानों से सीधे गुणवत्तापूर्ण कृषि उपज की थोक खरीद करें।',
+    stepPersonaSelect: '१. खाता प्रकार',
+    stepFillDetails: '२. विवरण दर्ज करें',
+    stepPendingApproval: '३. सत्यापन समीक्षा',
+    confirmPasswordLabel: 'पासवर्ड की पुष्टि करें',
+    confirmPasswordPlaceholder: 'अपना पासवर्ड पुनः दर्ज करें',
+    passwordStrengthWeak: 'कमजोर पासवर्ड (कम से कम 8 अक्षर, बड़े-छोटे अक्षर, संख्या और चिह्न आवश्यक)',
+    passwordStrengthMedium: 'मध्यम पासवर्ड',
+    passwordStrengthStrong: 'मजबूत सुरक्षित पासवर्ड',
+    passwordMatchError: 'दोनों पासवर्ड मेल नहीं खाते हैं।',
+    passwordRuleNotice: 'कम से कम 8 अक्षर, बड़ा अक्षर, छोटा अक्षर, संख्या एवं विशेष चिह्न होना आवश्यक है।',
+    villageLabel: 'ग्राम / ग्राम पंचायत',
+    villagePlaceholder: 'उदा. पिंपलगांव बसवंत',
+    primaryCropLabel: 'मुख्य उगाई जाने वाली फसल',
+    farmSizeLabel: 'खेत का आकार (एकड़ में)',
+    preferredLanguageLabel: 'पसंदीदा पोर्टल भाषा',
+    contactPersonLabel: 'अधिकृत संपर्क व्यक्ति का नाम',
+    businessTypeLabel: 'व्यवसाय का प्रकार',
+    warehouseLabel: 'मुख्य गोदाम / हब का स्थान',
+    kccOptionalLabel: 'किसान क्रेडिट कार्ड (KCC) नंबर (वैकल्पिक)',
+    apmcOptionalLabel: 'एपीएमसी मंडी लाइसेंस नंबर (वैकल्पिक)',
+    gstinOptionalLabel: 'जीएसटीआईएन (GSTIN) नंबर (वैकल्पिक)',
+    fssaiOptionalLabel: 'एफएसएसएआई (FSSAI) लाइसेंस (वैकल्पिक)',
+    btnSubmitRegistration: 'सत्यापन हेतु आवेदन सबमिट करें',
+    submittingRegistration: 'आवेदन सबमिट हो रहा है...',
+    registrationSubmittedTitle: 'पंजीकरण आवेदन सफलतापूर्वक सबमिट हुआ',
+    pendingApprovalBadge: 'प्रशासक सत्यापन लंबित',
+    pendingApprovalDesc: 'आपका वाणिज्य खाता आवेदन प्राप्त हो गया है और समीक्षाधीन है। व्यवस्थापक द्वारा स्वीकृत होने के बाद आप साइन इन कर सकेंगे।',
+    btnBackToLogin: 'साइन इन पर वापस जाएं',
+    verifiedFarmerBadge: 'सत्यापित किसान',
+    verifiedBuyerBadge: 'सत्यापित खरीदार',
+
+    tabRegistrations: 'पंजीकरण अनुरोध',
+    registrationsTitle: 'आवेदक सत्यापन पटल',
+    registrationsSubtitle: 'नए किसान एवं खरीदार पंजीकरण आवेदनों की समीक्षा करें, प्रमाण पत्र जांचें और स्वीकृति या अस्वीकृति दें',
+    kpiPendingFarmers: 'लंबित किसान',
+    kpiPendingBuyers: 'लंबित खरीदार',
+    kpiApprovedToday: 'आज स्वीकृत',
+    kpiRejectedToday: 'आज अस्वीकृत',
+    filterAllRoles: 'सभी खाता प्रकार',
+    filterAllApprovalStatuses: 'सभी सत्यापन स्थितियां',
+    searchRegistrationsPlaceholder: 'आवेदक का नाम, मोबाइल, जिला, संस्था से खोजें...',
+    btnViewApplication: 'आवेदन की समीक्षा करें',
+    btnApproveApplication: 'स्वीकृत करें',
+    btnRejectApplication: 'अस्वीकृत करें',
+    approveModalTitle: 'उपयोगकर्ता स्वीकृति की पुष्टि',
+    approveModalConfirmDesc: 'क्या आप वाकई इस आवेदक को स्वीकृत करना चाहते हैं? वे तुरंत वाणिज्य पोर्टल पर व्यापार करने में सक्षम होंगे।',
+    rejectModalTitle: 'पंजीकरण आवेदन अस्वीकार करें',
+    rejectModalDesc: 'कृपया अस्वीकृति का स्पष्ट कारण बताएं। आवेदक को साइन इन करने पर यह कारण दिखाई देगा।',
+    rejectionReasonPrompt: 'अस्वीकृति का कारण (अनिवार्य)',
+    rejectionReasonPlaceholder: 'उदा. भूमि स्वामित्व दस्तावेज अपूर्ण हैं या अमान्य संपर्क नंबर।',
+    btnConfirmApprove: 'पुष्टि करें एवं स्वीकृत करें',
+    btnConfirmReject: 'पुष्टि करें एवं अस्वीकृत करें',
+    appDossierTitle: 'आवेदक सत्यापन रिकॉर्ड',
+    applicantDetails: 'पहचान एवं संपर्क',
+    agriculturalProfile: 'कृषि संबंधी विवरण',
+    commercialProfile: 'वाणिज्यिक विवरण',
+    statusPendingApproval: 'अनुमोदन लंबित',
+    statusApproved: 'स्वीकृत एवं सत्यापित',
+    statusRejected: 'अस्वीकृत',
 
     farmerDashboardTitle: 'किसान नियंत्रण केंद्र',
     farmerWelcomeTitle: 'नमस्ते',
@@ -819,6 +1104,7 @@ export const translations: Record<Language, UnifiedTranslations> = {
     expectedRate: 'अपेक्षित भाव',
     bidRateLabel: 'आपकी बोली दर (₹/क्विंटल)',
     bidQtyLabel: 'खरीद मात्रा (क्विंटल में)',
+    bidTotalValueLabel: 'कुल खरीद मूल्य',
     messageLabel: 'खरीद शर्तें / संदेश (वैकल्पिक)',
     messagePlaceholder: 'उदा. तत्काल लोडिंग और सीधे डिजिटल बैंक भुगतान के लिए तैयार',
     myBidsTitle: 'मेरी सक्रिय बोलियां',
@@ -888,6 +1174,11 @@ export const translations: Record<Language, UnifiedTranslations> = {
     districtLabel: 'जिला',
     stateLabel: 'राज्य',
     addressLabel: 'पता / व्यापार यार्ड स्थान',
+    orgLabel: 'कंपनी / संस्था का नाम',
+    gstinLabel: 'जीएसटीआईएन (GSTIN) पंजीकरण',
+    fssaiLabel: 'एफएसएसएआई (FSSAI) लाइसेंस',
+    kccLabel: 'किसान क्रेडिट कार्ड (KCC) क्रमांक',
+    apmcLabel: 'एपीएमसी लाइसेंस क्रमांक',
     btnSaveProfile: 'प्रोफ़ाइल विवरण सहेजें',
     profileSavedSuccess: 'प्रोफ़ाइल विवरण सफलतापूर्वक अपडेट हो गया!',
 
@@ -920,6 +1211,10 @@ export const translations: Record<Language, UnifiedTranslations> = {
     errCaptchaExpired: 'सुरक्षा कोड समाप्त हो गया। कृपया रीफ़्रेश करें।',
     errTooManyAttempts: 'अत्यधिक गलत प्रयास। कृपया नया कोड बनाएं।',
     errServerError: 'एक अप्रत्याशित त्रुटि हुई। कृपया पुनः प्रयास करें।',
+    errProfileIncompleteLot: 'फसल लिस्ट करने से पहले कृपया अपना प्रोफ़ाइल विवरण (स्थान, जिला, राज्य) पूरा करें।',
+    errProfileIncompleteBid: 'खरीद बोली लगाने से पहले कृपया अपना प्रोफ़ाइल विवरण (संस्था, जिला, राज्य, स्थान) पूरा करें।',
+    errAccountPendingApproval: 'आपका खाता व्यवस्थापक के अनुमोदन की प्रतीक्षा में है। अनुमोदन के बाद आप साइन इन कर सकेंगे।',
+    errAccountRejected: 'आपका खाता पंजीकरण अस्वीकार कर दिया गया है।',
   },
 
   te: {
@@ -941,6 +1236,25 @@ export const translations: Record<Language, UnifiedTranslations> = {
     roleFarmer: 'రైతు',
     roleBuyer: 'కొనుగోలుదారు / వ్యాపారి',
     roleAdmin: 'నిర్వాహకుడు',
+
+    notificationsTitle: 'నోటిఫికేషన్లు (Notifications)',
+    noNotifications: 'ప్రస్తుతం ఎటువంటి నోటిఫికేషన్లు లేవు',
+    markAllRead: 'అన్నీ చదివినట్లుగా గుర్తించండి',
+    unreadCountLabel: 'చదవనివి',
+    viewRelatedEntity: 'వివరాలు చూడండి',
+
+    profileCompletionBannerTitle: 'మీ వాణిజ్య ప్రొఫైల్‌ను పూర్తి చేయండి',
+    profileCompletionBannerDesc: 'పంటలను నమోదు చేయడానికి లేదా కొనుగోలు బిడ్లను సమర్పించడానికి అవసరమైన ప్రొఫైల్ వివరాలు పూర్తి చేయడం తప్పనిసరి.',
+    btnCompleteProfile: 'ప్రొఫైల్ వివరాలను పూర్తి చేయండి',
+    missingFieldsLabel: 'మిగిలి ఉన్న వివరాలు:',
+    profileCompleteBadge: 'ప్రొఫైల్ 100% పూర్తయింది',
+    profileIncompleteBadge: 'ప్రొఫైల్ అసంపూర్ణం',
+    fieldDistrict: 'జిల్లా',
+    fieldState: 'రాష్ట్రం',
+    fieldLocation: 'పొలం / లోడింగ్ ప్రాంతం',
+    fieldOrganization: 'కంపెనీ / సంస్థ పేరు',
+    fieldName: 'పూర్తి పేరు',
+    fieldContact: 'సంప్రదింపు నంబర్ / ఈమెయిల్',
 
     heroPill: 'బలమైన మార్కెట్ అనుసంధానం & పారదర్శక ధరల గుర్తింపు',
     heroHeadline: 'మీ పంటను అమ్మే ముందే సరైన & ఉత్తమ ధరను తెలుసుకోండి.',
@@ -1025,6 +1339,7 @@ export const translations: Record<Language, UnifiedTranslations> = {
     passwordPlaceholder: '••••••••',
     roleSelectLabel: 'మీ ఖాతా రకాన్ని ఎంచుకోండి',
     btnSignIn: 'వాణిజ్యలోకి సైన్ ఇన్ చేయండి',
+    btnCreateAccount: 'కొత్త ఖాతా సృష్టించండి',
     signingIn: 'సైన్ ఇన్ అవుతోంది...',
     securityVerification: 'భద్రతా ధృవీకరణ (CAPTCHA)',
     securityCodeCaseNotice: 'చిన్న/పెద్ద అక్షరాలు రెండూ చెల్లుబాటు',
@@ -1035,6 +1350,73 @@ export const translations: Record<Language, UnifiedTranslations> = {
     captchaInputPlaceholder: 'ఉదా. K7P4X',
     chooseAccountTypeLabel: 'ఖాతా రకాన్ని ఎంచుకోండి / 1-క్లిక్ డెమో:',
     tradeEnrolledNotice: 'కిసాన్ క్రెడిట్ కార్డ్ (KCC) & జాతీయ వ్యవసాయ వాణిజ్య నమోదిత | భద్రతా ధృవీకరణ',
+
+    signupTitle: 'వాణిజ్య జాతీయ పోర్టల్‌లో నమోదు',
+    signupSubtitle: 'భారతీయ రైతులు మరియు ధృవీకరించబడిన వ్యాపారుల కోసం ప్రత్యక్ష వ్యవసాయ మార్కెట్ అనుసంధానం',
+    chooseAccountType: 'మీ ఖాతా రకాన్ని ఎంచుకోండి',
+    accountTypeFarmer: 'రైతు / ఉత్పత్తిదారు',
+    accountTypeBuyer: 'సంస్థాగత / వ్యాపార కొనుగోలుదారు',
+    accountTypeFarmerDesc: 'దళారీ కమిషన్ లేకుండా నేరుగా లాభదాయక మార్కెట్ ధరలకు పంటను అమ్మండి.',
+    accountTypeBuyerDesc: 'భారతదేశ వ్యాప్తంగా నేరుగా పొలం నుండి నాణ్యమైన పంటను సేకరించండి.',
+    stepPersonaSelect: '1. ఖాతా ఎంపిక',
+    stepFillDetails: '2. వివరాల నమోదు',
+    stepPendingApproval: '3. అడ్మిన్ సమీక్ష',
+    confirmPasswordLabel: 'పాస్‌వర్డ్‌ను నిర్ధారించండి',
+    confirmPasswordPlaceholder: 'మీ పాస్‌వర్డ్‌ను మళ్లీ నమోదు చేయండి',
+    passwordStrengthWeak: 'బలహీనమైన పాస్‌వర్డ్ (కనీసం 8 అక్షరాలు, పెద్ద/చిన్న అక్షరాలు, సంఖ్య & ప్రత్యేక చిహ్నం తప్పనిసరి)',
+    passwordStrengthMedium: 'మధ్యస్థ పాస్‌వర్డ్',
+    passwordStrengthStrong: 'బలమైన సురక్షిత పాస్‌వర్డ్',
+    passwordMatchError: 'పాస్‌వర్డ్‌లు సరిపోలడం లేదు.',
+    passwordRuleNotice: 'కనీసం 8 అక్షరాలు, పెద్ద అక్షరం, చిన్న అక్షరం, సంఖ్య మరియు ప్రత్యేక గుర్తు ఉండాలి.',
+    villageLabel: 'గ్రామం / పంచాయతీ',
+    villagePlaceholder: 'ఉదా. పింపల్‌గావ్ బసవంత్',
+    primaryCropLabel: 'ప్రధాన పంట',
+    farmSizeLabel: 'పొలం విస్తీర్ణం (ఎకరాలలో)',
+    preferredLanguageLabel: 'ప్రాధాన్య పోర్టల్ భాష',
+    contactPersonLabel: 'అధికారిక సంప్రదింపు వ్యక్తి',
+    businessTypeLabel: 'వ్యాపార వర్గం / రకం',
+    warehouseLabel: 'ప్రధాన గిడ్డంగి / హబ్ ప్రాంతం',
+    kccOptionalLabel: 'కిసాన్ క్రెడిట్ కార్డ్ (KCC) సంఖ్య (ఐచ్ఛికం)',
+    apmcOptionalLabel: 'APMC మార్కెట్ లైసెన్స్ సంఖ్య (ఐచ్ఛికం)',
+    gstinOptionalLabel: 'GSTIN నమోదు సంఖ్య (ఐచ్ఛికం)',
+    fssaiOptionalLabel: 'FSSAI లైసెన్స్ (ఐచ్ఛికం)',
+    btnSubmitRegistration: 'ధృవీకరణ కోసం దరఖాస్తు సమర్పించండి',
+    submittingRegistration: 'దరఖాస్తు సమర్పించబడుతోంది...',
+    registrationSubmittedTitle: 'నమోదు దరఖాస్తు విజయవంతంగా సమర్పించబడింది',
+    pendingApprovalBadge: 'అడ్మిన్ ఆమోదం పెండింగ్‌లో ఉంది',
+    pendingApprovalDesc: 'మీ వాణిజ్య ఖాతా దరఖాస్తు స్వీకరించబడింది మరియు పరిశీలనలో ఉంది. నిర్వాహకుడు ఆమోదించిన తర్వాత మీరు లాగిన్ చేయవచ్చు.',
+    btnBackToLogin: 'సైన్ ఇన్ పేజీకి తిరిగి వెళ్లండి',
+    verifiedFarmerBadge: 'ధృవీకరించబడిన రైతు',
+    verifiedBuyerBadge: 'ధృవీకరించబడిన కొనుగోలుదారు',
+
+    tabRegistrations: 'నమోదు అభ్యర్థనలు',
+    registrationsTitle: 'దరఖాస్తుదారుల ధృవీకరణ పీఠం',
+    registrationsSubtitle: 'కొత్త రైతు మరియు వ్యాపారి నమోదు దరఖాస్తులను సమీక్షించండి, పత్రాలను తనిఖీ చేయండి మరియు ఆమోదించండి లేదా తిరస్కరించండి',
+    kpiPendingFarmers: 'పెండింగ్ రైతులు',
+    kpiPendingBuyers: 'పెండింగ్ కొనుగోలుదారులు',
+    kpiApprovedToday: 'ఈరోజు ఆమోదించబడినవి',
+    kpiRejectedToday: 'ఈరోజు తిరస్కరించబడినవి',
+    filterAllRoles: 'అన్ని ఖాతా రకాలు',
+    filterAllApprovalStatuses: 'అన్ని ధృవీకరణ స్థితులు',
+    searchRegistrationsPlaceholder: 'పేరు, మొబైల్, జిల్లా, సంస్థ ద్వారా శోధించండి...',
+    btnViewApplication: 'దరఖాస్తు సమీక్షించండి',
+    btnApproveApplication: 'ఆమోదించండి',
+    btnRejectApplication: 'తిరస్కరించండి',
+    approveModalTitle: 'వినియోగదారు ఆమోదాన్ని నిర్ధారించండి',
+    approveModalConfirmDesc: 'మీరు ఖచ్చితంగా ఈ దరఖాస్తుదారుని ఆమోదించాలనుకుంటున్నారా? వారు తక్షణమే వాణిజ్య పోర్టల్‌లో లాగిన్ అయి వ్యాపారం చేయగలరు.',
+    rejectModalTitle: 'నమోదు దరఖాస్తును తిరస్కరించండి',
+    rejectModalDesc: 'దయచేసి తిరస్కరణకు స్పష్టమైన కారణాన్ని తెలియజేయండి. దరఖాస్తుదారుడు లాగిన్ చేసేటప్పుడు ఈ కారణం కనిపిస్తుంది.',
+    rejectionReasonPrompt: 'తిరస్కరణ కారణం (తప్పనిసరి)',
+    rejectionReasonPlaceholder: 'ఉదా. సరైన భూమి పత్రాలు లేవు లేదా చెల్లని సంప్రదింపు సంఖ్య.',
+    btnConfirmApprove: 'నిర్ధారించి ఆమోదించండి',
+    btnConfirmReject: 'నిర్ధారించి తిరస్కరించండి',
+    appDossierTitle: 'దరఖాస్తుదారు ధృవీకరణ వివరాలు',
+    applicantDetails: 'గుర్తింపు & సంప్రదింపు',
+    agriculturalProfile: 'వ్యవసాయ వివరాలు',
+    commercialProfile: 'వాణిజ్య వివరాలు',
+    statusPendingApproval: 'ఆమోదం పెండింగ్',
+    statusApproved: 'ఆమోదించబడింది & ధృవీకరించబడింది',
+    statusRejected: 'తిరస్కరించబడింది',
 
     farmerDashboardTitle: 'రైతు నియంత్రణ కేంద్రం',
     farmerWelcomeTitle: 'నమస్కారం',
@@ -1123,6 +1505,7 @@ export const translations: Record<Language, UnifiedTranslations> = {
     expectedRate: 'ఆశించే ధర',
     bidRateLabel: 'మీ బిడ్ ధర (₹/క్వింటాల్)',
     bidQtyLabel: 'కొనుగోలు పరిమాణం (క్వింటాళ్లలో)',
+    bidTotalValueLabel: 'మొత్తం సేకరణ విలువ',
     messageLabel: 'కొనుగోలు నిబంధనలు / సందేశం (ఐచ్ఛికం)',
     messagePlaceholder: 'ఉదా. తక్షణ లోడింగ్ మరియు ప్రత్యక్ష డిజిటల్ బ్యాంక్ చెల్లింపుకు సిద్ధం',
     myBidsTitle: 'నా సక్రియ బిడ్లు',
@@ -1192,6 +1575,11 @@ export const translations: Record<Language, UnifiedTranslations> = {
     districtLabel: 'జిల్లా',
     stateLabel: 'రాష్ట్రం',
     addressLabel: 'చిరునామా / యార్డ్ ప్రాంతం',
+    orgLabel: 'కంపెనీ / సంస్థ పేరు',
+    gstinLabel: 'జీఎస్టీఐఎన్ (GSTIN) నమోదు సంఖ్య',
+    fssaiLabel: 'ఎఫ్ఎస్ఎస్ఏఐ (FSSAI) లైసెన్స్',
+    kccLabel: 'కిసాన్ క్రెడిట్ కార్డ్ (KCC) సంఖ్య',
+    apmcLabel: 'ఏపీఎంసీ (APMC) లైసెన్స్ సంఖ్య',
     btnSaveProfile: 'ప్రొఫైల్ మార్పులను భద్రపరచండి',
     profileSavedSuccess: 'ప్రొఫైల్ వివరాలు విజయవంతంగా నవీకరించబడ్డాయి!',
 
@@ -1224,6 +1612,10 @@ export const translations: Record<Language, UnifiedTranslations> = {
     errCaptchaExpired: 'సెక్యూరిటీ కోడ్ గడువు ముగిసింది. దయచేసి రీఫ్రెష్ చేయండి.',
     errTooManyAttempts: 'చాలా తప్పు ప్రయత్నాలు. దయచేసి కొత్త కోడ్ రూపొందించండి.',
     errServerError: 'ఊహించని లోపం జరిగింది. దయచేసి మళ్లీ ప్రయత్నించండి.',
+    errProfileIncompleteLot: 'పంటను నమోదు చేయడానికి ముందు దయచేసి మీ ప్రొఫైల్ వివరాలను (ప్రాంతం, జిల్లా, రాష్ట్రం) పూర్తి చేయండి.',
+    errProfileIncompleteBid: 'బిడ్ నమోదు చేయడానికి ముందు దయచేసి మీ ప్రొఫైల్ వివరాలను (సంస్థ, జిల్లా, రాష్ట్రం, ప్రాంతం) పూర్తి చేయండి.',
+    errAccountPendingApproval: 'మీ ఖాతా అడ్మిన్ ఆమోదం కోసం వేచి ఉంది. ఆమోదించబడిన తర్వాత మీరు సైన్ ఇన్ చేయవచ్చు.',
+    errAccountRejected: 'మీ ఖాతా నమోదు తిరస్కరించబడింది.',
   },
 };
 
@@ -1256,4 +1648,6 @@ export const statusTranslations: Record<string, Record<Language, string>> = {
   INITIATED: { en: 'PAYMENT DISPATCHED', hi: 'भुगतान भेजा गया', te: 'చెల్లింపు పంపబడింది' },
   PAID: { en: 'SETTLED (PAID)', hi: 'भुगतान संपन्न (सफल)', te: 'చెల్లించబడింది' },
   COMPLETED: { en: 'CONTRACT COMPLETED', hi: 'अनुबंध पूर्ण', te: 'ఒప్పందం పూర్తయింది' },
+  APPROVED: { en: 'APPROVED', hi: 'स्वीकृत', te: 'ఆమోదించబడింది' },
+  VERIFIED: { en: 'VERIFIED', hi: 'सत्यापित', te: 'ధృవీకరించబడింది' },
 };
