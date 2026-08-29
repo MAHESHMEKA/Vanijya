@@ -677,6 +677,20 @@ export class BidsService {
     lot.updatedAt = new Date();
 
     const totalAmount = bid.price * bid.quantity;
+    const lotSummary = {
+      id: lot.id,
+      farmerId: lot.farmerId,
+      cropId: lot.cropId,
+      quantity: lot.quantity,
+      unit: lot.unit,
+      expectedPrice: lot.expectedPrice,
+      qualityGrade: lot.qualityGrade,
+      location: lot.location,
+      status: lot.status,
+      crop: lot.crop,
+      farmer: lot.farmer,
+    };
+
     const newTxn = {
       id: `txn-${Date.now()}`,
       lotId: lot.id,
@@ -691,7 +705,7 @@ export class BidsService {
       updatedAt: new Date(),
       farmer: lot.farmer,
       buyer: bid.buyer,
-      lot,
+      lot: lotSummary,
       payment: {
         id: `pay-${Date.now()}`,
         amount: totalAmount,
@@ -701,7 +715,22 @@ export class BidsService {
     };
 
     FALLBACK_TRANSACTIONS.unshift(newTxn);
-    lot.transaction = newTxn;
+    lot.transaction = {
+      id: newTxn.id,
+      lotId: lot.id,
+      acceptedBidId: bid.id,
+      farmerId: lot.farmerId,
+      buyerId: bid.buyerId,
+      agreedPrice: bid.price,
+      quantity: bid.quantity,
+      totalAmount,
+      status: newTxn.status,
+      createdAt: newTxn.createdAt,
+      updatedAt: newTxn.updatedAt,
+      farmer: lot.farmer,
+      buyer: bid.buyer,
+      payment: newTxn.payment,
+    };
 
     await this.auditService.log({
       actorId: farmerId,

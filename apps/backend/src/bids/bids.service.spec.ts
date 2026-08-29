@@ -308,5 +308,19 @@ describe('BidsService', () => {
         service.acceptBid('bid-1', 'other-user', Role.FARMER),
       ).rejects.toThrow(ForbiddenException);
     });
+
+    it('should cleanly accept bid in memory without circular JSON references', async () => {
+      mockPrismaService.isConnected = false;
+      const result = await service.acceptBid('bid-demo-1', 'usr-farmer-1', Role.FARMER);
+
+      expect(result).toHaveProperty('transaction');
+      expect(result).toHaveProperty('lot');
+
+      // Crucial verification: Must be 100% serializable by JSON.stringify without circular reference errors
+      expect(() => JSON.stringify(result)).not.toThrow();
+      expect(() => JSON.stringify(result.lot)).not.toThrow();
+      expect(() => JSON.stringify(result.transaction)).not.toThrow();
+      mockPrismaService.isConnected = true;
+    });
   });
 });

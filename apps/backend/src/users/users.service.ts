@@ -103,25 +103,24 @@ export class UsersService {
         },
       });
 
-      if (!user) {
-        throw new NotFoundException('User not found.');
+      if (user) {
+        const completion = computeProfileCompletion(user);
+        return {
+          ...user,
+          ...completion,
+        };
       }
-
-      const completion = computeProfileCompletion(user);
-      return {
-        ...user,
-        ...completion,
-      };
     } catch (err) {
-      if (err instanceof NotFoundException) throw err;
-      const fallback = FALLBACK_USERS.find((u) => u.id === userId);
-      if (fallback) {
-        const completion = computeProfileCompletion(fallback);
-        const { password, ...safeUser } = fallback;
-        return { ...safeUser, ...completion };
-      }
-      throw err;
+      // Fall through to in-memory check
     }
+
+    const fallback = FALLBACK_USERS.find((u) => u.id === userId);
+    if (fallback) {
+      const completion = computeProfileCompletion(fallback);
+      const { password, ...safeUser } = fallback;
+      return { ...safeUser, ...completion };
+    }
+    throw new NotFoundException('User not found.');
   }
 
   async updateProfile(userId: string, dto: UpdateUserDto) {
