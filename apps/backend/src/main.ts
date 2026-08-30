@@ -38,8 +38,8 @@ async function bootstrap() {
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api/docs', app, document);
 
-  const port = process.env.PORT || 4000;
-  await app.listen(port);
+  const port = process.env.BACKEND_PORT || process.env.API_PORT || 4000;
+  await app.listen(port, '0.0.0.0');
   console.log(`🌾 Vanijya Backend is running on: http://localhost:${port}/api`);
   console.log(`📖 Swagger API Docs available at: http://localhost:${port}/api/docs`);
 }
