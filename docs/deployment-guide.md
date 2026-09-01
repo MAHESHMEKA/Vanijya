@@ -5,32 +5,64 @@
 
 ## 1. Cloud Deployment Architectures
 
-### Option A: Single-Host Production Deployment (Docker Compose)
-Recommended for Hackathon live staging and pilot validation.
+### Option A: Cloud Platform Deployment (Render / Railway / Vercel)
+Recommended for agile cloud staging and production environments.
 
-1. **Host Setup (AWS EC2 / Ubuntu Linux):**
-   - Recommended: AWS EC2 `t3.medium` (2 vCPU, 4GB RAM) with Ubuntu 22.04 LTS.
-   - Open Inbound Ports: `80` (HTTP), `443` (HTTPS), `3000` (Unified Web Portal), `4000` (Backend API).
+1. **Database Setup (Neon / Supabase / Managed PostgreSQL):**
+   - Create a PostgreSQL database instance.
+   - Copy the PostgreSQL connection string `DATABASE_URL`.
 
-2. **Clone & Launch with Docker Compose:**
-   ```bash
-   git clone https://github.com/your-org/vanijya.git
-   cd vanijya
-   docker compose -f infrastructure/docker-compose.prod.yml up -d --build
-   ```
+2. **Backend API Service (Render / Railway / AWS EC2):**
+   - Set Build Command:
+     ```bash
+     npm install && npm run build:packages && npx prisma generate --schema=apps/backend/prisma/schema.prisma && npm run build:backend
+     ```
+   - Set Start Command:
+     ```bash
+     node apps/backend/dist/main.js
+     ```
+   - Set Environment Variables:
+     - `DATABASE_URL`: Your production PostgreSQL connection string
+     - `JWT_SECRET`: Secure random signing key
+     - `PORT`: `4000` (or platform default)
+     - `NODE_ENV`: `production`
 
-3. **Database Seed & Initialize:**
-   ```bash
-   docker exec -it vanijya-backend-prod npx prisma db push
-   docker exec -it vanijya-backend-prod npx prisma db seed
-   ```
+3. **Frontend Unified Portal (Vercel / AWS Amplify):**
+   - Root Directory: `apps/web` (or Monorepo Root)
+   - Framework Preset: `Next.js`
+   - Build Command: `npm run build`
+   - Set Environment Variables:
+     - `NEXT_PUBLIC_API_URL`: URL of your deployed Backend API (e.g. `https://api.vanijya.app/api`)
 
 ---
 
-### Option B: Cloud-Native Managed Deployment
-- **Backend & Database:** Render / Railway / AWS ECS connecting to Managed PostgreSQL.
-- **Frontend Portal:** Vercel / AWS Amplify (`apps/web` on `https://vanijya.gov.in` or `https://vanijya.app`).
-  - Set Environment Variable `NEXT_PUBLIC_API_URL=https://api.vanijya.app/api`.
+### Option B: Linux Server Deployment (Ubuntu / AWS EC2)
+1. **System Preparation:**
+   - Install Node.js 20+ LTS, npm, and PostgreSQL.
+   - Configure PostgreSQL database `vanijya_db` and user permissions.
+
+2. **Clone & Build:**
+   ```bash
+   git clone https://github.com/nithinpanuganti/Vanijya.git
+   cd Vanijya
+   npm install
+   npm run build:packages
+   npx prisma generate --schema=apps/backend/prisma/schema.prisma
+   npx prisma db push --schema=apps/backend/prisma/schema.prisma
+   npm run build
+   ```
+
+3. **Process Management with PM2:**
+   ```bash
+   # Install PM2 globally
+   npm install -g pm2
+
+   # Start Backend API
+   pm2 start apps/backend/dist/main.js --name "vanijya-backend"
+
+   # Start Web Portal
+   pm2 start npm --name "vanijya-web" -- run start --workspace=apps/web
+   ```
 
 ---
 
@@ -38,7 +70,7 @@ Recommended for Hackathon live staging and pilot validation.
 
 | Variable | Service | Template Default | Description |
 | :--- | :--- | :--- | :--- |
-| `DATABASE_URL` | Backend | `postgresql://vanijya_user:vanijya_pass@localhost:5432/vanijya_db?schema=public` | PostgreSQL Connection String |
+| `DATABASE_URL` | Backend | `postgresql://user:pass@localhost:5432/vanijya_db?schema=public` | PostgreSQL Connection String |
 | `JWT_SECRET` | Backend | `vanijya_super_secret_jwt_key_sih2024` | Cryptographic JWT signing secret |
 | `JWT_EXPIRES_IN`| Backend | `7d` | Session expiration window |
 | `PORT` | Backend | `4000` | HTTP listening port |

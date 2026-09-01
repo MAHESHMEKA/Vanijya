@@ -6,8 +6,7 @@
 ---
 
 [![Build Status](https://img.shields.io/badge/Build-Passing-brightgreen?style=for-the-badge)](https://github.com/nithinpanuganti/Vanijya)
-[![Docker](https://img.shields.io/badge/Docker-Multi--Stage%20Ready-blue?style=for-the-badge&logo=docker)](https://github.com/nithinpanuganti/Vanijya)
-[![Tests](https://img.shields.io/badge/Tests-67%2F67%20Passing-brightgreen?style=for-the-badge)](https://github.com/nithinpanuganti/Vanijya)
+[![Tests](https://img.shields.io/badge/Tests-68%2F68%20Passing-brightgreen?style=for-the-badge)](https://github.com/nithinpanuganti/Vanijya)
 [![Security](https://img.shields.io/badge/CAPTCHA-Visual%20Alphanumeric%20SVG-orange?style=for-the-badge&logo=shield)](https://github.com/nithinpanuganti/Vanijya)
 [![Workflow](https://img.shields.io/badge/Verification-Admin%20Approval%20Workflow-emerald?style=for-the-badge&logo=checkmarx)](https://github.com/nithinpanuganti/Vanijya)
 [![Theme](https://img.shields.io/badge/Theme-Golden%20Yellow-amber?style=for-the-badge&color=f59e0b)](https://github.com/nithinpanuganti/Vanijya)
@@ -62,7 +61,7 @@
 - **Chronological Audit Trail**: Records `USER_REGISTERED`, `USER_APPROVED`, and `USER_REJECTED` audit events.
 
 ### 3. 🔔 Persistent Notification Center (`NotificationBell`)
-- Real-time notification feed in the top navigation bar with unread badge count, dropdown panel, and 25-second background polling.
+- Real-time notification feed in the top navigation bar with unread badge count, dropdown panel, and background polling.
 - **Automated Event Triggers**:
   - Sourcing bid placed &rarr; Farmer receives `BID_RECEIVED`.
   - Bid modified / cancelled &rarr; Farmer receives `BID_MODIFIED` / `BID_CANCELLED`.
@@ -87,7 +86,7 @@
 - 1-click instantaneous switching between **English**, **हिंदी (Hindi)**, and **తెలుగు (Telugu)** across all 17 routes, status badges, forms, and validation prompts.
 
 ### 8. 🛡️ 100% Offline Resilient Data Layer
-- Operates seamlessly with PostgreSQL and Prisma, with zero-downtime in-memory fallback stores ensuring 100% test and presentation reliability when disconnected.
+- Operates seamlessly with local or managed PostgreSQL and Prisma, with zero-downtime in-memory fallback stores ensuring 100% test and presentation reliability when disconnected.
 
 ---
 
@@ -120,47 +119,61 @@ On the unified login page ([`http://localhost:3000/login`](http://localhost:3000
 
 ---
 
-## 🚀 Quick Start Guide
+## 🚀 Local Development Setup
 
-### Option 1: 1-Click Desktop Launcher on Windows (Recommended)
-Double-click the launcher script in the project root:
-```bat
-start-vanijya.bat
-```
-*This automatically clears conflicting ports, checks dependencies, builds artifacts on first run, starts both servers, and opens your browser to `http://localhost:3000`.*
+### 1. Prerequisites
+- **Node.js**: v18 or v20+ LTS
+- **PostgreSQL**: Local installation or cloud instance (e.g. Neon, Supabase, Railway)
+- **npm**: v9 or v10+
 
----
-
-### Option 2: Run with Docker Compose
+### 2. Installation
 ```bash
-docker compose up --build
-```
+# Clone the repository
+git clone https://github.com/nithinpanuganti/Vanijya.git
+cd Vanijya
 
----
-
-### Option 3: Manual Monorepo Commands
-```bash
-# 1. Install dependencies
+# Install all workspace dependencies
 npm install
 
-# 2. Build shared packages
+# Build shared packages
 npm run build:packages
+```
 
-# 3. Generate Prisma client
+### 3. Database Configuration
+```bash
+# Configure .env with your local PostgreSQL connection string
+# DATABASE_URL="postgresql://postgres:postgres@localhost:5432/vanijya_db?schema=public"
+
+# Generate Prisma Client
 npx prisma generate --schema=apps/backend/prisma/schema.prisma
 
-# 4. Run test suites
-npm test
+# Push / Migrate Database Schema
+npx prisma db push --schema=apps/backend/prisma/schema.prisma
+```
 
-# 5. Start development servers
+### 4. Running the Application
+
+#### Option A: 1-Click Desktop Launcher on Windows (Recommended)
+Double-click `start-vanijya.bat` in the root directory.
+
+#### Option B: Terminal Commands
+Run the Backend and Frontend in separate terminals:
+
+```bash
+# Terminal 1: Start Backend API (Port 4000)
+npm run start:dev --workspace=apps/backend
+
+# Terminal 2: Start Unified Web Portal (Port 3000)
 npm run dev
 ```
+
+The portal will be available at [http://localhost:3000](http://localhost:3000) and API documentation at [http://localhost:4000/api/docs](http://localhost:4000/api/docs).
 
 ---
 
 ## 🧪 Automated Testing
 
-All **67 automated unit, integration, and end-to-end transaction loop tests** pass with 100% success rate:
+All **68 automated unit, integration, and end-to-end transaction loop tests** pass with 100% success rate:
 ```bash
 npm test
 ```
@@ -178,9 +191,9 @@ PASS src/auth/auth.service.spec.ts
 PASS src/e2e-live-loop.spec.ts
 
 Test Suites: 10 passed, 10 total
-Tests:       67 passed, 67 total
+Tests:       68 passed, 68 total
 Snapshots:   0 total
-Time:        10.2 s
+Time:        10.8 s
 ```
 
 ---
