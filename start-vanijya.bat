@@ -31,7 +31,6 @@ goto LAUNCH_SERVERS
 
 :DO_BUILD
 echo [2/3] Building backend and web applications...
-call npx.cmd prisma generate --schema=apps/backend/prisma/schema.prisma
 call npm.cmd run build
 if errorlevel 1 goto ERR_BUILD
 echo [2/3] Build completed successfully.

@@ -6,7 +6,8 @@
 ---
 
 [![Build Status](https://img.shields.io/badge/Build-Passing-brightgreen?style=for-the-badge)](https://github.com/nithinpanuganti/Vanijya)
-[![Tests](https://img.shields.io/badge/Tests-68%2F68%20Passing-brightgreen?style=for-the-badge)](https://github.com/nithinpanuganti/Vanijya)
+[![Tests](https://img.shields.io/badge/Tests-66%2F66%20Passing-brightgreen?style=for-the-badge)](https://github.com/nithinpanuganti/Vanijya)
+[![Database](https://img.shields.io/badge/Database-MongoDB%20%2B%20GridFS-green?style=for-the-badge&logo=mongodb)](https://github.com/nithinpanuganti/Vanijya)
 [![Security](https://img.shields.io/badge/CAPTCHA-Visual%20Alphanumeric%20SVG-orange?style=for-the-badge&logo=shield)](https://github.com/nithinpanuganti/Vanijya)
 [![Workflow](https://img.shields.io/badge/Verification-Admin%20Approval%20Workflow-emerald?style=for-the-badge&logo=checkmarx)](https://github.com/nithinpanuganti/Vanijya)
 [![Theme](https://img.shields.io/badge/Theme-Golden%20Yellow-amber?style=for-the-badge&color=f59e0b)](https://github.com/nithinpanuganti/Vanijya)
@@ -28,7 +29,7 @@
                                        CAPTCHA
                                           │
                                           ▼
-                               ADMIN VERIFICATION DESK
+                                ADMIN VERIFICATION DESK
                                           │
                          ┌────────────────┼────────────────┐
                          ▼                ▼                ▼
@@ -38,16 +39,23 @@
                     Lots & Offers    Bids & Catalog    12-KPI Monitor
                     Direct Sales     Purchase Orders   Audit Trail
                     Profile Gate     Profile Gate      Registration Desk
+                    GPS & Photo      GPS & Photo       Dossier Inspection
 ```
 
-### 1. 🛡️ Secure Signup & Admin Verification Workflow (`/signup`)
+### 1. 🛡️ Secure Signup & Identity Verification Workflow (`/signup`)
 - **Step 1: Account Persona Selection**: Choose between **🌾 Farmer / Producer** and **🏢 Institutional / Wholesale Buyer** (Admin accounts cannot be self-registered).
-- **Step 2: Role-Specific Application Form**:
-  - **Farmers**: Full Name, Mobile, Email, Password, State, District, Village, Farm Location, Preferred Language (`en`, `hi`, `te`), Primary Crop, Farm Size (Acres), KCC Number, APMC License.
-  - **Buyers**: Organization Name, Contact Person, Mobile, Email, Password, State, District, Procurement Yard Address, Business Type, Warehouse Hub, GSTIN, FSSAI License.
-  - **Live Password Strength Meter**: Real-time evaluation (Weak / Medium / Strong) verifying 8+ characters, uppercase, lowercase, number, and special character rules.
-  - **Visual Alphanumeric CAPTCHA**: Direct integration with SVG security challenge verification.
-- **Step 3: Registration Confirmation Screen**: Displays 🟡 **Pending Admin Verification** with clear guidance.
+- **Step 2: Profile Photo Verification**:
+  - Live HTML5 webcam snapshot (`navigator.mediaDevices.getUserMedia`) or drag-and-drop file upload (JPEG, PNG, WebP $\le 5\text{MB}$).
+  - Persisted in MongoDB GridFS (`profile_photos` bucket) and rendered across user avatars and admin dossier review.
+- **Step 3: Geolocation Coordination**:
+  - Instant GPS location detection (`navigator.geolocation.getCurrentPosition`) saved as GeoJSON Point `[longitude, latitude]` with `2dsphere` spatial indexing.
+  - Manual regional address fallback (State, District, Village / Warehouse Hub).
+- **Step 4: Operational Credentials & Security Challenge**:
+  - **Farmers**: Primary Crop, Farm Size (Acres), KCC Number, APMC License.
+  - **Buyers**: Organization, Contact Person, Business Type, Warehouse Location, GSTIN, FSSAI License.
+  - **Live Password Strength Meter**: 5-point evaluation verifying 8+ characters, uppercase, lowercase, number, and special character rules.
+  - **Visual Alphanumeric CAPTCHA**: Direct SVG challenge verification.
+- **Step 5: Registration Confirmation Screen**: Displays 🟡 **Pending Admin Verification**.
 - **Login Enforcement**:
   - `PENDING` accounts are blocked with an approval status notification.
   - `REJECTED` accounts are blocked and display the administrator's specific rejection reason.
@@ -56,7 +64,7 @@
 ### 2. 🏛️ Admin Applicant Verification Desk (`/dashboard` &rarr; Registration Requests)
 - **4 Real-Time KPI Cards**: *Pending Farmers*, *Pending Buyers*, *Approved Today*, *Rejected Today*.
 - **Interactive Applicant Directory**: Full-text search (name, phone, organization, district, state), role filters, and status filters.
-- **Applicant Dossier Review Modal**: Complete inspection of agricultural or commercial profiles before approval.
+- **Applicant Dossier Review Modal**: Complete inspection of applicant identity photo, GPS coordinates, and agricultural/commercial credentials before approval.
 - **Structured Rejection Dialog**: Captures constructive rejection reasons logged to the user's permanent record.
 - **Chronological Audit Trail**: Records `USER_REGISTERED`, `USER_APPROVED`, and `USER_REJECTED` audit events.
 
@@ -85,8 +93,8 @@
 ### 7. 🌐 Trilingual Internationalization (i18n)
 - 1-click instantaneous switching between **English**, **हिंदी (Hindi)**, and **తెలుగు (Telugu)** across all 17 routes, status badges, forms, and validation prompts.
 
-### 8. 🛡️ 100% Offline Resilient Data Layer
-- Operates seamlessly with local or managed PostgreSQL and Prisma, with zero-downtime in-memory fallback stores ensuring 100% test and presentation reliability when disconnected.
+### 8. 🍃 Modern MongoDB Data Layer & 100% Offline Resiliency
+- Robust Mongoose schemas with 2dsphere indexing, GridFS streaming bucket, atomic multi-document transaction handling, and auto-seeding demo data with zero-downtime in-memory fallback.
 
 ---
 
@@ -97,12 +105,12 @@
 | **Unified Web Portal** | [**http://localhost:3000**](http://localhost:3000) | Public landing page with live mandi tickers & core features |
 | **Public Price Discovery** | [**http://localhost:3000/prices**](http://localhost:3000/prices) | Live rates, 7-day trend chart & arbitrage (No login needed) |
 | **Common Sign In** | [**http://localhost:3000/login**](http://localhost:3000/login) | Unified login with visual CAPTCHA & approval check |
-| **Unified Registration** | [**http://localhost:3000/signup**](http://localhost:3000/signup) | Farmer & Buyer signup with password meter & CAPTCHA |
+| **Unified Registration** | [**http://localhost:3000/signup**](http://localhost:3000/signup) | Photo capture, GPS location, password meter & CAPTCHA |
 | **Smart Dashboard** | [**http://localhost:3000/dashboard**](http://localhost:3000/dashboard) | Role-aware cockpit (Farmer, Buyer, Admin Verification Desk) |
 | **Farmer Lots & Bids** | [**http://localhost:3000/my-lots**](http://localhost:3000/my-lots) | Category tabs: All, Active Bidding, Sold, Open, Cancelled |
 | **Buyer Active Bids** | [**http://localhost:3000/my-bids**](http://localhost:3000/my-bids) | Buyer bids management with Modify Quantity & Cancel Bid |
 | **Marketplace Catalog** | [**http://localhost:3000/browse-lots**](http://localhost:3000/browse-lots) | Sourcing lots with live procurement value calculation |
-| **Profile Management** | [**http://localhost:3000/profile**](http://localhost:3000/profile) | Identity, KYC credentials, and completion gauge |
+| **Profile Management** | [**http://localhost:3000/profile**](http://localhost:3000/profile) | Identity photo, GPS location, and KYC completion gauge |
 | **Backend API & Swagger Docs** | [**http://localhost:4000/api/docs**](http://localhost:4000/api/docs) | 34 NestJS REST APIs & Swagger interactive docs |
 
 ---
@@ -123,7 +131,7 @@ On the unified login page ([`http://localhost:3000/login`](http://localhost:3000
 
 ### 1. Prerequisites
 - **Node.js**: v18 or v20+ LTS
-- **PostgreSQL**: Local installation or cloud instance (e.g. Neon, Supabase, Railway)
+- **MongoDB**: Local MongoDB instance (e.g. `mongodb://localhost:27017/vanijya`) or MongoDB Atlas
 - **npm**: v9 or v10+
 
 ### 2. Installation
@@ -139,19 +147,7 @@ npm install
 npm run build:packages
 ```
 
-### 3. Database Configuration
-```bash
-# Configure .env with your local PostgreSQL connection string
-# DATABASE_URL="postgresql://postgres:postgres@localhost:5432/vanijya_db?schema=public"
-
-# Generate Prisma Client
-npx prisma generate --schema=apps/backend/prisma/schema.prisma
-
-# Push / Migrate Database Schema
-npx prisma db push --schema=apps/backend/prisma/schema.prisma
-```
-
-### 4. Running the Application
+### 3. Running the Application
 
 #### Option A: 1-Click Desktop Launcher on Windows (Recommended)
 Double-click `start-vanijya.bat` in the root directory.
@@ -173,27 +169,27 @@ The portal will be available at [http://localhost:3000](http://localhost:3000) a
 
 ## 🧪 Automated Testing
 
-All **68 automated unit, integration, and end-to-end transaction loop tests** pass with 100% success rate:
+All **66 automated unit, integration, and end-to-end transaction loop tests** pass with 100% success rate:
 ```bash
-npm test
+npm test --workspace=@vanijya/backend
 ```
 
 ```
+PASS src/e2e-live-loop.spec.ts
 PASS src/prices/services/price-analytics.service.spec.ts
-PASS src/prices/prices.service.spec.ts
+PASS src/app.controller.spec.ts
 PASS src/auth/captcha.service.spec.ts
 PASS src/notifications/notifications.service.spec.ts
-PASS src/admin/admin.service.spec.ts
-PASS src/app.controller.spec.ts
 PASS src/bids/bids.service.spec.ts
-PASS src/lots/lots.service.spec.ts
+PASS src/admin/admin.service.spec.ts
+PASS src/prices/prices.service.spec.ts
 PASS src/auth/auth.service.spec.ts
-PASS src/e2e-live-loop.spec.ts
+PASS src/lots/lots.service.spec.ts
 
 Test Suites: 10 passed, 10 total
-Tests:       68 passed, 68 total
+Tests:       66 passed, 66 total
 Snapshots:   0 total
-Time:        10.8 s
+Time:        12.1 s
 ```
 
 ---
@@ -207,27 +203,31 @@ Time:        10.8 s
 2. Step 1: Choose Persona
    └─ Select [ 🌾 Farmer ] or [ 🏢 Buyer ]
 
-3. Step 2: Fill Details & Verify CAPTCHA
+3. Step 2: Live Photo & GPS Location
+   └─ Take Live Webcam Snapshot or Upload Identity Photo (GridFS)
+   └─ Click "Detect My Current Location" -> Acquires GPS Coordinates
+
+4. Step 3: Fill Details & Verify CAPTCHA
    └─ Name, Mobile (e.g. 9811223344), Password (with live strength gauge), Location & Crops
    └─ Enter Visual Alphanumeric CAPTCHA (e.g. K7P4X)
    └─ Click "Submit Application for Verification"
 
-4. Step 3: View Confirmation Screen
+5. Step 4: View Confirmation Screen
    └─ Displays 🟡 "Pending Admin Verification"
 
-5. Attempt Login before Approval
+6. Attempt Login before Approval
    └─ Go to /login -> Enter 9811223344 -> CAPTCHA -> Sign In
    └─ Blocked with notice: "Your account is awaiting admin approval."
 
-6. Login as System Administrator
+7. Login as System Administrator
    └─ Use admin@vanijya.gov.in / Admin@123 -> Enter CAPTCHA -> Sign In
    └─ Open "Registration Requests" tab in Admin Dashboard
-   └─ Click "Review Application" -> Inspect Applicant Dossier
+   └─ Click "Review Application" -> Inspect Applicant Photo, GPS, and Credentials Dossier
    └─ Click "Approve User" (or "Reject Request" with constructive reason)
 
-7. Login as Newly Approved User
+8. Login as Newly Approved User
    └─ Sign out of Admin -> Sign in with the newly approved Farmer credentials
-   └─ Farmer successfully reaches Command Center with "🟢 Verified Farmer" badge
+   └─ Farmer reaches Command Center with "🟢 Verified Farmer" badge and profile avatar
 ```
 
 ---
@@ -237,4 +237,4 @@ Time:        10.8 s
 - **Problem Statement:** SIH 26132
 - **Organization:** Ministry of Agriculture & Farmers Welfare
 - **Theme:** Agriculture, FoodTech & Rural Development
-- **Outcome:** Direct farmer price discovery, visual alphanumeric CAPTCHA security verification, complete registration & admin verification lifecycle, persistent multi-event notifications, and auditable national trade monitoring.
+- **Outcome:** Direct farmer price discovery, visual alphanumeric CAPTCHA security verification, live photo capture & GridFS verification, GeoJSON location capture, complete registration & admin verification lifecycle, persistent multi-event notifications, and auditable national trade monitoring.
