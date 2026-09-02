@@ -274,18 +274,33 @@ export default function SmartDashboardPage() {
         {renderProfileCompletionBanner()}
 
         {/* Welcome Header */}
-        <div className="bg-gradient-to-r from-amber-500 via-amber-600 to-yellow-600 p-6 md:p-8 rounded-3xl text-slate-950 shadow-xl relative overflow-hidden">
-          <div className="relative z-10 space-y-2">
-            <div className="inline-flex items-center gap-1.5 bg-slate-950 text-amber-400 text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-wider">
-              <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
-              {user.isVerified || user.approvalStatus === 'APPROVED' ? t.verifiedFarmerBadge : t.pendingApprovalBadge}
+        <div className="bg-gradient-to-r from-amber-500 via-amber-600 to-yellow-600 p-6 md:p-8 rounded-3xl text-slate-950 shadow-xl relative overflow-hidden flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+          <div className="flex items-center gap-4 relative z-10">
+            <div className="w-16 h-16 md:w-20 md:h-20 rounded-2xl overflow-hidden border-2 border-slate-950/20 bg-amber-100 shadow-md shrink-0 flex items-center justify-center">
+              {(user as any)?.profilePhoto?.url || (user as any)?.photo ? (
+                <img
+                  src={(user as any)?.profilePhoto?.url || (user as any)?.photo}
+                  alt={user.name}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <span className="text-2xl font-black text-amber-900">
+                  {user.name ? user.name.charAt(0) : '🌾'}
+                </span>
+              )}
             </div>
-            <h1 className="text-2xl md:text-4xl font-black tracking-tight">
-              {t.farmerWelcomeTitle}, {user.name} 🌾
-            </h1>
-            <p className="text-xs md:text-sm font-bold text-amber-950 max-w-xl">
-              {t.farmerTagline}
-            </p>
+            <div className="space-y-1">
+              <div className="inline-flex items-center gap-1.5 bg-slate-950 text-amber-400 text-[10px] font-black px-3 py-0.5 rounded-full uppercase tracking-wider">
+                <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
+                {user.isVerified || user.approvalStatus === 'APPROVED' ? t.verifiedFarmerBadge : t.pendingApprovalBadge}
+              </div>
+              <h1 className="text-2xl md:text-3xl font-black tracking-tight">
+                {t.farmerWelcomeTitle}, {user.name} 🌾
+              </h1>
+              <p className="text-xs font-bold text-amber-950 max-w-xl">
+                {user.district && user.state ? `${user.district}, ${user.state} • ` : ''}{t.farmerTagline}
+              </p>
+            </div>
           </div>
 
           <div className="mt-4 flex flex-wrap gap-2.5 relative z-10">
@@ -498,18 +513,33 @@ export default function SmartDashboardPage() {
         {renderProfileCompletionBanner()}
 
         {/* Welcome Header */}
-        <div className="bg-gradient-to-r from-slate-950 via-slate-900 to-amber-950 p-6 md:p-8 rounded-3xl text-white shadow-xl relative overflow-hidden">
-          <div className="relative z-10 space-y-2">
-            <div className="inline-flex items-center gap-1.5 bg-amber-400 text-slate-950 text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-wider">
-              <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
-              {user.isVerified || user.approvalStatus === 'APPROVED' ? t.verifiedBuyerBadge : t.pendingApprovalBadge}
+        <div className="bg-gradient-to-r from-slate-950 via-slate-900 to-amber-950 p-6 md:p-8 rounded-3xl text-white shadow-xl relative overflow-hidden flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+          <div className="flex items-center gap-4 relative z-10">
+            <div className="w-16 h-16 md:w-20 md:h-20 rounded-2xl overflow-hidden border-2 border-amber-400/40 bg-slate-900 shadow-md shrink-0 flex items-center justify-center">
+              {(user as any)?.profilePhoto?.url || (user as any)?.photo ? (
+                <img
+                  src={(user as any)?.profilePhoto?.url || (user as any)?.photo}
+                  alt={user.name}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <span className="text-2xl font-black text-amber-400">
+                  {user.name ? user.name.charAt(0) : '🏢'}
+                </span>
+              )}
             </div>
-            <h1 className="text-2xl md:text-4xl font-black tracking-tight text-white">
-              {t.buyerWelcomeTitle}, {user.name} 🏢
-            </h1>
-            <p className="text-xs md:text-sm font-medium text-slate-300 max-w-xl">
-              {t.buyerTagline}
-            </p>
+            <div className="space-y-1">
+              <div className="inline-flex items-center gap-1.5 bg-amber-400 text-slate-950 text-[10px] font-black px-3 py-0.5 rounded-full uppercase tracking-wider">
+                <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+                {user.isVerified || user.approvalStatus === 'APPROVED' ? t.verifiedBuyerBadge : t.pendingApprovalBadge}
+              </div>
+              <h1 className="text-2xl md:text-3xl font-black tracking-tight text-white">
+                {t.buyerWelcomeTitle}, {user.name} 🏢
+              </h1>
+              <p className="text-xs md:text-sm font-medium text-slate-300 max-w-xl">
+                {user.district && user.state ? `${user.district}, ${user.state} • ` : ''}{t.buyerTagline}
+              </p>
+            </div>
           </div>
 
           <div className="mt-4 flex flex-wrap gap-2.5 relative z-10">
@@ -888,10 +918,32 @@ export default function SmartDashboardPage() {
                     {filteredRegistrations.map((reg) => (
                       <tr key={reg.id} className="hover:bg-amber-50/40 transition">
                         <td className="py-3.5 px-4">
-                          <strong className="text-slate-900 block">{reg.name || reg.organization}</strong>
-                          {reg.organization && reg.contactPerson && (
-                            <span className="text-[10px] text-slate-500">Contact: {reg.contactPerson}</span>
-                          )}
+                          <div className="flex items-center gap-2.5">
+                            <div className="w-8 h-8 rounded-full overflow-hidden border border-amber-300 bg-amber-100 flex items-center justify-center shrink-0">
+                              {(reg as any)?.profilePhoto?.url || (reg as any)?.photo ? (
+                                <img
+                                  src={(reg as any)?.profilePhoto?.url || (reg as any)?.photo}
+                                  alt={reg.name}
+                                  className="w-full h-full object-cover"
+                                />
+                              ) : (
+                                <span className="text-xs font-bold text-amber-900">
+                                  {reg.name ? reg.name.charAt(0) : 'U'}
+                                </span>
+                              )}
+                            </div>
+                            <div>
+                              <strong className="text-slate-900 block">{reg.name || reg.organization}</strong>
+                              {reg.organization && reg.contactPerson && (
+                                <span className="text-[10px] text-slate-500">Contact: {reg.contactPerson}</span>
+                              )}
+                              {reg.geoPoint?.coordinates && (
+                                <span className="text-[9px] text-emerald-700 font-mono font-bold block">
+                                  GPS: {reg.geoPoint.coordinates[1].toFixed(2)}°N, {reg.geoPoint.coordinates[0].toFixed(2)}°E
+                                </span>
+                              )}
+                            </div>
+                          </div>
                         </td>
                         <td className="py-3.5 px-4">
                           <span
@@ -1087,13 +1139,34 @@ export default function SmartDashboardPage() {
         <div className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl border border-amber-200 shadow-2xl max-w-lg w-full p-6 space-y-5 animate-in zoom-in-95">
             <div className="flex items-center justify-between border-b border-amber-100 pb-3">
-              <div>
-                <span className="text-[10px] font-black uppercase text-amber-800 bg-amber-100 px-2 py-0.5 rounded-full">
-                  {selectedApplicant.role === 'FARMER' ? '🌾 Farmer Dossier' : '🏢 Buyer Dossier'}
-                </span>
-                <h3 className="text-xl font-black text-slate-900 mt-1">
-                  {selectedApplicant.name || selectedApplicant.organization}
-                </h3>
+              <div className="flex items-center gap-3">
+                <div className="w-14 h-14 rounded-2xl overflow-hidden border-2 border-amber-400 bg-amber-100 flex items-center justify-center shrink-0 shadow-sm">
+                  {(selectedApplicant as any)?.profilePhoto?.url || (selectedApplicant as any)?.photo ? (
+                    <img
+                      src={(selectedApplicant as any)?.profilePhoto?.url || (selectedApplicant as any)?.photo}
+                      alt={selectedApplicant.name}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <span className="text-xl font-black text-amber-900">
+                      {selectedApplicant.name ? selectedApplicant.name.charAt(0) : 'U'}
+                    </span>
+                  )}
+                </div>
+                <div>
+                  <span className="text-[10px] font-black uppercase text-amber-800 bg-amber-100 px-2 py-0.5 rounded-full">
+                    {selectedApplicant.role === 'FARMER' ? '🌾 Farmer Dossier' : '🏢 Buyer Dossier'}
+                  </span>
+                  <h3 className="text-lg font-black text-slate-900 mt-0.5">
+                    {selectedApplicant.name || selectedApplicant.organization}
+                  </h3>
+                  {selectedApplicant.geoPoint?.coordinates && (
+                    <span className="text-[10px] text-emerald-800 font-mono font-bold flex items-center gap-1">
+                      <MapPin className="w-3 h-3 text-emerald-600" />
+                      GPS: {selectedApplicant.geoPoint.coordinates[1].toFixed(4)}°N, {selectedApplicant.geoPoint.coordinates[0].toFixed(4)}°E
+                    </span>
+                  )}
+                </div>
               </div>
               <button
                 type="button"

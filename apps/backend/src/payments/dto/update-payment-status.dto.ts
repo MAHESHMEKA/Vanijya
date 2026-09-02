@@ -1,6 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { IsEnum, IsNotEmpty, IsOptional, IsString } from 'class-validator';
-import { PaymentStatus } from '@prisma/client';
+import { PaymentStatus } from '../../database/schemas/enums';
 
 export class UpdatePaymentStatusDto {
   @ApiProperty({ enum: PaymentStatus, description: 'New payment status: PENDING, INITIATED, PAID, FAILED' })

@@ -1,26 +1,45 @@
-import { Injectable, NotFoundException, ForbiddenException, BadRequestException } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
+import { Injectable, NotFoundException, ForbiddenException, BadRequestException, Logger } from '@nestjs/common';
+import { InjectModel } from '@nestjs/mongoose';
+import { Model } from 'mongoose';
+import {
+  CropLot,
+  CropLotDocument,
+  Crop,
+  CropDocument,
+  User,
+  UserDocument,
+  Bid,
+  BidDocument,
+  Transaction,
+  TransactionDocument,
+  Payment,
+  PaymentDocument,
+  CropLotStatus,
+  Role,
+  AuditAction,
+} from '../database/schemas';
 import { CreateCropLotDto, UpdateCropLotDto, QueryLotsDto } from './dto/create-lot.dto';
-import { CropLotStatus, Role, AuditAction } from '@prisma/client';
 import { FALLBACK_CROPS } from '../crops/crops.service';
 import { AuditService } from '../audit/audit.service';
 import { UsersService } from '../users/users.service';
 
 export const FALLBACK_LOTS: any[] = [
   {
+    _id: 'lot-demo-1',
     id: 'lot-demo-1',
     farmerId: 'usr-farmer-1',
-    cropId: 'crop-1',
+    cropId: 'crop-tomato',
     quantity: 100,
     unit: 'QUINTAL',
     expectedPrice: 2200,
     qualityGrade: 'GRADE_A',
     location: 'Village Pimpalgaon, Niphad Taluka, Nashik',
+    geoPoint: { type: 'Point', coordinates: [73.9854, 20.1718] },
     harvestDate: new Date(),
     status: CropLotStatus.BIDDING,
     createdAt: new Date(Date.now() - 3600000 * 4),
     updatedAt: new Date(),
-    crop: { id: 'crop-1', name: 'Tomato', category: 'VEGETABLE', icon: '🍅' },
+    crop: { id: 'crop-tomato', name: 'Tomato', category: 'Vegetables' },
     farmer: {
       id: 'usr-farmer-1',
       name: 'Ramesh Patel',
@@ -28,24 +47,27 @@ export const FALLBACK_LOTS: any[] = [
       district: 'Nashik',
       state: 'Maharashtra',
       isVerified: true,
+      profilePhoto: { url: '/images/avatars/farmer-ramesh.svg' },
     },
     bids: [],
     _count: { bids: 1 },
   },
   {
+    _id: 'lot-demo-2',
     id: 'lot-demo-2',
     farmerId: 'usr-farmer-1',
-    cropId: 'crop-2',
+    cropId: 'crop-onion',
     quantity: 80,
     unit: 'QUINTAL',
     expectedPrice: 1650,
     qualityGrade: 'GRADE_A',
     location: 'Lasalgaon Road, Niphad, Nashik',
+    geoPoint: { type: 'Point', coordinates: [74.2281, 20.1472] },
     harvestDate: new Date(),
     status: CropLotStatus.OPEN,
     createdAt: new Date(Date.now() - 3600000 * 2),
     updatedAt: new Date(),
-    crop: { id: 'crop-2', name: 'Onion', category: 'VEGETABLE', icon: '🧅' },
+    crop: { id: 'crop-onion', name: 'Onion', category: 'Vegetables' },
     farmer: {
       id: 'usr-farmer-1',
       name: 'Ramesh Patel',
@@ -53,24 +75,27 @@ export const FALLBACK_LOTS: any[] = [
       district: 'Nashik',
       state: 'Maharashtra',
       isVerified: true,
+      profilePhoto: { url: '/images/avatars/farmer-ramesh.svg' },
     },
     bids: [],
     _count: { bids: 0 },
   },
   {
+    _id: 'lot-demo-3',
     id: 'lot-demo-3',
     farmerId: 'usr-farmer-2',
-    cropId: 'crop-4',
+    cropId: 'crop-wheat',
     quantity: 200,
     unit: 'QUINTAL',
     expectedPrice: 2450,
     qualityGrade: 'GRADE_A',
     location: 'Khanna Mandi Gate 2, Ludhiana',
+    geoPoint: { type: 'Point', coordinates: [76.2167, 30.7046] },
     harvestDate: new Date(),
     status: CropLotStatus.OPEN,
     createdAt: new Date(Date.now() - 3600000 * 5),
     updatedAt: new Date(),
-    crop: { id: 'crop-4', name: 'Wheat', category: 'GRAIN', icon: '🌾' },
+    crop: { id: 'crop-wheat', name: 'Wheat', category: 'Cereals & Grains' },
     farmer: {
       id: 'usr-farmer-2',
       name: 'Gurpreet Singh',
@@ -78,24 +103,27 @@ export const FALLBACK_LOTS: any[] = [
       district: 'Ludhiana',
       state: 'Punjab',
       isVerified: true,
+      profilePhoto: { url: '/images/avatars/farmer-gurpreet.svg' },
     },
     bids: [],
     _count: { bids: 0 },
   },
   {
+    _id: 'lot-demo-4',
     id: 'lot-demo-4',
     farmerId: 'usr-farmer-1',
-    cropId: 'crop-3',
+    cropId: 'crop-potato',
     quantity: 120,
     unit: 'QUINTAL',
     expectedPrice: 1400,
     qualityGrade: 'GRADE_B',
     location: 'Dindori Road, Nashik',
+    geoPoint: { type: 'Point', coordinates: [73.8344, 20.2012] },
     harvestDate: new Date(Date.now() - 86400000 * 3),
     status: CropLotStatus.SOLD,
     createdAt: new Date(Date.now() - 86400000 * 3),
     updatedAt: new Date(Date.now() - 86400000 * 2),
-    crop: { id: 'crop-3', name: 'Potato', category: 'VEGETABLE', icon: '🥔' },
+    crop: { id: 'crop-potato', name: 'Potato', category: 'Vegetables' },
     farmer: {
       id: 'usr-farmer-1',
       name: 'Ramesh Patel',
@@ -103,6 +131,7 @@ export const FALLBACK_LOTS: any[] = [
       district: 'Nashik',
       state: 'Maharashtra',
       isVerified: true,
+      profilePhoto: { url: '/images/avatars/farmer-ramesh.svg' },
     },
     bids: [],
     _count: { bids: 1 },
@@ -120,10 +149,17 @@ export const FALLBACK_LOTS: any[] = [
 
 @Injectable()
 export class LotsService {
+  private readonly logger = new Logger(LotsService.name);
+
   constructor(
-    private prisma: PrismaService,
-    private auditService: AuditService,
-    private usersService: UsersService,
+    @InjectModel(CropLot.name) private readonly cropLotModel: Model<CropLotDocument>,
+    @InjectModel(Crop.name) private readonly cropModel: Model<CropDocument>,
+    @InjectModel(User.name) private readonly userModel: Model<UserDocument>,
+    @InjectModel(Bid.name) private readonly bidModel: Model<BidDocument>,
+    @InjectModel(Transaction.name) private readonly transactionModel: Model<TransactionDocument>,
+    @InjectModel(Payment.name) private readonly paymentModel: Model<PaymentDocument>,
+    private readonly auditService: AuditService,
+    private readonly usersService: UsersService,
   ) {}
 
   private enrichLot(lot: any) {
@@ -134,13 +170,14 @@ export class LotsService {
 
     return {
       ...lot,
+      id: lot._id || lot.id,
       highestBid: highestActiveBid || highestBid,
       bidCount: lot._count?.bids ?? bids.length,
     };
   }
 
   async create(farmerId: string, dto: CreateCropLotDto) {
-    // 1. Profile Completion Gate Check
+    // Profile Completion Gate Check
     const profile = await this.usersService.getProfile(farmerId).catch(() => null);
     if (profile && profile.profileCompletionStatus === 'INCOMPLETE') {
       const missing = profile.missingFields?.join(', ') || 'required fields';
@@ -156,306 +193,250 @@ export class LotsService {
       throw new BadRequestException('Expected price must be greater than 0.');
     }
 
-    if (!this.prisma.isConnected) {
-      const crop =
-        FALLBACK_CROPS.find(
-          (c) =>
-            c.id === dto.cropId ||
-            c.name.toLowerCase() === (dto.cropId || '').toLowerCase()
-        ) || FALLBACK_CROPS[0];
-
-      const newLot = {
-        id: `lot-${Date.now()}`,
-        farmerId,
-        cropId: crop.id,
-        quantity: Number(dto.quantity),
-        unit: dto.unit || 'QUINTAL',
-        expectedPrice: Number(dto.expectedPrice),
-        qualityGrade: dto.qualityGrade || 'GRADE_A',
-        location: dto.location || 'Pimpalgaon Farm Gate, Niphad, Nashik',
-        harvestDate: dto.harvestDate ? new Date(dto.harvestDate) : new Date(),
-        status: CropLotStatus.OPEN,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        crop,
-        farmer: {
-          id: farmerId,
-          name: profile?.name || 'Ramesh Patel',
-          phone: profile?.phone || '9876543210',
-          district: profile?.district || 'Nashik',
-          state: profile?.state || 'Maharashtra',
-          isVerified: true,
-        },
-        bids: [],
-        _count: { bids: 0 },
-      };
-
-      FALLBACK_LOTS.unshift(newLot);
-
-      await this.auditService.log({
-        actorId: farmerId,
-        action: AuditAction.LOT_CREATED,
-        lotId: newLot.id,
-        price: newLot.expectedPrice,
-        newQuantity: newLot.quantity,
-        metadata: { cropName: crop.name, location: newLot.location },
-      });
-
-      return this.enrichLot(newLot);
-    }
+    const lotId = `lot-${Date.now()}`;
+    const lotData: any = {
+      _id: lotId,
+      farmerId,
+      cropId: dto.cropId,
+      quantity: Number(dto.quantity),
+      unit: dto.unit || 'QUINTAL',
+      expectedPrice: Number(dto.expectedPrice),
+      qualityGrade: dto.qualityGrade || 'GRADE_A',
+      location: dto.location || profile?.location || 'Pimpalgaon Farm Gate, Niphad, Nashik',
+      geoPoint: profile?.geoPoint || null,
+      harvestDate: dto.harvestDate ? new Date(dto.harvestDate) : new Date(),
+      status: CropLotStatus.OPEN,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
 
     try {
-      const crop = await this.prisma.crop.findUnique({ where: { id: dto.cropId } });
-      if (!crop) {
-        throw new NotFoundException(`Crop with ID ${dto.cropId} does not exist.`);
-      }
-
-      const created = await this.prisma.cropLot.create({
-        data: {
-          farmerId,
-          cropId: dto.cropId,
-          quantity: Number(dto.quantity),
-          unit: dto.unit || 'QUINTAL',
-          expectedPrice: Number(dto.expectedPrice),
-          qualityGrade: dto.qualityGrade,
-          location: dto.location,
-          harvestDate: dto.harvestDate ? new Date(dto.harvestDate) : new Date(),
-          status: CropLotStatus.OPEN,
-        },
-        include: {
-          crop: true,
-          farmer: {
-            select: {
-              id: true,
-              name: true,
-              phone: true,
-              district: true,
-              state: true,
-              isVerified: true,
-            },
-          },
-        },
-      });
+      const crop = await this.cropModel.findById(dto.cropId).lean();
+      const created = await this.cropLotModel.create(lotData);
 
       await this.auditService.log({
         actorId: farmerId,
         action: AuditAction.LOT_CREATED,
-        lotId: created.id,
+        lotId: created._id,
         price: created.expectedPrice,
         newQuantity: created.quantity,
-        metadata: { cropName: crop.name, location: created.location },
+        metadata: { cropName: crop?.name || 'Produce', location: created.location },
       });
 
-      return this.enrichLot(created);
-    } catch (err) {
-      if (err instanceof NotFoundException || err instanceof BadRequestException) throw err;
-      return this.create(farmerId, dto);
+      return this.enrichLot({
+        ...created.toObject(),
+        crop: crop || { name: 'Crop', category: 'General' },
+        farmer: profile || { name: 'Farmer' },
+        bids: [],
+        _count: { bids: 0 },
+      });
+    } catch (err: any) {
+      this.logger.warn(`MongoDB lot creation fallback: ${err.message}`);
     }
+
+    // In-memory fallback
+    const crop =
+      FALLBACK_CROPS.find(
+        (c) =>
+          c.id === dto.cropId ||
+          c._id === dto.cropId ||
+          c.name.toLowerCase() === (dto.cropId || '').toLowerCase(),
+      ) || FALLBACK_CROPS[0];
+
+    const fallbackLot = {
+      ...lotData,
+      id: lotId,
+      crop,
+      farmer: {
+        id: farmerId,
+        name: profile?.name || 'Ramesh Patel',
+        phone: profile?.phone || '9876543210',
+        district: profile?.district || 'Nashik',
+        state: profile?.state || 'Maharashtra',
+        isVerified: true,
+        profilePhoto: profile?.profilePhoto || null,
+      },
+      bids: [],
+      _count: { bids: 0 },
+    };
+
+    FALLBACK_LOTS.unshift(fallbackLot);
+
+    await this.auditService.log({
+      actorId: farmerId,
+      action: AuditAction.LOT_CREATED,
+      lotId: fallbackLot.id,
+      price: fallbackLot.expectedPrice,
+      newQuantity: fallbackLot.quantity,
+      metadata: { cropName: crop.name, location: fallbackLot.location },
+    });
+
+    return this.enrichLot(fallbackLot);
   }
 
   async findAll(query: QueryLotsDto) {
-    if (!this.prisma.isConnected) {
-      let filtered = [...FALLBACK_LOTS];
-      if (query.farmerId) {
-        filtered = filtered.filter((l) => l.farmerId === query.farmerId);
-      }
-      if (query.cropId) {
-        filtered = filtered.filter((l) => l.cropId === query.cropId || l.crop.name.toLowerCase() === query.cropId.toLowerCase());
-      }
-      if (query.status) {
-        filtered = filtered.filter((l) => l.status === query.status);
-      }
-      if (query.qualityGrade) {
-        filtered = filtered.filter((l) => l.qualityGrade === query.qualityGrade);
-      }
-      return filtered.map((l) => this.enrichLot(l));
-    }
-
     try {
-      const where: any = {};
-      if (query.cropId) where.cropId = query.cropId;
-      if (query.farmerId) where.farmerId = query.farmerId;
-      if (query.status) where.status = query.status;
-      if (query.qualityGrade) where.qualityGrade = query.qualityGrade;
-      if (query.location) where.location = { contains: query.location, mode: 'insensitive' };
+      const filter: any = {};
+      if (query.cropId) filter.cropId = query.cropId;
+      if (query.farmerId) filter.farmerId = query.farmerId;
+      if (query.status) filter.status = query.status;
+      if (query.qualityGrade) filter.qualityGrade = query.qualityGrade;
 
-      const lots = await this.prisma.cropLot.findMany({
-        where,
-        orderBy: { createdAt: 'desc' },
-        include: {
-          crop: true,
-          farmer: {
-            select: {
-              id: true,
-              name: true,
-              phone: true,
-              district: true,
-              state: true,
-              isVerified: true,
-            },
-          },
-          bids: {
-            orderBy: { price: 'desc' },
-            include: {
-              buyer: {
-                select: { id: true, name: true, district: true, state: true, isVerified: true },
-              },
-            },
-          },
-          transaction: {
-            include: {
-              buyer: { select: { id: true, name: true, district: true } },
-              payment: true,
-            },
-          },
-          _count: {
-            select: { bids: true },
-          },
-        },
-      });
+      const lots = await this.cropLotModel.find(filter).sort({ createdAt: -1 }).lean();
+      if (lots && lots.length > 0) {
+        const crops = await this.cropModel.find().lean();
+        const farmers = await this.userModel.find().lean();
+        const bids = await this.bidModel.find().lean();
+        const txns = await this.transactionModel.find().lean();
+        const payments = await this.paymentModel.find().lean();
 
-      return lots.map((l) => this.enrichLot(l));
-    } catch (err) {
-      return FALLBACK_LOTS.map((l) => this.enrichLot(l));
+        const cropMap = new Map(crops.map((c) => [c._id, c]));
+        const farmerMap = new Map(farmers.map((f) => [f._id, f]));
+        const paymentMap = new Map(payments.map((p) => [p.transactionId, p]));
+
+        const enriched = lots.map((lot) => {
+          const lotBids = bids.filter((b) => b.lotId === lot._id);
+          const txn = txns.find((t) => t.lotId === lot._id);
+          const farmer = farmerMap.get(lot.farmerId);
+          const buyer = txn ? farmerMap.get(txn.buyerId) : null;
+
+          return this.enrichLot({
+            ...lot,
+            id: lot._id,
+            crop: cropMap.get(lot.cropId) || { name: 'Crop', category: 'General' },
+            farmer: farmer ? {
+              id: farmer._id,
+              name: farmer.name,
+              phone: farmer.phone,
+              district: farmer.district,
+              state: farmer.state,
+              isVerified: farmer.isVerified,
+              profilePhoto: farmer.profilePhoto,
+            } : { name: 'Farmer' },
+            bids: lotBids.map((b) => ({ ...b, id: b._id })),
+            transaction: txn ? {
+              ...txn,
+              id: txn._id,
+              buyer: buyer ? { name: buyer.name, district: buyer.district } : { name: 'Buyer' },
+              payment: paymentMap.get(txn._id) || { status: 'PENDING' },
+            } : null,
+            _count: { bids: lotBids.length },
+          });
+        });
+
+        return enriched;
+      }
+    } catch (err: any) {
+      this.logger.warn(`MongoDB findAll lots fallback: ${err.message}`);
     }
+
+    let filtered = [...FALLBACK_LOTS];
+    if (query.farmerId) filtered = filtered.filter((l) => l.farmerId === query.farmerId);
+    if (query.cropId) filtered = filtered.filter((l) => l.cropId === query.cropId || l.crop?.name?.toLowerCase() === query.cropId.toLowerCase());
+    if (query.status) filtered = filtered.filter((l) => l.status === query.status);
+    if (query.qualityGrade) filtered = filtered.filter((l) => l.qualityGrade === query.qualityGrade);
+    return filtered.map((l) => this.enrichLot(l));
   }
 
   async findOne(id: string) {
-    if (!this.prisma.isConnected) {
-      const found = FALLBACK_LOTS.find((l) => l.id === id);
-      if (!found) throw new NotFoundException(`Crop Lot with ID ${id} not found.`);
-      return this.enrichLot(found);
-    }
-
     try {
-      const lot = await this.prisma.cropLot.findUnique({
-        where: { id },
-        include: {
-          crop: true,
-          farmer: {
-            select: {
-              id: true,
-              name: true,
-              phone: true,
-              district: true,
-              state: true,
-              isVerified: true,
-            },
-          },
-          bids: {
-            orderBy: { price: 'desc' },
-            include: {
-              buyer: {
-                select: {
-                  id: true,
-                  name: true,
-                  district: true,
-                  state: true,
-                  isVerified: true,
-                },
-              },
-            },
-          },
-          transaction: {
-            include: {
-              buyer: { select: { id: true, name: true, district: true } },
-              payment: true,
-            },
-          },
-        },
-      });
+      const lot = await this.cropLotModel.findById(id).lean();
+      if (lot) {
+        const crop = await this.cropModel.findById(lot.cropId).lean();
+        const farmer = await this.userModel.findById(lot.farmerId).lean();
+        const bids = await this.bidModel.find({ lotId: lot._id }).sort({ price: -1 }).lean();
+        const txn = await this.transactionModel.findOne({ lotId: lot._id }).lean();
+        let payment: any = null;
+        let buyer: any = null;
+        if (txn) {
+          payment = await this.paymentModel.findOne({ transactionId: txn._id }).lean();
+          buyer = await this.userModel.findById(txn.buyerId).lean();
+        }
 
-      if (!lot) {
-        throw new NotFoundException(`Crop Lot with ID ${id} not found.`);
+        return this.enrichLot({
+          ...lot,
+          id: lot._id,
+          crop: crop || { name: 'Crop', category: 'General' },
+          farmer: farmer ? {
+            id: farmer._id,
+            name: farmer.name,
+            phone: farmer.phone,
+            district: farmer.district,
+            state: farmer.state,
+            isVerified: farmer.isVerified,
+            profilePhoto: farmer.profilePhoto,
+          } : { name: 'Farmer' },
+          bids: bids.map((b) => ({ ...b, id: b._id })),
+          transaction: txn ? {
+            ...txn,
+            id: txn._id,
+            buyer: buyer ? { name: buyer.name, district: buyer.district } : { name: 'Buyer' },
+            payment,
+          } : null,
+          _count: { bids: bids.length },
+        });
       }
-
-      return this.enrichLot(lot);
-    } catch (err) {
-      const found = FALLBACK_LOTS.find((l) => l.id === id);
-      if (found) return this.enrichLot(found);
-      throw new NotFoundException(`Crop Lot with ID ${id} not found.`);
+    } catch (err: any) {
+      this.logger.warn(`MongoDB findOne lot fallback for ${id}: ${err.message}`);
     }
+
+    const found = FALLBACK_LOTS.find((l) => l.id === id || l._id === id);
+    if (found) return this.enrichLot(found);
+
+    throw new NotFoundException(`Crop Lot with ID ${id} not found.`);
   }
 
   async update(lotId: string, userId: string, userRole: Role, dto: UpdateCropLotDto) {
-    if (!this.prisma.isConnected) {
-      const lot = FALLBACK_LOTS.find((l) => l.id === lotId);
-      if (!lot) throw new NotFoundException(`Crop Lot with ID ${lotId} not found.`);
-      if (lot.farmerId !== userId && userRole !== Role.ADMIN) {
-        throw new ForbiddenException('You are not authorized to modify this lot.');
-      }
-      if (lot.status === CropLotStatus.SOLD) {
-        throw new BadRequestException('Sold lots cannot be modified.');
-      }
-      Object.assign(lot, dto, { updatedAt: new Date() });
-      return this.enrichLot(lot);
+    const lot = await this.findOne(lotId);
+    if (lot.farmerId !== userId && userRole !== Role.ADMIN) {
+      throw new ForbiddenException('You are not authorized to modify this lot.');
+    }
+    if (lot.status === CropLotStatus.SOLD) {
+      throw new BadRequestException('Sold lots cannot be modified.');
     }
 
     try {
-      const lot = await this.prisma.cropLot.findUnique({ where: { id: lotId } });
-      if (!lot) throw new NotFoundException(`Crop Lot with ID ${lotId} not found.`);
-      if (lot.farmerId !== userId && userRole !== Role.ADMIN) {
-        throw new ForbiddenException('You are not authorized to modify this lot.');
+      const updated = await this.cropLotModel
+        .findByIdAndUpdate(lotId, { $set: dto }, { new: true })
+        .lean();
+      if (updated) {
+        return this.enrichLot({ ...lot, ...updated });
       }
-      if (lot.status === CropLotStatus.SOLD) {
-        throw new BadRequestException('Sold lots cannot be modified.');
-      }
-      const updated = await this.prisma.cropLot.update({
-        where: { id: lotId },
-        data: dto,
-        include: { crop: true, farmer: true },
-      });
-      return this.enrichLot(updated);
-    } catch (err) {
-      if (err instanceof NotFoundException || err instanceof ForbiddenException || err instanceof BadRequestException) throw err;
-      const lot = FALLBACK_LOTS.find((l) => l.id === lotId);
-      if (lot) {
-        Object.assign(lot, dto, { updatedAt: new Date() });
-        return this.enrichLot(lot);
-      }
-      throw err;
+    } catch (err: any) {
+      this.logger.warn(`MongoDB update lot fallback: ${err.message}`);
     }
+
+    const fallback = FALLBACK_LOTS.find((l) => l.id === lotId || l._id === lotId);
+    if (fallback) {
+      Object.assign(fallback, dto, { updatedAt: new Date() });
+      return this.enrichLot(fallback);
+    }
+
+    throw new NotFoundException(`Crop Lot with ID ${lotId} not found.`);
   }
 
   async cancel(lotId: string, userId: string, userRole: Role) {
-    if (!this.prisma.isConnected) {
-      const lot = FALLBACK_LOTS.find((l) => l.id === lotId);
-      if (!lot) throw new NotFoundException(`Crop Lot with ID ${lotId} not found.`);
-      if (lot.farmerId !== userId && userRole !== Role.ADMIN) {
-        throw new ForbiddenException('You are not authorized to cancel this lot.');
-      }
-      if (lot.status === CropLotStatus.SOLD) {
-        throw new BadRequestException('A sold lot cannot be cancelled.');
-      }
-      lot.status = CropLotStatus.CANCELLED;
-      return this.enrichLot(lot);
+    const lot = await this.findOne(lotId);
+    if (lot.farmerId !== userId && userRole !== Role.ADMIN) {
+      throw new ForbiddenException('You are not authorized to cancel this lot.');
+    }
+    if (lot.status === CropLotStatus.SOLD) {
+      throw new BadRequestException('A sold lot cannot be cancelled.');
     }
 
     try {
-      const lot = await this.prisma.cropLot.findUnique({
-        where: { id: lotId },
-        include: { bids: true },
-      });
-      if (!lot) throw new NotFoundException(`Crop Lot with ID ${lotId} not found.`);
-      if (lot.farmerId !== userId && userRole !== Role.ADMIN) {
-        throw new ForbiddenException('You are not authorized to cancel this lot.');
-      }
-      if (lot.status === CropLotStatus.SOLD) {
-        throw new BadRequestException('A sold lot cannot be cancelled.');
-      }
-      const updated = await this.prisma.cropLot.update({
-        where: { id: lotId },
-        data: { status: CropLotStatus.CANCELLED },
-      });
-      return this.enrichLot(updated);
-    } catch (err) {
-      if (err instanceof NotFoundException || err instanceof ForbiddenException || err instanceof BadRequestException) throw err;
-      const lot = FALLBACK_LOTS.find((l) => l.id === lotId);
-      if (lot) {
-        lot.status = CropLotStatus.CANCELLED;
-        return this.enrichLot(lot);
-      }
-      throw err;
+      await this.cropLotModel.findByIdAndUpdate(lotId, { $set: { status: CropLotStatus.CANCELLED } });
+      return this.enrichLot({ ...lot, status: CropLotStatus.CANCELLED });
+    } catch (err: any) {
+      this.logger.warn(`MongoDB cancel lot fallback: ${err.message}`);
     }
+
+    const fallback = FALLBACK_LOTS.find((l) => l.id === lotId || l._id === lotId);
+    if (fallback) {
+      fallback.status = CropLotStatus.CANCELLED;
+      return this.enrichLot(fallback);
+    }
+
+    throw new NotFoundException(`Crop Lot with ID ${lotId} not found.`);
   }
 }

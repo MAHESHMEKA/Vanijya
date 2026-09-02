@@ -1,6 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { IsEnum, IsNotEmpty, IsOptional, IsString } from 'class-validator';
-import { NotificationType } from '@prisma/client';
+import { NotificationType } from '../../database/schemas/enums';
 
 export class CreateNotificationDto {
   @ApiProperty({ description: 'Target recipient user ID' })
@@ -27,7 +27,7 @@ export class CreateNotificationDto {
   @IsOptional()
   entityType?: string;
 
-  @ApiPropertyOptional({ description: 'Associated entity UUID' })
+  @ApiPropertyOptional({ description: 'Associated entity ID' })
   @IsString()
   @IsOptional()
   entityId?: string;

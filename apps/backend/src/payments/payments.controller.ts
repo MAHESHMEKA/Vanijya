@@ -4,7 +4,7 @@ import { PaymentsService } from './payments.service';
 import { UpdatePaymentStatusDto } from './dto/update-payment-status.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
-import { Role } from '@prisma/client';
+import { Role } from '../database/schemas/enums';
 
 @ApiTags('Payments & Settlement')
 @ApiBearerAuth()

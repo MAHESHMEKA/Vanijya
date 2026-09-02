@@ -1,93 +1,55 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
-import { FALLBACK_LOTS } from '../lots/lots.service';
-import { FALLBACK_BIDS, FALLBACK_TRANSACTIONS, FALLBACK_PAYMENTS } from '../bids/bids.service';
-import { FALLBACK_USERS, AuthService } from '../auth/auth.service';
-import { AuditService } from '../audit/audit.service';
-import { NotificationsService } from '../notifications/notifications.service';
+import { Injectable, NotFoundException, BadRequestException, Logger } from '@nestjs/common';
+import { InjectModel } from '@nestjs/mongoose';
+import { Model } from 'mongoose';
 import {
+  User,
+  UserDocument,
+  CropLot,
+  CropLotDocument,
+  Crop,
+  CropDocument,
+  Bid,
+  BidDocument,
+  Transaction,
+  TransactionDocument,
+  Payment,
+  PaymentDocument,
+  AuditLog,
+  AuditLogDocument,
   CropLotStatus,
   BidStatus,
-  TransactionStatus,
   PaymentStatus,
   Role,
   AuditAction,
   ApprovalStatus,
   VerificationStatus,
   NotificationType,
-} from '@prisma/client';
+} from '../database/schemas';
+import { FALLBACK_LOTS } from '../lots/lots.service';
+import { FALLBACK_BIDS, FALLBACK_TRANSACTIONS, FALLBACK_PAYMENTS } from '../bids/bids.service';
+import { FALLBACK_USERS, AuthService } from '../auth/auth.service';
+import { AuditService } from '../audit/audit.service';
+import { NotificationsService } from '../notifications/notifications.service';
 
 @Injectable()
 export class AdminService {
+  private readonly logger = new Logger(AdminService.name);
+
   constructor(
-    private prisma: PrismaService,
-    private auditService: AuditService,
-    private notificationsService: NotificationsService,
-    private authService: AuthService,
+    @InjectModel(User.name) private readonly userModel: Model<UserDocument>,
+    @InjectModel(CropLot.name) private readonly cropLotModel: Model<CropLotDocument>,
+    @InjectModel(Crop.name) private readonly cropModel: Model<CropDocument>,
+    @InjectModel(Bid.name) private readonly bidModel: Model<BidDocument>,
+    @InjectModel(Transaction.name) private readonly transactionModel: Model<TransactionDocument>,
+    @InjectModel(Payment.name) private readonly paymentModel: Model<PaymentDocument>,
+    @InjectModel(AuditLog.name) private readonly auditLogModel: Model<AuditLogDocument>,
+    private readonly auditService: AuditService,
+    private readonly notificationsService: NotificationsService,
+    private readonly authService: AuthService,
   ) {}
 
   async getDashboardStats() {
     const recentActivity = await this.auditService.getRecent(10);
-
-    if (!this.prisma.isConnected) {
-      const allUsers = [...FALLBACK_USERS, ...this.authService.getInMemoryRegisteredUsers()];
-      const farmers = allUsers.filter((u) => u.role === Role.FARMER);
-      const buyers = allUsers.filter((u) => u.role === Role.BUYER);
-
-      const pendingFarmers = allUsers.filter(
-        (u) => u.role === Role.FARMER && u.approvalStatus === ApprovalStatus.PENDING,
-      ).length;
-      const pendingBuyers = allUsers.filter(
-        (u) => u.role === Role.BUYER && u.approvalStatus === ApprovalStatus.PENDING,
-      ).length;
-
-      const activeLots = FALLBACK_LOTS.filter(
-        (l) => l.status === CropLotStatus.OPEN || l.status === CropLotStatus.BIDDING,
-      ).length;
-      const activeBiddingLots = FALLBACK_LOTS.filter((l) => l.status === CropLotStatus.BIDDING).length;
-      const soldLots = FALLBACK_LOTS.filter((l) => l.status === CropLotStatus.SOLD).length;
-      const cancelledLots = FALLBACK_LOTS.filter((l) => l.status === CropLotStatus.CANCELLED).length;
-
-      const pendingBids = FALLBACK_BIDS.filter((b) => b.status === BidStatus.PENDING).length;
-      const acceptedBids = FALLBACK_BIDS.filter((b) => b.status === BidStatus.ACCEPTED).length;
-      const cancelledBids = FALLBACK_BIDS.filter((b) => b.status === BidStatus.WITHDRAWN).length;
-      const modifiedBids = (await this.auditService.getRecent(100)).filter(
-        (a) => a.action === AuditAction.QUANTITY_MODIFIED,
-      ).length;
-
-      const totalTransactionValue =
-        FALLBACK_TRANSACTIONS.reduce((acc, t) => acc + (t.totalAmount || 0), 0) +
-        (soldLots > 0 ? 174000 : 0);
-      const completedPaymentsValue =
-        FALLBACK_PAYMENTS.filter((p) => p.status === PaymentStatus.PAID).reduce(
-          (acc, p) => acc + (p.amount || 0),
-          0,
-        ) + (soldLots > 0 ? 174000 : 0);
-      const pendingPaymentsValue = FALLBACK_PAYMENTS.filter(
-        (p) => p.status === PaymentStatus.PENDING,
-      ).reduce((acc, p) => acc + (p.amount || 0), 0);
-
-      return {
-        totalFarmers: farmers.length,
-        totalBuyers: buyers.length,
-        pendingFarmers,
-        pendingBuyers,
-        approvedToday: allUsers.filter((u) => u.approvalStatus === ApprovalStatus.APPROVED).length,
-        rejectedToday: allUsers.filter((u) => u.approvalStatus === ApprovalStatus.REJECTED).length,
-        activeLots,
-        activeBiddingLots,
-        soldLots,
-        cancelledLots,
-        pendingBids,
-        acceptedBids,
-        cancelledBids,
-        modifiedBids,
-        totalTransactionValue,
-        pendingPaymentsValue,
-        completedPaymentsValue,
-        recentActivity,
-      };
-    }
 
     try {
       const todayStart = new Date();
@@ -110,40 +72,31 @@ export class AdminService {
         transactions,
         payments,
       ] = await Promise.all([
-        this.prisma.user.count({ where: { role: Role.FARMER } }),
-        this.prisma.user.count({ where: { role: Role.BUYER } }),
-        this.prisma.user.count({ where: { role: Role.FARMER, approvalStatus: ApprovalStatus.PENDING } }),
-        this.prisma.user.count({ where: { role: Role.BUYER, approvalStatus: ApprovalStatus.PENDING } }),
-        this.prisma.user.count({
-          where: { approvalStatus: ApprovalStatus.APPROVED, approvedAt: { gte: todayStart } },
-        }),
-        this.prisma.user.count({
-          where: { approvalStatus: ApprovalStatus.REJECTED, updatedAt: { gte: todayStart } },
-        }),
-        this.prisma.cropLot.count({
-          where: { status: { in: [CropLotStatus.OPEN, CropLotStatus.BIDDING] } },
-        }),
-        this.prisma.cropLot.count({ where: { status: CropLotStatus.BIDDING } }),
-        this.prisma.cropLot.count({ where: { status: CropLotStatus.SOLD } }),
-        this.prisma.cropLot.count({ where: { status: CropLotStatus.CANCELLED } }),
-        this.prisma.bid.count({ where: { status: BidStatus.PENDING } }),
-        this.prisma.bid.count({ where: { status: BidStatus.ACCEPTED } }),
-        this.prisma.bid.count({ where: { status: BidStatus.WITHDRAWN } }),
-        this.prisma.transaction.findMany({ select: { totalAmount: true } }),
-        this.prisma.payment.findMany({ select: { amount: true, status: true } }),
+        this.userModel.countDocuments({ role: Role.FARMER }),
+        this.userModel.countDocuments({ role: Role.BUYER }),
+        this.userModel.countDocuments({ role: Role.FARMER, approvalStatus: ApprovalStatus.PENDING }),
+        this.userModel.countDocuments({ role: Role.BUYER, approvalStatus: ApprovalStatus.PENDING }),
+        this.userModel.countDocuments({ approvalStatus: ApprovalStatus.APPROVED, approvedAt: { $gte: todayStart } }),
+        this.userModel.countDocuments({ approvalStatus: ApprovalStatus.REJECTED, updatedAt: { $gte: todayStart } }),
+        this.cropLotModel.countDocuments({ status: { $in: [CropLotStatus.OPEN, CropLotStatus.BIDDING] } }),
+        this.cropLotModel.countDocuments({ status: CropLotStatus.BIDDING }),
+        this.cropLotModel.countDocuments({ status: CropLotStatus.SOLD }),
+        this.cropLotModel.countDocuments({ status: CropLotStatus.CANCELLED }),
+        this.bidModel.countDocuments({ status: BidStatus.PENDING }),
+        this.bidModel.countDocuments({ status: BidStatus.ACCEPTED }),
+        this.bidModel.countDocuments({ status: BidStatus.WITHDRAWN }),
+        this.transactionModel.find().select('totalAmount').lean(),
+        this.paymentModel.find().select('amount status').lean(),
       ]);
 
-      const modifiedBids = await this.prisma.auditLog.count({
-        where: { action: AuditAction.QUANTITY_MODIFIED },
-      });
-
-      const totalTransactionValue = transactions.reduce((acc, t) => acc + t.totalAmount, 0);
+      const modifiedBids = await this.auditLogModel.countDocuments({ action: AuditAction.QUANTITY_MODIFIED });
+      const totalTransactionValue = transactions.reduce((acc, t) => acc + (t.totalAmount || 0), 0);
       const completedPaymentsValue = payments
         .filter((p) => p.status === PaymentStatus.PAID)
-        .reduce((acc, p) => acc + p.amount, 0);
+        .reduce((acc, p) => acc + (p.amount || 0), 0);
       const pendingPaymentsValue = payments
         .filter((p) => p.status === PaymentStatus.PENDING)
-        .reduce((acc, p) => acc + p.amount, 0);
+        .reduce((acc, p) => acc + (p.amount || 0), 0);
 
       return {
         totalFarmers,
@@ -165,9 +118,51 @@ export class AdminService {
         completedPaymentsValue,
         recentActivity,
       };
-    } catch (err) {
-      return this.getDashboardStats();
+    } catch (err: any) {
+      this.logger.warn(`MongoDB getDashboardStats fallback: ${err.message}`);
     }
+
+    // In-memory fallback
+    const allUsers = [...FALLBACK_USERS, ...this.authService.getInMemoryRegisteredUsers()];
+    const farmers = allUsers.filter((u) => u.role === Role.FARMER);
+    const buyers = allUsers.filter((u) => u.role === Role.BUYER);
+
+    const pendingFarmers = allUsers.filter((u) => u.role === Role.FARMER && u.approvalStatus === ApprovalStatus.PENDING).length;
+    const pendingBuyers = allUsers.filter((u) => u.role === Role.BUYER && u.approvalStatus === ApprovalStatus.PENDING).length;
+    const activeLots = FALLBACK_LOTS.filter((l) => l.status === CropLotStatus.OPEN || l.status === CropLotStatus.BIDDING).length;
+    const activeBiddingLots = FALLBACK_LOTS.filter((l) => l.status === CropLotStatus.BIDDING).length;
+    const soldLots = FALLBACK_LOTS.filter((l) => l.status === CropLotStatus.SOLD).length;
+    const cancelledLots = FALLBACK_LOTS.filter((l) => l.status === CropLotStatus.CANCELLED).length;
+
+    const pendingBids = FALLBACK_BIDS.filter((b) => b.status === BidStatus.PENDING).length;
+    const acceptedBids = FALLBACK_BIDS.filter((b) => b.status === BidStatus.ACCEPTED).length;
+    const cancelledBids = FALLBACK_BIDS.filter((b) => b.status === BidStatus.WITHDRAWN).length;
+    const modifiedBids = (await this.auditService.getRecent(100)).filter((a) => a.action === AuditAction.QUANTITY_MODIFIED).length;
+
+    const totalTransactionValue = FALLBACK_TRANSACTIONS.reduce((acc, t) => acc + (t.totalAmount || 0), 0) + (soldLots > 0 ? 174000 : 0);
+    const completedPaymentsValue = FALLBACK_PAYMENTS.filter((p) => p.status === PaymentStatus.PAID).reduce((acc, p) => acc + (p.amount || 0), 0) + (soldLots > 0 ? 174000 : 0);
+    const pendingPaymentsValue = FALLBACK_PAYMENTS.filter((p) => p.status === PaymentStatus.PENDING).reduce((acc, p) => acc + (p.amount || 0), 0);
+
+    return {
+      totalFarmers: farmers.length,
+      totalBuyers: buyers.length,
+      pendingFarmers,
+      pendingBuyers,
+      approvedToday: allUsers.filter((u) => u.approvalStatus === ApprovalStatus.APPROVED).length,
+      rejectedToday: allUsers.filter((u) => u.approvalStatus === ApprovalStatus.REJECTED).length,
+      activeLots,
+      activeBiddingLots,
+      soldLots,
+      cancelledLots,
+      pendingBids,
+      acceptedBids,
+      cancelledBids,
+      modifiedBids,
+      totalTransactionValue,
+      pendingPaymentsValue,
+      completedPaymentsValue,
+      recentActivity,
+    };
   }
 
   async getRegistrations(query: {
@@ -176,193 +171,158 @@ export class AdminService {
     search?: string;
     sort?: 'asc' | 'desc';
   }) {
-    if (!this.prisma.isConnected) {
-      const allUsers = [...FALLBACK_USERS, ...this.authService.getInMemoryRegisteredUsers()];
-      let filtered = allUsers.filter((u) => u.role !== Role.ADMIN);
-
-      if (query.role) {
-        filtered = filtered.filter((u) => u.role === query.role);
-      }
-      if (query.status) {
-        filtered = filtered.filter((u) => u.approvalStatus === query.status);
-      }
-      if (query.search) {
-        const q = query.search.toLowerCase();
-        filtered = filtered.filter(
-          (u) =>
-            u.name?.toLowerCase().includes(q) ||
-            u.phone?.includes(q) ||
-            u.email?.toLowerCase().includes(q) ||
-            u.district?.toLowerCase().includes(q) ||
-            u.state?.toLowerCase().includes(q) ||
-            u.organization?.toLowerCase().includes(q),
-        );
-      }
-
-      filtered.sort((a, b) => {
-        const dateA = new Date(a.createdAt || 0).getTime();
-        const dateB = new Date(b.createdAt || 0).getTime();
-        return query.sort === 'asc' ? dateA - dateB : dateB - dateA;
-      });
-
-      return filtered;
-    }
-
     try {
-      const where: any = {
-        role: { in: [Role.FARMER, Role.BUYER] },
+      const filter: any = {
+        role: { $in: [Role.FARMER, Role.BUYER] },
       };
 
-      if (query.role) where.role = query.role;
-      if (query.status) where.approvalStatus = query.status;
-
+      if (query.role) filter.role = query.role;
+      if (query.status) filter.approvalStatus = query.status;
       if (query.search) {
-        where.OR = [
-          { name: { contains: query.search, mode: 'insensitive' } },
-          { phone: { contains: query.search } },
-          { email: { contains: query.search, mode: 'insensitive' } },
-          { district: { contains: query.search, mode: 'insensitive' } },
-          { state: { contains: query.search, mode: 'insensitive' } },
-          { organization: { contains: query.search, mode: 'insensitive' } },
+        const regex = new RegExp(query.search, 'i');
+        filter.$or = [
+          { name: regex },
+          { phone: regex },
+          { email: regex },
+          { district: regex },
+          { state: regex },
+          { organization: regex },
         ];
       }
 
-      return await this.prisma.user.findMany({
-        where,
-        orderBy: { createdAt: query.sort === 'asc' ? 'asc' : 'desc' },
-        select: {
-          id: true,
-          name: true,
-          phone: true,
-          email: true,
-          role: true,
-          verificationStatus: true,
-          approvalStatus: true,
-          rejectionReason: true,
-          approvedBy: true,
-          approvedAt: true,
-          district: true,
-          state: true,
-          village: true,
-          location: true,
-          primaryCrop: true,
-          farmSize: true,
-          preferredLanguage: true,
-          organization: true,
-          contactPerson: true,
-          businessType: true,
-          warehouseLocation: true,
-          gstin: true,
-          fssai: true,
-          kccNumber: true,
-          apmcLicense: true,
-          isVerified: true,
-          createdAt: true,
-        },
-      });
-    } catch (err) {
-      return this.getRegistrations(query);
+      const sortOrder = query.sort === 'asc' ? 1 : -1;
+      const list = await this.userModel.find(filter).sort({ createdAt: sortOrder }).lean();
+      if (list && list.length > 0) {
+        return list.map((u) => ({
+          ...u,
+          id: u._id,
+        }));
+      }
+    } catch (err: any) {
+      this.logger.warn(`MongoDB getRegistrations fallback: ${err.message}`);
     }
+
+    const allUsers = [...FALLBACK_USERS, ...this.authService.getInMemoryRegisteredUsers()];
+    let filtered = allUsers.filter((u) => u.role !== Role.ADMIN);
+
+    if (query.role) filtered = filtered.filter((u) => u.role === query.role);
+    if (query.status) filtered = filtered.filter((u) => u.approvalStatus === query.status);
+    if (query.search) {
+      const q = query.search.toLowerCase();
+      filtered = filtered.filter(
+        (u) =>
+          u.name?.toLowerCase().includes(q) ||
+          u.phone?.includes(q) ||
+          u.email?.toLowerCase().includes(q) ||
+          u.district?.toLowerCase().includes(q) ||
+          u.state?.toLowerCase().includes(q) ||
+          u.organization?.toLowerCase().includes(q),
+      );
+    }
+
+    filtered.sort((a, b) => {
+      const dateA = new Date(a.createdAt || 0).getTime();
+      const dateB = new Date(b.createdAt || 0).getTime();
+      return query.sort === 'asc' ? dateA - dateB : dateB - dateA;
+    });
+
+    return filtered.map((u) => ({ ...u, id: u._id || u.id }));
   }
 
   async getRegistrationById(id: string) {
-    if (!this.prisma.isConnected) {
-      const allUsers = [...FALLBACK_USERS, ...this.authService.getInMemoryRegisteredUsers()];
-      const user = allUsers.find((u) => u.id === id);
-      if (!user) throw new NotFoundException(`User registration ${id} not found.`);
-      return user;
+    try {
+      const user = await this.userModel.findById(id).lean();
+      if (user) {
+        return { ...user, id: user._id };
+      }
+    } catch (err: any) {
+      this.logger.warn(`MongoDB getRegistrationById fallback for ${id}: ${err.message}`);
     }
 
-    try {
-      const user = await this.prisma.user.findUnique({
-        where: { id },
-      });
-      if (!user) throw new NotFoundException(`User registration ${id} not found.`);
-      return user;
-    } catch (err) {
-      if (err instanceof NotFoundException) throw err;
-      const allUsers = [...FALLBACK_USERS, ...this.authService.getInMemoryRegisteredUsers()];
-      const user = allUsers.find((u) => u.id === id);
-      if (user) return user;
-      throw new NotFoundException(`User registration ${id} not found.`);
-    }
+    const allUsers = [...FALLBACK_USERS, ...this.authService.getInMemoryRegisteredUsers()];
+    const user = allUsers.find((u) => u.id === id || u._id === id);
+    if (!user) throw new NotFoundException(`User registration ${id} not found.`);
+    return { ...user, id: user._id || user.id };
   }
 
   async approveUser(userId: string, adminId: string) {
-    if (!this.prisma.isConnected) {
-      const allUsers = [...FALLBACK_USERS, ...this.authService.getInMemoryRegisteredUsers()];
-      const user = allUsers.find((u) => u.id === userId);
-      if (!user) throw new NotFoundException(`User registration ${userId} not found.`);
-
-      user.approvalStatus = ApprovalStatus.APPROVED;
-      user.verificationStatus = VerificationStatus.VERIFIED;
-      user.isVerified = true;
-      user.approvedBy = adminId;
-      user.approvedAt = new Date();
-      user.rejectionReason = null;
-
-      await this.auditService.log({
-        actorId: adminId,
-        action: AuditAction.USER_APPROVED,
-        metadata: { userId: user.id, userName: user.name, role: user.role },
-      });
-
-      await this.notificationsService.create({
-        recipientId: user.id,
-        type: NotificationType.SYSTEM,
-        title: 'Account Registration Approved! 🎉',
-        message: 'Your Vanijya account has been verified and approved by the administrator. You may now sign in and access the trading dashboard.',
-        entityType: 'USER',
-        entityId: user.id,
-      });
-
-      return {
-        success: true,
-        message: `User ${user.name} (${user.role}) has been successfully approved.`,
-        user,
-      };
+    const allUsers = [...FALLBACK_USERS, ...this.authService.getInMemoryRegisteredUsers()];
+    const memoryUser = allUsers.find((u) => u.id === userId || u._id === userId);
+    if (memoryUser) {
+      memoryUser.approvalStatus = ApprovalStatus.APPROVED;
+      memoryUser.verificationStatus = VerificationStatus.VERIFIED;
+      memoryUser.isVerified = true;
+      memoryUser.approvedBy = adminId;
+      memoryUser.approvedAt = new Date();
+      memoryUser.rejectionReason = null;
     }
 
     try {
-      const user = await this.prisma.user.findUnique({ where: { id: userId } });
-      if (!user) throw new NotFoundException(`User registration ${userId} not found.`);
+      const updated = await this.userModel
+        .findByIdAndUpdate(
+          userId,
+          {
+            $set: {
+              approvalStatus: ApprovalStatus.APPROVED,
+              verificationStatus: VerificationStatus.VERIFIED,
+              isVerified: true,
+              approvedBy: adminId,
+              approvedAt: new Date(),
+              rejectionReason: null,
+            },
+          },
+          { new: true },
+        )
+        .lean();
 
-      const updated = await this.prisma.user.update({
-        where: { id: userId },
-        data: {
-          approvalStatus: ApprovalStatus.APPROVED,
-          verificationStatus: VerificationStatus.VERIFIED,
-          isVerified: true,
-          approvedBy: adminId,
-          approvedAt: new Date(),
-          rejectionReason: null,
-        },
-      });
+      if (updated) {
+        await this.auditService.log({
+          actorId: adminId,
+          action: AuditAction.USER_APPROVED,
+          metadata: { userId: updated._id, userName: updated.name, role: updated.role },
+        });
 
-      await this.auditService.log({
-        actorId: adminId,
-        action: AuditAction.USER_APPROVED,
-        metadata: { userId: updated.id, userName: updated.name, role: updated.role },
-      });
+        await this.notificationsService.create({
+          recipientId: updated._id,
+          type: NotificationType.SYSTEM,
+          title: 'Account Registration Approved! 🎉',
+          message: 'Your Vanijya account has been verified and approved by the administrator. You may now sign in and access the trading dashboard.',
+          entityType: 'USER',
+          entityId: updated._id,
+        });
 
-      await this.notificationsService.create({
-        recipientId: updated.id,
-        type: NotificationType.SYSTEM,
-        title: 'Account Registration Approved! 🎉',
-        message: 'Your Vanijya account has been verified and approved by the administrator. You may now sign in and access the trading dashboard.',
-        entityType: 'USER',
-        entityId: updated.id,
-      });
-
-      return {
-        success: true,
-        message: `User ${updated.name} (${updated.role}) has been successfully approved.`,
-        user: updated,
-      };
-    } catch (err) {
-      if (err instanceof NotFoundException) throw err;
-      return this.approveUser(userId, adminId);
+        return {
+          success: true,
+          message: `User ${updated.name} (${updated.role}) has been successfully approved.`,
+          user: { ...updated, id: updated._id },
+        };
+      }
+    } catch (err: any) {
+      this.logger.warn(`MongoDB approveUser fallback for ${userId}: ${err.message}`);
     }
+
+    if (!memoryUser) throw new NotFoundException(`User registration ${userId} not found.`);
+
+    await this.auditService.log({
+      actorId: adminId,
+      action: AuditAction.USER_APPROVED,
+      metadata: { userId: memoryUser.id, userName: memoryUser.name, role: memoryUser.role },
+    });
+
+    await this.notificationsService.create({
+      recipientId: memoryUser.id,
+      type: NotificationType.SYSTEM,
+      title: 'Account Registration Approved! 🎉',
+      message: 'Your Vanijya account has been verified and approved by the administrator. You may now sign in and access the trading dashboard.',
+      entityType: 'USER',
+      entityId: memoryUser.id,
+    });
+
+    return {
+      success: true,
+      message: `User ${memoryUser.name} (${memoryUser.role}) has been successfully approved.`,
+      user: memoryUser,
+    };
   }
 
   async rejectUser(userId: string, adminId: string, reason: string) {
@@ -370,230 +330,207 @@ export class AdminService {
       throw new BadRequestException('A reason for rejection must be provided.');
     }
 
-    if (!this.prisma.isConnected) {
-      const allUsers = [...FALLBACK_USERS, ...this.authService.getInMemoryRegisteredUsers()];
-      const user = allUsers.find((u) => u.id === userId);
-      if (!user) throw new NotFoundException(`User registration ${userId} not found.`);
-
-      user.approvalStatus = ApprovalStatus.REJECTED;
-      user.verificationStatus = VerificationStatus.REJECTED;
-      user.isVerified = false;
-      user.rejectionReason = reason;
-
-      await this.auditService.log({
-        actorId: adminId,
-        action: AuditAction.USER_REJECTED,
-        metadata: { userId: user.id, userName: user.name, role: user.role, reason },
-      });
-
-      await this.notificationsService.create({
-        recipientId: user.id,
-        type: NotificationType.SYSTEM,
-        title: 'Account Registration Update',
-        message: `Your Vanijya account registration was rejected. Reason: ${reason}`,
-        entityType: 'USER',
-        entityId: user.id,
-      });
-
-      return {
-        success: true,
-        message: `User ${user.name} registration was rejected.`,
-        user,
-      };
+    const allUsers = [...FALLBACK_USERS, ...this.authService.getInMemoryRegisteredUsers()];
+    const memoryUser = allUsers.find((u) => u.id === userId || u._id === userId);
+    if (memoryUser) {
+      memoryUser.approvalStatus = ApprovalStatus.REJECTED;
+      memoryUser.verificationStatus = VerificationStatus.REJECTED;
+      memoryUser.isVerified = false;
+      memoryUser.rejectionReason = reason;
     }
 
     try {
-      const user = await this.prisma.user.findUnique({ where: { id: userId } });
-      if (!user) throw new NotFoundException(`User registration ${userId} not found.`);
+      const updated = await this.userModel
+        .findByIdAndUpdate(
+          userId,
+          {
+            $set: {
+              approvalStatus: ApprovalStatus.REJECTED,
+              verificationStatus: VerificationStatus.REJECTED,
+              isVerified: false,
+              rejectionReason: reason,
+            },
+          },
+          { new: true },
+        )
+        .lean();
 
-      const updated = await this.prisma.user.update({
-        where: { id: userId },
-        data: {
-          approvalStatus: ApprovalStatus.REJECTED,
-          verificationStatus: VerificationStatus.REJECTED,
-          isVerified: false,
-          rejectionReason: reason,
-        },
-      });
+      if (updated) {
+        await this.auditService.log({
+          actorId: adminId,
+          action: AuditAction.USER_REJECTED,
+          metadata: { userId: updated._id, userName: updated.name, role: updated.role, reason },
+        });
 
-      await this.auditService.log({
-        actorId: adminId,
-        action: AuditAction.USER_REJECTED,
-        metadata: { userId: updated.id, userName: updated.name, role: updated.role, reason },
-      });
+        await this.notificationsService.create({
+          recipientId: updated._id,
+          type: NotificationType.SYSTEM,
+          title: 'Account Registration Update',
+          message: `Your Vanijya account registration was rejected. Reason: ${reason}`,
+          entityType: 'USER',
+          entityId: updated._id,
+        });
 
-      await this.notificationsService.create({
-        recipientId: updated.id,
-        type: NotificationType.SYSTEM,
-        title: 'Account Registration Update',
-        message: `Your Vanijya account registration was rejected. Reason: ${reason}`,
-        entityType: 'USER',
-        entityId: updated.id,
-      });
-
-      return {
-        success: true,
-        message: `User ${updated.name} registration was rejected.`,
-        user: updated,
-      };
-    } catch (err) {
-      if (err instanceof NotFoundException || err instanceof BadRequestException) throw err;
-      return this.rejectUser(userId, adminId, reason);
+        return {
+          success: true,
+          message: `User ${updated.name} registration was rejected.`,
+          user: { ...updated, id: updated._id },
+        };
+      }
+    } catch (err: any) {
+      this.logger.warn(`MongoDB rejectUser fallback: ${err.message}`);
     }
+
+    if (!memoryUser) throw new NotFoundException(`User registration ${userId} not found.`);
+
+    await this.auditService.log({
+      actorId: adminId,
+      action: AuditAction.USER_REJECTED,
+      metadata: { userId: memoryUser.id, userName: memoryUser.name, role: memoryUser.role, reason },
+    });
+
+    await this.notificationsService.create({
+      recipientId: memoryUser.id,
+      type: NotificationType.SYSTEM,
+      title: 'Account Registration Update',
+      message: `Your Vanijya account registration was rejected. Reason: ${reason}`,
+      entityType: 'USER',
+      entityId: memoryUser.id,
+    });
+
+    return {
+      success: true,
+      message: `User ${memoryUser.name} registration was rejected.`,
+      user: memoryUser,
+    };
   }
 
   async getAllLots(query: any = {}) {
-    if (!this.prisma.isConnected) {
-      let lots = [...FALLBACK_LOTS];
-      if (query.status) lots = lots.filter((l) => l.status === query.status);
-      if (query.cropId) lots = lots.filter((l) => l.cropId === query.cropId || l.crop?.name === query.cropId);
-      return lots;
-    }
-
     try {
-      const where: any = {};
-      if (query.status) where.status = query.status;
-      if (query.cropId) where.cropId = query.cropId;
+      const filter: any = {};
+      if (query.status) filter.status = query.status;
+      if (query.cropId) filter.cropId = query.cropId;
 
-      const lots = await this.prisma.cropLot.findMany({
-        where,
-        orderBy: { createdAt: 'desc' },
-        include: {
-          crop: true,
-          farmer: {
-            select: { id: true, name: true, phone: true, district: true, state: true, isVerified: true },
-          },
-          bids: {
-            orderBy: { price: 'desc' },
-            include: { buyer: { select: { id: true, name: true, district: true } } },
-          },
-          transaction: {
-            include: { buyer: { select: { id: true, name: true } }, payment: true },
-          },
-          _count: { select: { bids: true } },
-        },
-      });
+      const lots = await this.cropLotModel.find(filter).sort({ createdAt: -1 }).lean();
+      if (lots && lots.length > 0) {
+        const crops = await this.cropModel.find().lean();
+        const users = await this.userModel.find().lean();
+        const cropMap = new Map(crops.map((c) => [c._id, c]));
+        const userMap = new Map(users.map((u) => [u._id, u]));
 
-      return lots.map((l) => ({
-        ...l,
-        highestBid: l.bids.length > 0 ? Math.max(...l.bids.map((b) => b.price)) : null,
-      }));
-    } catch (err) {
-      return FALLBACK_LOTS;
+        return lots.map((l) => ({
+          ...l,
+          id: l._id,
+          crop: cropMap.get(l.cropId) || { name: 'Produce' },
+          farmer: userMap.get(l.farmerId) || { name: 'Farmer' },
+        }));
+      }
+    } catch (err: any) {
+      this.logger.warn(`MongoDB getAllLots fallback: ${err.message}`);
     }
+
+    let lots = [...FALLBACK_LOTS];
+    if (query.status) lots = lots.filter((l) => l.status === query.status);
+    if (query.cropId) lots = lots.filter((l) => l.cropId === query.cropId || l.crop?.name === query.cropId);
+    return lots;
   }
 
   async getAllBids(query: any = {}) {
-    if (!this.prisma.isConnected) {
-      let bids = [...FALLBACK_BIDS];
-      if (query.status) bids = bids.filter((b) => b.status === query.status);
-      return bids;
-    }
-
     try {
-      const where: any = {};
-      if (query.status) where.status = query.status;
+      const filter: any = {};
+      if (query.status) filter.status = query.status;
 
-      return await this.prisma.bid.findMany({
-        where,
-        orderBy: { createdAt: 'desc' },
-        include: {
-          buyer: {
-            select: { id: true, name: true, email: true, phone: true, district: true, state: true, isVerified: true },
-          },
-          lot: {
-            include: {
-              crop: true,
-              farmer: {
-                select: { id: true, name: true, phone: true, district: true, state: true },
-              },
-            },
-          },
-        },
-      });
-    } catch (err) {
-      return FALLBACK_BIDS;
+      const bids = await this.bidModel.find(filter).sort({ createdAt: -1 }).lean();
+      if (bids && bids.length > 0) {
+        const users = await this.userModel.find().lean();
+        const lots = await this.cropLotModel.find().lean();
+        const crops = await this.cropModel.find().lean();
+
+        const userMap = new Map(users.map((u) => [u._id, u]));
+        const lotMap = new Map(lots.map((l) => [l._id, l]));
+        const cropMap = new Map(crops.map((c) => [c._id, c]));
+
+        return bids.map((b) => {
+          const lot = lotMap.get(b.lotId);
+          const crop = lot ? cropMap.get(lot.cropId) : null;
+          const buyer = userMap.get(b.buyerId);
+          const farmer = lot ? userMap.get(lot.farmerId) : null;
+
+          return {
+            ...b,
+            id: b._id,
+            buyer: buyer ? { name: buyer.name, district: buyer.district, phone: buyer.phone } : { name: 'Buyer' },
+            lot: lot ? { ...lot, id: lot._id, crop: crop || { name: 'Produce' }, farmer: farmer || { name: 'Farmer' } } : null,
+          };
+        });
+      }
+    } catch (err: any) {
+      this.logger.warn(`MongoDB getAllBids fallback: ${err.message}`);
     }
+
+    let bids = [...FALLBACK_BIDS];
+    if (query.status) bids = bids.filter((b) => b.status === query.status);
+    return bids;
   }
 
   async getUsers() {
-    if (!this.prisma.isConnected) {
-      const allUsers = [...FALLBACK_USERS, ...this.authService.getInMemoryRegisteredUsers()];
-      const farmers = allUsers
-        .filter((u) => u.role === Role.FARMER)
-        .map((f) => ({
-          ...f,
-          activeLots: FALLBACK_LOTS.filter((l) => l.farmerId === f.id && l.status !== CropLotStatus.SOLD).length,
-          soldLots: FALLBACK_LOTS.filter((l) => l.farmerId === f.id && l.status === CropLotStatus.SOLD).length,
-          totalSales: 174000,
-        }));
-
-      const buyers = allUsers
-        .filter((u) => u.role === Role.BUYER)
-        .map((b) => ({
-          ...b,
-          activeBids: FALLBACK_BIDS.filter((bid) => bid.buyerId === b.id && bid.status === BidStatus.PENDING).length,
-          acceptedBids: FALLBACK_BIDS.filter((bid) => bid.buyerId === b.id && bid.status === BidStatus.ACCEPTED).length,
-          cancelledBids: FALLBACK_BIDS.filter((bid) => bid.buyerId === b.id && bid.status === BidStatus.WITHDRAWN).length,
-          totalProcurement: 174000,
-        }));
-
-      return { farmers, buyers };
-    }
-
     try {
-      const users = await this.prisma.user.findMany({
-        select: {
-          id: true,
-          name: true,
-          email: true,
-          phone: true,
-          role: true,
-          verificationStatus: true,
-          approvalStatus: true,
-          district: true,
-          state: true,
-          location: true,
-          isVerified: true,
-          createdAt: true,
-          cropLots: {
-            select: { id: true, status: true },
-          },
-          bids: {
-            select: { id: true, status: true },
-          },
-          buyerTransactions: {
-            select: { totalAmount: true },
-          },
-          farmerTransactions: {
-            select: { totalAmount: true },
-          },
-        },
-      });
+      const users = await this.userModel.find().lean();
+      if (users && users.length > 0) {
+        const lots = await this.cropLotModel.find().lean();
+        const bids = await this.bidModel.find().lean();
+        const txns = await this.transactionModel.find().lean();
 
-      const farmers = users
-        .filter((u) => u.role === Role.FARMER)
-        .map((f) => ({
-          ...f,
-          activeLots: f.cropLots.filter((l) => l.status !== CropLotStatus.SOLD && l.status !== CropLotStatus.CANCELLED).length,
-          soldLots: f.cropLots.filter((l) => l.status === CropLotStatus.SOLD).length,
-          totalSales: f.farmerTransactions.reduce((acc, t) => acc + t.totalAmount, 0),
-        }));
+        const farmers = users
+          .filter((u) => u.role === Role.FARMER)
+          .map((f) => ({
+            ...f,
+            id: f._id,
+            activeLots: lots.filter((l) => l.farmerId === f._id && l.status !== CropLotStatus.SOLD && l.status !== CropLotStatus.CANCELLED).length,
+            soldLots: lots.filter((l) => l.farmerId === f._id && l.status === CropLotStatus.SOLD).length,
+            totalSales: txns.filter((t) => t.farmerId === f._id).reduce((acc, t) => acc + (t.totalAmount || 0), 0),
+          }));
 
-      const buyers = users
-        .filter((u) => u.role === Role.BUYER)
-        .map((b) => ({
-          ...b,
-          activeBids: b.bids.filter((bid) => bid.status === BidStatus.PENDING).length,
-          acceptedBids: b.bids.filter((bid) => bid.status === BidStatus.ACCEPTED).length,
-          cancelledBids: b.bids.filter((bid) => bid.status === BidStatus.WITHDRAWN).length,
-          totalProcurement: b.buyerTransactions.reduce((acc, t) => acc + t.totalAmount, 0),
-        }));
+        const buyers = users
+          .filter((u) => u.role === Role.BUYER)
+          .map((b) => ({
+            ...b,
+            id: b._id,
+            activeBids: bids.filter((bid) => bid.buyerId === b._id && bid.status === BidStatus.PENDING).length,
+            acceptedBids: bids.filter((bid) => bid.buyerId === b._id && bid.status === BidStatus.ACCEPTED).length,
+            cancelledBids: bids.filter((bid) => bid.buyerId === b._id && bid.status === BidStatus.WITHDRAWN).length,
+            totalProcurement: txns.filter((t) => t.buyerId === b._id).reduce((acc, t) => acc + (t.totalAmount || 0), 0),
+          }));
 
-      return { farmers, buyers };
-    } catch (err) {
-      return this.getUsers();
+        return { farmers, buyers };
+      }
+    } catch (err: any) {
+      this.logger.warn(`MongoDB getUsers fallback: ${err.message}`);
     }
+
+    const allUsers = [...FALLBACK_USERS, ...this.authService.getInMemoryRegisteredUsers()];
+    const farmers = allUsers
+      .filter((u) => u.role === Role.FARMER)
+      .map((f) => ({
+        ...f,
+        id: f._id || f.id,
+        activeLots: FALLBACK_LOTS.filter((l) => l.farmerId === f.id && l.status !== CropLotStatus.SOLD).length,
+        soldLots: FALLBACK_LOTS.filter((l) => l.farmerId === f.id && l.status === CropLotStatus.SOLD).length,
+        totalSales: 174000,
+      }));
+
+    const buyers = allUsers
+      .filter((u) => u.role === Role.BUYER)
+      .map((b) => ({
+        ...b,
+        id: b._id || b.id,
+        activeBids: FALLBACK_BIDS.filter((bid) => bid.buyerId === b.id && bid.status === BidStatus.PENDING).length,
+        acceptedBids: FALLBACK_BIDS.filter((bid) => bid.buyerId === b.id && bid.status === BidStatus.ACCEPTED).length,
+        cancelledBids: FALLBACK_BIDS.filter((bid) => bid.buyerId === b.id && bid.status === BidStatus.WITHDRAWN).length,
+        totalProcurement: 174000,
+      }));
+
+    return { farmers, buyers };
   }
 
   async getActivityFeed(limit: number = 50) {

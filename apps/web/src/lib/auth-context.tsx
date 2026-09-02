@@ -28,6 +28,8 @@ export interface User {
   fssai?: string | null;
   kccNumber?: string | null;
   apmcLicense?: string | null;
+  geoPoint?: { type: string; coordinates: [number, number] } | null;
+  profilePhoto?: { url?: string; fileId?: string; filename?: string; mimeType?: string; sizeBytes?: number } | null;
   isVerified?: boolean;
   profileCompletionPercentage?: number;
   profileCompletionStatus?: 'COMPLETE' | 'INCOMPLETE';

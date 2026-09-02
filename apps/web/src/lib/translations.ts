@@ -41,6 +41,16 @@ export interface UnifiedTranslations {
   fieldOrganization: string;
   fieldName: string;
   fieldContact: string;
+  fieldProfilePhoto: string;
+  useCurrentLocation: string;
+  locationDetected: string;
+  detectingLocation: string;
+  cameraSnapshot: string;
+  takePhoto: string;
+  retakePhoto: string;
+  uploadPhoto: string;
+  photoRequired: string;
+  photoCaptured: string;
 
   // Landing Page
   heroPill: string;
@@ -451,8 +461,18 @@ export const translations: Record<Language, UnifiedTranslations> = {
     fieldState: 'State',
     fieldLocation: 'Farm-Gate / Loading Location',
     fieldOrganization: 'Company / Organization Name',
-    fieldName: 'Full Name',
+    fieldName: 'Full Legal Name',
     fieldContact: 'Contact Number / Email',
+    fieldProfilePhoto: 'Profile Photo',
+    useCurrentLocation: 'Use My Current Location',
+    locationDetected: 'Location Detected Successfully',
+    detectingLocation: 'Detecting GPS Coordinates...',
+    cameraSnapshot: 'Use Camera',
+    takePhoto: 'Take Snapshot',
+    retakePhoto: 'Retake Photo',
+    uploadPhoto: 'Upload File',
+    photoRequired: 'Profile photo is required',
+    photoCaptured: 'Photo Ready',
 
     heroPill: 'Strengthening Market Linkages & Price Discovery',
     heroHeadline: 'Know the Best Price Before You Sell.',
@@ -854,6 +874,16 @@ export const translations: Record<Language, UnifiedTranslations> = {
     fieldOrganization: 'कंपनी / संस्था का नाम',
     fieldName: 'पूरा नाम',
     fieldContact: 'संपर्क नंबर / ईमेल',
+    fieldProfilePhoto: 'प्रोफ़ाइल फ़ोटो',
+    useCurrentLocation: 'मेरे वर्तमान स्थान का उपयोग करें',
+    locationDetected: 'स्थान सफलतापूर्वक प्राप्त हुआ',
+    detectingLocation: 'जीपीएस स्थान प्राप्त किया जा रहा है...',
+    cameraSnapshot: 'कैमरे का उपयोग करें',
+    takePhoto: 'फ़ोटो खींचें',
+    retakePhoto: 'दोबारा फ़ोटो लें',
+    uploadPhoto: 'फ़ाइल अपलोड करें',
+    photoRequired: 'प्रोफ़ाइल फ़ोटो आवश्यक है',
+    photoCaptured: 'फ़ोटो तैयार है',
 
     heroPill: 'मजबूत बाजार संपर्क एवं पारदर्शी मूल्य निर्धारण',
     heroHeadline: 'फसल बेचने से पहले जानें सही और सर्वोत्तम भाव।',
@@ -1255,6 +1285,16 @@ export const translations: Record<Language, UnifiedTranslations> = {
     fieldOrganization: 'కంపెనీ / సంస్థ పేరు',
     fieldName: 'పూర్తి పేరు',
     fieldContact: 'సంప్రదింపు నంబర్ / ఈమెయిల్',
+    fieldProfilePhoto: 'ప్రొఫైల్ ఫోటో',
+    useCurrentLocation: 'నా ప్రస్తుత స్థానాన్ని ఉపయోగించండి',
+    locationDetected: 'స్థానం విజయవంతంగా గుర్తించబడింది',
+    detectingLocation: 'GPS స్థానాన్ని గుర్తిస్తోంది...',
+    cameraSnapshot: 'కెమెరా ఉపయోగించండి',
+    takePhoto: 'ఫోటో తీయండి',
+    retakePhoto: 'మళ్ళీ ఫోటో తీయండి',
+    uploadPhoto: 'ఫైల్ అప్‌లోడ్ చేయండి',
+    photoRequired: 'ప్రొఫైల్ ఫోటో అవసరం',
+    photoCaptured: 'ఫోటో సిద్ధంగా ఉంది',
 
     heroPill: 'బలమైన మార్కెట్ అనుసంధానం & పారదర్శక ధరల గుర్తింపు',
     heroHeadline: 'మీ పంటను అమ్మే ముందే సరైన & ఉత్తమ ధరను తెలుసుకోండి.',

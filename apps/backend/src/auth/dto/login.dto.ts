@@ -1,6 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { IsEnum, IsNotEmpty, IsOptional, IsString } from 'class-validator';
-import { Role } from '@prisma/client';
+import { Role } from '../../database/schemas/enums';
 
 export class LoginDto {
   @ApiProperty({ example: '9876543210', description: 'Phone number or email address' })

@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="120" height="120">
+  <rect width="120" height="120" rx="60" fill="#EA580C" />
+  <!-- Ashoka Chakra Style / Gov Coat of Arms Motif -->
+  <circle cx="60" cy="45" r="22" fill="#FEF3C7" />
+  <circle cx="60" cy="45" r="14" fill="#EA580C" />
+  <circle cx="60" cy="45" r="5" fill="#FFFFFF" />
+  <!-- Ashoka Spoke lines -->
+  <line x1="60" y1="31" x2="60" y2="59" stroke="#FFFFFF" stroke-width="1.5" />
+  <line x1="46" y1="45" x2="74" y2="45" stroke="#FFFFFF" stroke-width="1.5" />
+  <line x1="50" y1="35" x2="70" y2="55" stroke="#FFFFFF" stroke-width="1.5" />
+  <line x1="50" y1="55" x2="70" y2="35" stroke="#FFFFFF" stroke-width="1.5" />
+  <!-- Shield Base -->
+  <path d="M25 105 C25 78, 42 68, 60 68 C78 68, 95 78, 95 105 Z" fill="#7C2D12" />
+  <polygon points="60,74 54,92 66,92" fill="#FDE68A" />
+</svg>

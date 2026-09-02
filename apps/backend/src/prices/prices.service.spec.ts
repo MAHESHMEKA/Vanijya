@@ -1,20 +1,37 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { getModelToken } from '@nestjs/mongoose';
 import { PricesService } from './prices.service';
-import { PrismaService } from '../prisma/prisma.service';
 import { PriceAnalyticsService } from './services/price-analytics.service';
 import { PriceCacheService } from './services/price-cache.service';
 import { MockMarketDataProvider } from './providers/mock-market-data.provider';
 import { MARKET_DATA_PROVIDER_TOKEN } from './providers/market-data.constants';
+import { MandiPrice, Crop, Market } from '../database/schemas';
 
 describe('PricesService & Market Intelligence', () => {
   let service: PricesService;
   let mockProvider: MockMarketDataProvider;
   let analyticsService: PriceAnalyticsService;
 
-  const mockPrismaService = {
-    mandiPrice: {
-      findMany: jest.fn().mockResolvedValue([]),
-    },
+  const mockMandiPriceModel = {
+    find: jest.fn().mockReturnValue({
+      sort: jest.fn().mockReturnValue({
+        limit: jest.fn().mockReturnValue({
+          lean: jest.fn().mockResolvedValue([]),
+        }),
+      }),
+    }),
+  };
+
+  const mockCropModel = {
+    find: jest.fn().mockReturnValue({
+      lean: jest.fn().mockResolvedValue([]),
+    }),
+  };
+
+  const mockMarketModel = {
+    find: jest.fn().mockReturnValue({
+      lean: jest.fn().mockResolvedValue([]),
+    }),
   };
 
   beforeEach(async () => {
@@ -28,7 +45,9 @@ describe('PricesService & Market Intelligence', () => {
           provide: MARKET_DATA_PROVIDER_TOKEN,
           useClass: MockMarketDataProvider,
         },
-        { provide: PrismaService, useValue: mockPrismaService },
+        { provide: getModelToken(MandiPrice.name), useValue: mockMandiPriceModel },
+        { provide: getModelToken(Crop.name), useValue: mockCropModel },
+        { provide: getModelToken(Market.name), useValue: mockMarketModel },
       ],
     }).compile();
 

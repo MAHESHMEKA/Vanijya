@@ -1,64 +1,53 @@
-import { Injectable, NotFoundException, ForbiddenException, BadRequestException } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
+import { Injectable, NotFoundException, ForbiddenException, BadRequestException, Logger } from '@nestjs/common';
+import { InjectModel } from '@nestjs/mongoose';
+import { Model } from 'mongoose';
+import {
+  Payment,
+  PaymentDocument,
+  Transaction,
+  TransactionDocument,
+  PaymentStatus,
+  Role,
+  TransactionStatus,
+  NotificationType,
+} from '../database/schemas';
 import { UpdatePaymentStatusDto } from './dto/update-payment-status.dto';
-import { PaymentStatus, Role, TransactionStatus, NotificationType } from '@prisma/client';
 import { FALLBACK_PAYMENTS, FALLBACK_TRANSACTIONS } from '../bids/bids.service';
 import { NotificationsService } from '../notifications/notifications.service';
 
 @Injectable()
 export class PaymentsService {
+  private readonly logger = new Logger(PaymentsService.name);
+
   constructor(
-    private prisma: PrismaService,
-    private notificationsService: NotificationsService,
+    @InjectModel(Payment.name) private readonly paymentModel: Model<PaymentDocument>,
+    @InjectModel(Transaction.name) private readonly transactionModel: Model<TransactionDocument>,
+    private readonly notificationsService: NotificationsService,
   ) {}
 
   async getPaymentByTransaction(transactionId: string, userId: string, role: Role) {
-    if (!this.prisma.isConnected) {
-      const pay = FALLBACK_PAYMENTS.find((p) => p.transactionId === transactionId);
-      if (!pay) throw new NotFoundException(`Payment record for transaction ${transactionId} not found.`);
-      const txn = FALLBACK_TRANSACTIONS.find((t) => t.id === transactionId);
-      return { ...pay, transaction: txn };
-    }
-
     try {
-      const payment = await this.prisma.payment.findUnique({
-        where: { transactionId },
-        include: {
-          transaction: {
-            include: {
-              lot: { include: { crop: true } },
-              buyer: {
-                select: { id: true, name: true, phone: true, isVerified: true },
-              },
-              farmer: {
-                select: { id: true, name: true, phone: true, isVerified: true },
-              },
-            },
-          },
-        },
-      });
-
-      if (!payment) {
-        throw new NotFoundException(`Payment record for transaction ${transactionId} not found.`);
+      const payment = await this.paymentModel.findOne({ transactionId }).lean();
+      if (payment) {
+        const txn = await this.transactionModel.findById(transactionId).lean();
+        if (role !== Role.ADMIN && txn?.buyerId !== userId && txn?.farmerId !== userId) {
+          throw new ForbiddenException('You are not authorized to view this payment.');
+        }
+        return {
+          ...payment,
+          id: payment._id,
+          transaction: txn ? { ...txn, id: txn._id } : null,
+        };
       }
-
-      if (
-        role !== Role.ADMIN &&
-        payment.transaction.buyerId !== userId &&
-        payment.transaction.farmerId !== userId
-      ) {
-        throw new ForbiddenException('You are not authorized to view this payment.');
-      }
-
-      return payment;
-    } catch (err) {
-      const pay = FALLBACK_PAYMENTS.find((p) => p.transactionId === transactionId);
-      if (pay) {
-        const txn = FALLBACK_TRANSACTIONS.find((t) => t.id === transactionId);
-        return { ...pay, transaction: txn };
-      }
-      throw new NotFoundException(`Payment record for transaction ${transactionId} not found.`);
+    } catch (err: any) {
+      if (err instanceof ForbiddenException) throw err;
+      this.logger.warn(`MongoDB getPaymentByTransaction fallback: ${err.message}`);
     }
+
+    const pay = FALLBACK_PAYMENTS.find((p) => p.transactionId === transactionId);
+    if (!pay) throw new NotFoundException(`Payment record for transaction ${transactionId} not found.`);
+    const txn = FALLBACK_TRANSACTIONS.find((t) => t.id === transactionId);
+    return { ...pay, id: pay._id || pay.id, transaction: txn };
   }
 
   async updatePaymentStatus(
@@ -67,102 +56,85 @@ export class PaymentsService {
     role: Role,
     dto: UpdatePaymentStatusDto,
   ) {
-    if (!this.prisma.isConnected) {
-      const pay = FALLBACK_PAYMENTS.find((p) => p.transactionId === transactionId);
-      if (!pay) throw new NotFoundException(`Payment record for transaction ${transactionId} not found.`);
-      const txn = FALLBACK_TRANSACTIONS.find((t) => t.id === transactionId);
-      if (role !== Role.ADMIN && txn?.buyerId !== userId && txn?.farmerId !== userId) {
-        throw new ForbiddenException('You are not authorized to update this payment.');
-      }
+    try {
+      const payment = await this.paymentModel.findOne({ transactionId }).lean();
+      const txn = await this.transactionModel.findById(transactionId).lean();
 
-      if (pay.status === PaymentStatus.PAID && dto.status !== PaymentStatus.PAID) {
-        throw new BadRequestException('Settled payments cannot be reverted to pending or initiated.');
-      }
+      if (payment && txn) {
+        if (role !== Role.ADMIN && txn.buyerId !== userId && txn.farmerId !== userId) {
+          throw new ForbiddenException('You are not authorized to update this payment.');
+        }
 
-      pay.status = dto.status;
-      if (dto.paymentReference) pay.paymentReference = dto.paymentReference;
-      pay.paidAt = new Date();
+        if (payment.status === PaymentStatus.PAID && dto.status !== PaymentStatus.PAID) {
+          throw new BadRequestException('Settled payments cannot be reverted.');
+        }
 
-      if (dto.status === PaymentStatus.PAID && txn) {
-        txn.status = TransactionStatus.COMPLETED;
-        if (txn.farmerId) {
+        const updated = await this.paymentModel
+          .findByIdAndUpdate(
+            payment._id,
+            {
+              $set: {
+                status: dto.status,
+                paymentReference: dto.paymentReference || payment.paymentReference,
+                updatedAt: new Date(),
+              },
+            },
+            { new: true },
+          )
+          .lean();
+
+        if (dto.status === PaymentStatus.PAID) {
+          await this.transactionModel.findByIdAndUpdate(transactionId, {
+            $set: { status: TransactionStatus.COMPLETED, updatedAt: new Date() },
+          });
+
           await this.notificationsService.create({
             recipientId: txn.farmerId,
             type: NotificationType.PAYMENT_PAID,
             title: 'Payment Received & Settled',
-            message: `Payment of ₹${(txn.totalAmount || pay.amount).toLocaleString('en-IN')} has been settled by the buyer (Ref: ${dto.paymentReference || 'UTR-891244'}).`,
+            message: `Payment of ₹${payment.amount.toLocaleString('en-IN')} has been marked as PAID (Ref: ${dto.paymentReference || 'UPI-SETTLED'}).`,
             entityType: 'TRANSACTION',
             entityId: transactionId,
           });
         }
-      }
 
-      return pay;
+        return { ...updated, id: updated?._id };
+      }
+    } catch (err: any) {
+      if (err instanceof NotFoundException || err instanceof ForbiddenException || err instanceof BadRequestException) throw err;
+      this.logger.warn(`MongoDB updatePaymentStatus fallback: ${err.message}`);
     }
 
-    try {
-      const payment = await this.prisma.payment.findUnique({
-        where: { transactionId },
-        include: { transaction: { include: { lot: { include: { crop: true } } } } },
-      });
+    // In-memory fallback
+    const pay = FALLBACK_PAYMENTS.find((p) => p.transactionId === transactionId);
+    if (!pay) throw new NotFoundException(`Payment record for transaction ${transactionId} not found.`);
+    const txn = FALLBACK_TRANSACTIONS.find((t) => t.id === transactionId);
+    if (role !== Role.ADMIN && txn?.buyerId !== userId && txn?.farmerId !== userId) {
+      throw new ForbiddenException('You are not authorized to update this payment.');
+    }
 
-      if (!payment) {
-        throw new NotFoundException(`Payment record for transaction ${transactionId} not found.`);
-      }
+    if (pay.status === PaymentStatus.PAID && dto.status !== PaymentStatus.PAID) {
+      throw new BadRequestException('Settled payments cannot be reverted.');
+    }
 
-      if (
-        role !== Role.ADMIN &&
-        payment.transaction.buyerId !== userId &&
-        payment.transaction.farmerId !== userId
-      ) {
-        throw new ForbiddenException('You are not authorized to update this payment.');
-      }
+    pay.status = dto.status;
+    if (dto.paymentReference) pay.paymentReference = dto.paymentReference;
+    pay.updatedAt = new Date();
 
-      // Validate state transition
-      if (payment.status === PaymentStatus.PAID && dto.status !== PaymentStatus.PAID) {
-        throw new BadRequestException('Settled payments cannot be reverted.');
-      }
-
-      const updatedPayment = await this.prisma.payment.update({
-        where: { transactionId },
-        data: {
-          status: dto.status,
-          paymentReference: dto.paymentReference || payment.paymentReference,
-        },
-      });
-
-      if (dto.status === PaymentStatus.PAID) {
-        await this.prisma.transaction.update({
-          where: { id: transactionId },
-          data: { status: TransactionStatus.COMPLETED },
-        });
-
-        // Notify farmer
+    if (dto.status === PaymentStatus.PAID && txn) {
+      txn.status = TransactionStatus.COMPLETED;
+      if (txn.farmerId) {
         await this.notificationsService.create({
-          recipientId: payment.transaction.farmerId,
+          recipientId: txn.farmerId,
           type: NotificationType.PAYMENT_PAID,
           title: 'Payment Received & Settled',
-          message: `Payment of ₹${payment.amount.toLocaleString('en-IN')} for ${payment.transaction.lot?.crop?.name || 'crop'} has been marked as PAID (Ref: ${dto.paymentReference || updatedPayment.paymentReference || 'Bank UTR'}).`,
+          message: `Payment of ₹${(txn.totalAmount || pay.amount).toLocaleString('en-IN')} has been settled.`,
           entityType: 'TRANSACTION',
           entityId: transactionId,
         });
       }
-
-      return updatedPayment;
-    } catch (err) {
-      if (err instanceof NotFoundException || err instanceof ForbiddenException || err instanceof BadRequestException) throw err;
-      const pay = FALLBACK_PAYMENTS.find((p) => p.transactionId === transactionId);
-      if (pay) {
-        const txn = FALLBACK_TRANSACTIONS.find((t) => t.id === transactionId);
-        pay.status = dto.status;
-        if (dto.paymentReference) pay.paymentReference = dto.paymentReference;
-        pay.paidAt = new Date();
-        if (dto.status === PaymentStatus.PAID && txn) {
-          txn.status = TransactionStatus.COMPLETED;
-        }
-        return pay;
-      }
-      throw err;
     }
+
+    return { ...pay, id: pay._id || pay.id };
   }
 }

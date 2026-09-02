@@ -1,6 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { IsEmail, IsEnum, IsNotEmpty, IsNumber, IsOptional, IsString, MinLength } from 'class-validator';
-import { Role } from '@prisma/client';
+import { Role } from '../../database/schemas/enums';
 
 export class RegisterDto {
   @ApiProperty({ example: 'Ramesh Patel', description: 'Full legal name of the user or contact person' })
@@ -46,6 +46,26 @@ export class RegisterDto {
   @IsString()
   @IsOptional()
   location?: string;
+
+  @ApiPropertyOptional({ example: 20.1718, description: 'GPS Latitude' })
+  @IsNumber()
+  @IsOptional()
+  latitude?: number;
+
+  @ApiPropertyOptional({ example: 73.9854, description: 'GPS Longitude' })
+  @IsNumber()
+  @IsOptional()
+  longitude?: number;
+
+  @ApiPropertyOptional({ example: '/images/avatars/farmer-ramesh.svg', description: 'Profile photo URL' })
+  @IsString()
+  @IsOptional()
+  profilePhotoUrl?: string;
+
+  @ApiPropertyOptional({ example: 'data:image/jpeg;base64,...', description: 'Base64 encoded profile photo data' })
+  @IsString()
+  @IsOptional()
+  profilePhotoBase64?: string;
 
   @ApiPropertyOptional({ example: 'Tomato', description: 'Primary crop cultivated (farmers)' })
   @IsString()

@@ -7,6 +7,8 @@ import { api } from '../../lib/api';
 import { useLanguage } from '../../lib/language-context';
 import { useToast } from '../../components/ui/toast';
 import { Captcha, CaptchaHandle } from '../../components/security/captcha';
+import { PhotoCapture } from '../../components/common/photo-capture';
+import { LocationCapture } from '../../components/common/location-capture';
 import {
   Sprout,
   Building2,
@@ -25,8 +27,8 @@ import {
   AlertTriangle,
   Eye,
   EyeOff,
-  Sparkles,
-  Info,
+  Camera,
+  Navigation,
 } from 'lucide-react';
 
 type AccountPersona = 'FARMER' | 'BUYER';
@@ -52,6 +54,10 @@ export default function UnifiedSignupPage() {
   const [district, setDistrict] = useState('Nashik');
   const [location, setLocation] = useState('');
   const [preferredLanguage, setPreferredLanguage] = useState(language);
+
+  // Photo and Geolocation State
+  const [photoBase64, setPhotoBase64] = useState<string | null>(null);
+  const [geoCoordinates, setGeoCoordinates] = useState<{ latitude: number; longitude: number; accuracy?: number } | null>(null);
 
   // Farmer Specific Fields
   const [village, setVillage] = useState('');
@@ -159,6 +165,15 @@ export default function UnifiedSignupPage() {
         captchaAnswer: captchaData.captchaAnswer.trim().toUpperCase(),
       };
 
+      if (photoBase64) {
+        payload.profilePhotoBase64 = photoBase64;
+      }
+
+      if (geoCoordinates) {
+        payload.latitude = geoCoordinates.latitude;
+        payload.longitude = geoCoordinates.longitude;
+      }
+
       if (persona === 'FARMER') {
         payload.name = name;
         payload.village = village;
@@ -213,11 +228,17 @@ export default function UnifiedSignupPage() {
           </p>
         </div>
 
+        {photoBase64 && (
+          <div className="w-20 h-20 mx-auto rounded-full overflow-hidden border-2 border-emerald-500 shadow-md">
+            <img src={photoBase64} alt="Applicant" className="w-full h-full object-cover" />
+          </div>
+        )}
+
         <div className="p-4 bg-amber-50/70 rounded-2xl border border-amber-200 text-left space-y-2 text-xs">
           <div className="flex justify-between border-b border-amber-100 pb-2 font-bold">
             <span className="text-slate-500">Account Type:</span>
             <span className="text-slate-900 font-black">
-              {persona === 'FARMER' ? `🌾 ${t.roleFarmer.split(' ')[0]}` : `🏢 ${t.roleBuyer.split(' ')[0]}`}
+              {persona === 'FARMER' ? `🌾 Farmer Producer` : `🏢 Institutional Buyer`}
             </span>
           </div>
           <div className="flex justify-between border-b border-amber-100 pb-2">
@@ -228,10 +249,18 @@ export default function UnifiedSignupPage() {
             <span className="text-slate-500">Mobile Number:</span>
             <strong className="text-slate-900">{phone}</strong>
           </div>
-          <div className="flex justify-between">
+          <div className="flex justify-between border-b border-amber-100 pb-2">
             <span className="text-slate-500">Region:</span>
             <strong className="text-slate-900">{district}, {state}</strong>
           </div>
+          {geoCoordinates && (
+            <div className="flex justify-between">
+              <span className="text-slate-500">GPS Coordinates:</span>
+              <strong className="text-emerald-800 font-mono">
+                {geoCoordinates.latitude.toFixed(4)}° N, {geoCoordinates.longitude.toFixed(4)}° E
+              </strong>
+            </div>
+          )}
         </div>
 
         <div className="pt-2">
@@ -252,51 +281,48 @@ export default function UnifiedSignupPage() {
   if (step === 'SELECT_PERSONA') {
     return (
       <div className="max-w-xl mx-auto space-y-6 animate-in fade-in duration-300">
-        <Link href="/login" className="inline-flex items-center gap-1 text-xs text-amber-800 font-bold hover:underline">
-          <ArrowLeft className="w-3.5 h-3.5" /> {t.commonBack} to {t.navLogin}
-        </Link>
-
-        <div className="bg-white p-6 md:p-8 rounded-3xl border border-amber-200 shadow-md space-y-6">
-          <div className="text-center space-y-1.5">
-            <div className="w-12 h-12 bg-gradient-to-br from-amber-400 to-yellow-500 text-slate-950 rounded-2xl flex items-center justify-center mx-auto mb-2 font-bold shadow-md shadow-amber-500/25">
-              <UserPlus className="w-6 h-6" />
-            </div>
-            <span className="text-[10px] font-black uppercase text-amber-800 bg-amber-100 px-2.5 py-0.5 rounded-full">
-              {t.stepPersonaSelect}
+        <div className="bg-white p-6 md:p-8 rounded-3xl border border-amber-200 shadow-md space-y-6 text-center">
+          <div className="space-y-1">
+            <span className="bg-gradient-to-r from-amber-400 to-yellow-500 text-slate-950 text-[10px] font-black px-3 py-1 rounded-full uppercase">
+              SIH 26132 Unified Verification Portal
             </span>
-            <h1 className="text-2xl font-black text-slate-900 tracking-tight">{t.signupTitle}</h1>
-            <p className="text-xs text-slate-500">{t.signupSubtitle}</p>
+            <h1 className="text-2xl md:text-3xl font-black text-slate-900 tracking-tight pt-2">
+              {t.signupTitle}
+            </h1>
+            <p className="text-xs text-slate-500 max-w-sm mx-auto">
+              Select your primary marketplace role to begin the official verification onboarding.
+            </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
-            {/* Farmer Persona Card */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-left">
+            {/* Persona: Farmer */}
             <button
               type="button"
               onClick={() => handleSelectPersona('FARMER')}
-              className="p-5 rounded-3xl border-2 border-amber-200 hover:border-amber-500 bg-gradient-to-b from-amber-50/60 to-white hover:shadow-lg transition text-left space-y-3 group"
+              className="p-5 rounded-2xl border-2 border-emerald-200 hover:border-emerald-500 bg-emerald-50/50 hover:bg-emerald-50 transition space-y-3 group text-left relative overflow-hidden"
             >
-              <div className="w-12 h-12 bg-amber-100 text-amber-900 rounded-2xl flex items-center justify-center font-bold text-xl group-hover:scale-110 transition">
+              <div className="w-12 h-12 bg-emerald-100 text-emerald-800 rounded-2xl flex items-center justify-center font-bold text-xl group-hover:scale-110 transition">
                 🌾
               </div>
               <div>
                 <h3 className="text-base font-black text-slate-900 flex items-center justify-between">
                   {t.accountTypeFarmer}
-                  <ArrowRight className="w-4 h-4 text-amber-600 opacity-0 group-hover:opacity-100 transition" />
+                  <ArrowRight className="w-4 h-4 text-emerald-600 opacity-0 group-hover:opacity-100 transition" />
                 </h3>
                 <p className="text-xs text-slate-600 mt-1 leading-relaxed">
                   {t.accountTypeFarmerDesc}
                 </p>
               </div>
-              <span className="inline-block text-[10px] font-bold text-amber-800 bg-amber-100 px-2 py-0.5 rounded-full">
+              <span className="inline-block text-[10px] font-bold text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-full">
                 0% Middleman Commission
               </span>
             </button>
 
-            {/* Buyer Persona Card */}
+            {/* Persona: Buyer */}
             <button
               type="button"
               onClick={() => handleSelectPersona('BUYER')}
-              className="p-5 rounded-3xl border-2 border-amber-200 hover:border-amber-500 bg-gradient-to-b from-amber-50/60 to-white hover:shadow-lg transition text-left space-y-3 group"
+              className="p-5 rounded-2xl border-2 border-amber-200 hover:border-amber-500 bg-amber-50/50 hover:bg-amber-50 transition space-y-3 group text-left relative overflow-hidden"
             >
               <div className="w-12 h-12 bg-amber-100 text-amber-900 rounded-2xl flex items-center justify-center font-bold text-xl group-hover:scale-110 transition">
                 🏢
@@ -311,7 +337,7 @@ export default function UnifiedSignupPage() {
                 </p>
               </div>
               <span className="inline-block text-[10px] font-bold text-amber-800 bg-amber-100 px-2 py-0.5 rounded-full">
-                Verified Mandi Sourcing
+                Direct Farm-Gate Procurement
               </span>
             </button>
           </div>
@@ -352,7 +378,7 @@ export default function UnifiedSignupPage() {
             {persona === 'FARMER' ? 'Farmer Producer Registration' : 'Institutional Buyer Registration'}
           </h1>
           <p className="text-xs text-slate-500">
-            Submit your credentials for administrative verification. Verified accounts receive direct marketplace access.
+            Submit your credentials, live photo, and GPS location for admin review and market access.
           </p>
         </div>
 
@@ -363,12 +389,21 @@ export default function UnifiedSignupPage() {
           </div>
         )}
 
-        <form onSubmit={handleSubmitRegistration} className="space-y-5">
-          {/* Section: Basic Identity */}
+        <form onSubmit={handleSubmitRegistration} className="space-y-6">
+          {/* Section 1: Applicant Profile Photo Capture */}
+          <div className="space-y-3">
+            <h3 className="text-xs font-black uppercase text-amber-900 tracking-wider flex items-center gap-1.5 border-b border-amber-100 pb-1.5">
+              <Camera className="w-3.5 h-3.5 text-amber-700" />
+              1. Identity Profile Photo Verification
+            </h3>
+            <PhotoCapture onPhotoSelected={setPhotoBase64} required={true} />
+          </div>
+
+          {/* Section 2: Basic Identity */}
           <div className="space-y-3">
             <h3 className="text-xs font-black uppercase text-amber-900 tracking-wider flex items-center gap-1.5 border-b border-amber-100 pb-1.5">
               <ShieldCheck className="w-3.5 h-3.5 text-amber-700" />
-              1. Basic Identity & Contact Details
+              2. Basic Identity & Contact Details
             </h3>
 
             {persona === 'FARMER' ? (
@@ -448,102 +483,17 @@ export default function UnifiedSignupPage() {
             </div>
           </div>
 
-          {/* Section: Passwords & Strength Meter */}
-          <div className="space-y-3">
-            <h3 className="text-xs font-black uppercase text-amber-900 tracking-wider flex items-center gap-1.5 border-b border-amber-100 pb-1.5">
-              <Lock className="w-3.5 h-3.5 text-amber-700" />
-              2. Security Credentials
-            </h3>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">{t.passwordLabel} *</label>
-                <div className="relative">
-                  <input
-                    type={showPassword ? 'text' : 'password'}
-                    required
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="Min 8 characters"
-                    className="w-full px-3.5 py-2.5 pr-10 bg-amber-50/40 border border-amber-200 rounded-xl text-xs font-bold focus:bg-white focus:ring-2 focus:ring-amber-500 focus:outline-none"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700"
-                    tabIndex={-1}
-                  >
-                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                  </button>
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">{t.confirmPasswordLabel} *</label>
-                <input
-                  type={showPassword ? 'text' : 'password'}
-                  required
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  placeholder={t.confirmPasswordPlaceholder}
-                  className={`w-full px-3.5 py-2.5 bg-amber-50/40 border rounded-xl text-xs font-bold focus:bg-white focus:ring-2 focus:outline-none ${
-                    confirmPassword && !doPasswordsMatch
-                      ? 'border-rose-400 focus:ring-rose-500'
-                      : 'border-amber-200 focus:ring-amber-500'
-                  }`}
-                />
-              </div>
-            </div>
-
-            {/* Live Password Strength Meter */}
-            {password && (
-              <div className="p-3 bg-amber-50/50 rounded-xl border border-amber-200 space-y-1.5 text-[11px]">
-                <div className="flex justify-between items-center font-bold">
-                  <span className="text-slate-600">Password Strength:</span>
-                  <span
-                    className={
-                      rulesPassed >= 5
-                        ? 'text-emerald-700 font-black'
-                        : rulesPassed >= 3
-                        ? 'text-amber-700 font-bold'
-                        : 'text-rose-700 font-bold'
-                    }
-                  >
-                    {strengthLabel}
-                  </span>
-                </div>
-                <div className="w-full bg-slate-200 h-1.5 rounded-full overflow-hidden">
-                  <div
-                    className={`h-full transition-all duration-300 ${strengthColor}`}
-                    style={{ width: `${strengthPercent}%` }}
-                  />
-                </div>
-                <div className="grid grid-cols-2 gap-1 text-[10px] text-slate-500 pt-1">
-                  <span className={hasMinLength ? 'text-emerald-700 font-bold' : ''}>
-                    {hasMinLength ? '✓' : '•'} 8+ characters
-                  </span>
-                  <span className={hasUpper && hasLower ? 'text-emerald-700 font-bold' : ''}>
-                    {hasUpper && hasLower ? '✓' : '•'} Upper & lowercase
-                  </span>
-                  <span className={hasNumber ? 'text-emerald-700 font-bold' : ''}>
-                    {hasNumber ? '✓' : '•'} Numbers (0-9)
-                  </span>
-                  <span className={hasSpecial ? 'text-emerald-700 font-bold' : ''}>
-                    {hasSpecial ? '✓' : '•'} Special symbol (@#$%)
-                  </span>
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Section: Geographic & Region Coordinates */}
+          {/* Section 3: Geolocation and Regional Address */}
           <div className="space-y-3">
             <h3 className="text-xs font-black uppercase text-amber-900 tracking-wider flex items-center gap-1.5 border-b border-amber-100 pb-1.5">
               <MapPin className="w-3.5 h-3.5 text-amber-700" />
-              3. Geographic & Operational Region
+              3. Geolocation & Sourcing Hub
             </h3>
 
-            <div className="grid grid-cols-2 gap-3">
+            {/* GPS Capture Widget */}
+            <LocationCapture onLocationCaptured={setGeoCoordinates} />
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1">
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1">{t.fieldState} *</label>
                 <input
@@ -551,7 +501,6 @@ export default function UnifiedSignupPage() {
                   required
                   value={state}
                   onChange={(e) => setState(e.target.value)}
-                  placeholder="Maharashtra"
                   className="w-full px-3.5 py-2.5 bg-amber-50/40 border border-amber-200 rounded-xl text-xs font-bold focus:bg-white focus:ring-2 focus:ring-amber-500 focus:outline-none"
                 />
               </div>
@@ -563,7 +512,6 @@ export default function UnifiedSignupPage() {
                   required
                   value={district}
                   onChange={(e) => setDistrict(e.target.value)}
-                  placeholder="Nashik"
                   className="w-full px-3.5 py-2.5 bg-amber-50/40 border border-amber-200 rounded-xl text-xs font-bold focus:bg-white focus:ring-2 focus:ring-amber-500 focus:outline-none"
                 />
               </div>
@@ -578,222 +526,224 @@ export default function UnifiedSignupPage() {
                     required
                     value={village}
                     onChange={(e) => setVillage(e.target.value)}
-                    placeholder={t.villagePlaceholder}
+                    placeholder="e.g. Pimpalgaon Baswant"
                     className="w-full px-3.5 py-2.5 bg-amber-50/40 border border-amber-200 rounded-xl text-xs font-bold focus:bg-white focus:ring-2 focus:ring-amber-500 focus:outline-none"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">{t.fieldLocation} *</label>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">{t.fieldLocation}</label>
                   <input
                     type="text"
-                    required
                     value={location}
                     onChange={(e) => setLocation(e.target.value)}
-                    placeholder="Village Pimpalgaon, Niphad Taluka"
+                    placeholder="e.g. Niphad Taluka Farm Gate"
                     className="w-full px-3.5 py-2.5 bg-amber-50/40 border border-amber-200 rounded-xl text-xs font-bold focus:bg-white focus:ring-2 focus:ring-amber-500 focus:outline-none"
                   />
                 </div>
               </div>
             ) : (
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">Procurement Yard / Office Address *</label>
+                <label className="block text-xs font-bold text-slate-700 mb-1">{t.warehouseLabel} *</label>
                 <input
                   type="text"
                   required
-                  value={location}
-                  onChange={(e) => setLocation(e.target.value)}
-                  placeholder="e.g. Vashi APMC Sector 19, Navi Mumbai"
+                  value={warehouseLocation}
+                  onChange={(e) => setWarehouseLocation(e.target.value)}
+                  placeholder="e.g. Sector 19, Vashi APMC Terminal"
                   className="w-full px-3.5 py-2.5 bg-amber-50/40 border border-amber-200 rounded-xl text-xs font-bold focus:bg-white focus:ring-2 focus:ring-amber-500 focus:outline-none"
                 />
               </div>
             )}
           </div>
 
-          {/* Section: Role Specific Agronomic / Commercial Profile */}
+          {/* Section 4: Operational Profile */}
           <div className="space-y-3">
             <h3 className="text-xs font-black uppercase text-amber-900 tracking-wider flex items-center gap-1.5 border-b border-amber-100 pb-1.5">
               <FileText className="w-3.5 h-3.5 text-amber-700" />
-              {persona === 'FARMER' ? '4. Agricultural Profile & Compliance' : '4. Commercial Registration & Licenses'}
+              4. Operational & Licensing Credentials
             </h3>
 
             {persona === 'FARMER' ? (
-              <>
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 mb-1">{t.primaryCropLabel}</label>
-                    <select
-                      value={primaryCrop}
-                      onChange={(e) => setPrimaryCrop(e.target.value)}
-                      className="w-full px-3.5 py-2.5 bg-amber-50/40 border border-amber-200 rounded-xl text-xs font-bold focus:bg-white focus:ring-2 focus:ring-amber-500 focus:outline-none"
-                    >
-                      <option value="Tomato">Tomato</option>
-                      <option value="Onion">Onion</option>
-                      <option value="Potato">Potato</option>
-                      <option value="Wheat">Wheat</option>
-                      <option value="Paddy">Paddy / Rice</option>
-                      <option value="Maize">Maize</option>
-                      <option value="Soybean">Soybean</option>
-                      <option value="Cotton">Cotton</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 mb-1">{t.farmSizeLabel}</label>
-                    <input
-                      type="number"
-                      step="0.5"
-                      min="0.5"
-                      value={farmSize}
-                      onChange={(e) => setFarmSize(e.target.value)}
-                      placeholder="5.0"
-                      className="w-full px-3.5 py-2.5 bg-amber-50/40 border border-amber-200 rounded-xl text-xs font-bold focus:bg-white focus:ring-2 focus:ring-amber-500 focus:outline-none"
-                    />
-                  </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">{t.primaryCropLabel}</label>
+                  <select
+                    value={primaryCrop}
+                    onChange={(e) => setPrimaryCrop(e.target.value)}
+                    className="w-full px-3.5 py-2.5 bg-amber-50/40 border border-amber-200 rounded-xl text-xs font-bold focus:bg-white focus:ring-2 focus:ring-amber-500 focus:outline-none"
+                  >
+                    <option value="Tomato">🍅 Tomato (टमाटर / టమోటా)</option>
+                    <option value="Onion">🧅 Onion (प्याज / ఉల్లిపాయ)</option>
+                    <option value="Potato">🥔 Potato (आलू / బంగాళాదుంప)</option>
+                    <option value="Wheat">🌾 Wheat (गेहूं / గోధుమలు)</option>
+                    <option value="Paddy">🍚 Paddy / Rice (धान / వరి)</option>
+                    <option value="Cotton">🌱 Cotton (कपास / పత్తి)</option>
+                    <option value="Soybean">🫘 Soybean (सोयाबीन / సోయాబీన్)</option>
+                    <option value="Maize">🌽 Maize (मक्का / మొక్కజొన్న)</option>
+                  </select>
                 </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 mb-1">{t.kccOptionalLabel}</label>
-                    <input
-                      type="text"
-                      value={kccNumber}
-                      onChange={(e) => setKccNumber(e.target.value)}
-                      placeholder="e.g. KCC-MAH-992144"
-                      className="w-full px-3.5 py-2.5 bg-amber-50/40 border border-amber-200 rounded-xl text-xs font-medium focus:bg-white focus:ring-2 focus:ring-amber-500 focus:outline-none font-mono"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 mb-1">{t.apmcOptionalLabel}</label>
-                    <input
-                      type="text"
-                      value={apmcLicense}
-                      onChange={(e) => setApmcLicense(e.target.value)}
-                      placeholder="e.g. APMC-NSK-TRD-401"
-                      className="w-full px-3.5 py-2.5 bg-amber-50/40 border border-amber-200 rounded-xl text-xs font-medium focus:bg-white focus:ring-2 focus:ring-amber-500 focus:outline-none font-mono"
-                    />
-                  </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">{t.farmSizeLabel} (Acres)</label>
+                  <input
+                    type="number"
+                    step="0.5"
+                    min="0.5"
+                    value={farmSize}
+                    onChange={(e) => setFarmSize(e.target.value)}
+                    className="w-full px-3.5 py-2.5 bg-amber-50/40 border border-amber-200 rounded-xl text-xs font-bold focus:bg-white focus:ring-2 focus:ring-amber-500 focus:outline-none"
+                  />
                 </div>
-              </>
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">{t.kccOptionalLabel}</label>
+                  <input
+                    type="text"
+                    value={kccNumber}
+                    onChange={(e) => setKccNumber(e.target.value)}
+                    placeholder="e.g. KCC-MH-NSK-8821"
+                    className="w-full px-3.5 py-2.5 bg-amber-50/40 border border-amber-200 rounded-xl text-xs font-bold focus:bg-white focus:ring-2 focus:ring-amber-500 focus:outline-none font-mono"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">{t.apmcOptionalLabel}</label>
+                  <input
+                    type="text"
+                    value={apmcLicense}
+                    onChange={(e) => setApmcLicense(e.target.value)}
+                    placeholder="e.g. APMC-NSK-FMR-1042"
+                    className="w-full px-3.5 py-2.5 bg-amber-50/40 border border-amber-200 rounded-xl text-xs font-bold focus:bg-white focus:ring-2 focus:ring-amber-500 focus:outline-none font-mono"
+                  />
+                </div>
+              </div>
             ) : (
-              <>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 mb-1">{t.businessTypeLabel}</label>
-                    <input
-                      type="text"
-                      value={businessType}
-                      onChange={(e) => setBusinessType(e.target.value)}
-                      placeholder="e.g. Food Processor / Wholesale Trader"
-                      className="w-full px-3.5 py-2.5 bg-amber-50/40 border border-amber-200 rounded-xl text-xs font-bold focus:bg-white focus:ring-2 focus:ring-amber-500 focus:outline-none"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 mb-1">{t.warehouseLabel}</label>
-                    <input
-                      type="text"
-                      value={warehouseLocation}
-                      onChange={(e) => setWarehouseLocation(e.target.value)}
-                      placeholder="e.g. Vashi Sector 19 Warehouse Hub"
-                      className="w-full px-3.5 py-2.5 bg-amber-50/40 border border-amber-200 rounded-xl text-xs font-medium focus:bg-white focus:ring-2 focus:ring-amber-500 focus:outline-none"
-                    />
-                  </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">{t.businessTypeLabel}</label>
+                  <input
+                    type="text"
+                    value={businessType}
+                    onChange={(e) => setBusinessType(e.target.value)}
+                    placeholder="e.g. Food Processor / Institutional Buyer"
+                    className="w-full px-3.5 py-2.5 bg-amber-50/40 border border-amber-200 rounded-xl text-xs font-bold focus:bg-white focus:ring-2 focus:ring-amber-500 focus:outline-none"
+                  />
                 </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 mb-1">{t.gstinOptionalLabel}</label>
-                    <input
-                      type="text"
-                      value={gstin}
-                      onChange={(e) => setGstin(e.target.value.toUpperCase())}
-                      placeholder="e.g. 27AABCU9603R1ZM"
-                      className="w-full px-3.5 py-2.5 bg-amber-50/40 border border-amber-200 rounded-xl text-xs font-medium focus:bg-white focus:ring-2 focus:ring-amber-500 focus:outline-none font-mono"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 mb-1">{t.fssaiOptionalLabel}</label>
-                    <input
-                      type="text"
-                      value={fssai}
-                      onChange={(e) => setFssai(e.target.value)}
-                      placeholder="e.g. 10019022009876"
-                      className="w-full px-3.5 py-2.5 bg-amber-50/40 border border-amber-200 rounded-xl text-xs font-medium focus:bg-white focus:ring-2 focus:ring-amber-500 focus:outline-none font-mono"
-                    />
-                  </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">{t.gstinOptionalLabel}</label>
+                  <input
+                    type="text"
+                    value={gstin}
+                    onChange={(e) => setGstin(e.target.value.toUpperCase())}
+                    placeholder="e.g. 27AABCU9603R1ZM"
+                    className="w-full px-3.5 py-2.5 bg-amber-50/40 border border-amber-200 rounded-xl text-xs font-bold focus:bg-white focus:ring-2 focus:ring-amber-500 focus:outline-none font-mono"
+                  />
                 </div>
-              </>
+                <div className="md:col-span-2">
+                  <label className="block text-xs font-bold text-slate-700 mb-1">{t.fssaiOptionalLabel}</label>
+                  <input
+                    type="text"
+                    value={fssai}
+                    onChange={(e) => setFssai(e.target.value)}
+                    placeholder="e.g. 10019022009876"
+                    className="w-full px-3.5 py-2.5 bg-amber-50/40 border border-amber-200 rounded-xl text-xs font-bold focus:bg-white focus:ring-2 focus:ring-amber-500 focus:outline-none font-mono"
+                  />
+                </div>
+              </div>
             )}
           </div>
 
-          {/* Section: Preferred Language */}
-          <div className="space-y-2">
-            <label className="block text-xs font-bold text-slate-700">{t.preferredLanguageLabel}</label>
-            <div className="grid grid-cols-3 gap-2">
-              <button
-                type="button"
-                onClick={() => setPreferredLanguage('en')}
-                className={`py-2 px-3 rounded-xl border text-xs font-bold transition ${
-                  preferredLanguage === 'en'
-                    ? 'bg-amber-500 text-slate-950 border-amber-600 font-black'
-                    : 'bg-amber-50/50 text-slate-700 border-amber-200'
-                }`}
-              >
-                English
-              </button>
-              <button
-                type="button"
-                onClick={() => setPreferredLanguage('hi')}
-                className={`py-2 px-3 rounded-xl border text-xs font-bold transition ${
-                  preferredLanguage === 'hi'
-                    ? 'bg-amber-500 text-slate-950 border-amber-600 font-black'
-                    : 'bg-amber-50/50 text-slate-700 border-amber-200'
-                }`}
-              >
-                हिन्दी
-              </button>
-              <button
-                type="button"
-                onClick={() => setPreferredLanguage('te')}
-                className={`py-2 px-3 rounded-xl border text-xs font-bold transition ${
-                  preferredLanguage === 'te'
-                    ? 'bg-amber-500 text-slate-950 border-amber-600 font-black'
-                    : 'bg-amber-50/50 text-slate-700 border-amber-200'
-                }`}
-              >
-                తెలుగు
-              </button>
+          {/* Section 5: Password Security */}
+          <div className="space-y-3">
+            <h3 className="text-xs font-black uppercase text-amber-900 tracking-wider flex items-center gap-1.5 border-b border-amber-100 pb-1.5">
+              <Lock className="w-3.5 h-3.5 text-amber-700" />
+              5. Account Security Credentials
+            </h3>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">{t.passwordLabel} *</label>
+                <div className="relative">
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    required
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="Min 8 chars, 1 Upper, 1 Lower, 1 Symbol"
+                    className="w-full px-3.5 py-2.5 bg-amber-50/40 border border-amber-200 rounded-xl text-xs font-bold focus:bg-white focus:ring-2 focus:ring-amber-500 focus:outline-none pr-10"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                  >
+                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">{t.confirmPasswordLabel} *</label>
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  required
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  placeholder="Re-enter password"
+                  className="w-full px-3.5 py-2.5 bg-amber-50/40 border border-amber-200 rounded-xl text-xs font-bold focus:bg-white focus:ring-2 focus:ring-amber-500 focus:outline-none"
+                />
+              </div>
             </div>
+
+            {/* Password Strength Meter */}
+            {password.length > 0 && (
+              <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-2 text-xs">
+                <div className="flex items-center justify-between font-bold">
+                  <span className="text-slate-600">Password Strength:</span>
+                  <span className={rulesPassed >= 5 ? 'text-emerald-700' : rulesPassed >= 3 ? 'text-amber-700' : 'text-rose-700'}>
+                    {strengthLabel}
+                  </span>
+                </div>
+                <div className="h-1.5 w-full bg-slate-200 rounded-full overflow-hidden">
+                  <div className={`h-full ${strengthColor} transition-all duration-300`} style={{ width: `${strengthPercent}%` }} />
+                </div>
+              </div>
+            )}
           </div>
 
-          {/* Section: Visual Alphanumeric CAPTCHA */}
-          <Captcha
-            ref={captchaRef}
-            onCaptchaChange={setCaptchaData}
-            disabled={isSubmitting}
-          />
+          {/* Section 6: Security Visual CAPTCHA */}
+          <div className="space-y-3 pt-2">
+            <h3 className="text-xs font-black uppercase text-amber-900 tracking-wider flex items-center gap-1.5 border-b border-amber-100 pb-1.5">
+              <ShieldCheck className="w-3.5 h-3.5 text-amber-700" />
+              6. Visual Security CAPTCHA Challenge
+            </h3>
+            <Captcha
+              ref={captchaRef}
+              onCaptchaChange={(data) => setCaptchaData(data)}
+            />
+          </div>
 
-          {/* Submit Button */}
-          <button
-            type="submit"
-            disabled={isSubmitting || !isPasswordValid || !doPasswordsMatch}
-            className={`w-full font-black py-4 rounded-2xl text-xs uppercase tracking-wider transition transform shadow-md flex items-center justify-center gap-2 ${
-              isSubmitting || !isPasswordValid || !doPasswordsMatch
-                ? 'bg-slate-200 text-slate-400 cursor-not-allowed border border-slate-300'
-                : 'bg-gradient-to-r from-amber-400 via-amber-500 to-yellow-500 hover:from-amber-300 hover:to-yellow-400 text-slate-950 shadow-amber-500/25 active:scale-95'
-            }`}
-          >
-            {isSubmitting ? (
-              <>
-                <Loader2 className="w-4 h-4 animate-spin" />
-                {t.submittingRegistration}
-              </>
-            ) : (
-              <>
-                <UserPlus className="w-4 h-4" />
-                {t.btnSubmitRegistration}
-              </>
-            )}
-          </button>
+          {/* Submit Action */}
+          <div className="pt-3">
+            <button
+              type="submit"
+              disabled={isSubmitting || !isPasswordValid || !doPasswordsMatch}
+              className="w-full py-4 px-6 bg-gradient-to-r from-amber-400 via-amber-500 to-yellow-500 hover:from-amber-300 hover:to-yellow-400 text-slate-950 font-black text-sm rounded-2xl shadow-lg shadow-amber-500/25 transition disabled:opacity-50 flex items-center justify-center gap-2 active:scale-[0.99]"
+            >
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span>Submitting Registration Dossier...</span>
+                </>
+              ) : (
+                <>
+                  <UserPlus className="w-4 h-4" />
+                  <span>Submit Application for Verification</span>
+                </>
+              )}
+            </button>
+          </div>
+
+          <p className="text-[11px] text-center text-slate-500">
+            By submitting, you declare that all uploaded identity documents and crop/business credentials are accurate.
+          </p>
         </form>
       </div>
     </div>

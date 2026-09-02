@@ -9,6 +9,18 @@ export enum UserRole {
   ADMIN = 'ADMIN',
 }
 
+export enum VerificationStatus {
+  PENDING = 'PENDING',
+  VERIFIED = 'VERIFIED',
+  REJECTED = 'REJECTED',
+}
+
+export enum ApprovalStatus {
+  PENDING = 'PENDING',
+  APPROVED = 'APPROVED',
+  REJECTED = 'REJECTED',
+}
+
 export enum CropLotStatus {
   OPEN = 'OPEN',
   BIDDING = 'BIDDING',
@@ -57,6 +69,40 @@ export enum AuditAction {
   BID_ACCEPTED = 'BID_ACCEPTED',
   BID_REJECTED = 'BID_REJECTED',
   PAYMENT_PAID = 'PAYMENT_PAID',
+  PROFILE_UPDATED = 'PROFILE_UPDATED',
+  USER_REGISTERED = 'USER_REGISTERED',
+  USER_APPROVED = 'USER_APPROVED',
+  USER_REJECTED = 'USER_REJECTED',
+}
+
+export enum NotificationType {
+  BID_RECEIVED = 'BID_RECEIVED',
+  BID_ACCEPTED = 'BID_ACCEPTED',
+  BID_REJECTED = 'BID_REJECTED',
+  BID_CANCELLED = 'BID_CANCELLED',
+  BID_MODIFIED = 'BID_MODIFIED',
+  LOT_CREATED = 'LOT_CREATED',
+  LOT_SOLD = 'LOT_SOLD',
+  PAYMENT_INITIATED = 'PAYMENT_INITIATED',
+  PAYMENT_PAID = 'PAYMENT_PAID',
+  PROFILE_INCOMPLETE = 'PROFILE_INCOMPLETE',
+  SYSTEM = 'SYSTEM',
+}
+
+export interface GeoPoint {
+  type: 'Point';
+  /**
+   * Coordinates in [longitude, latitude] order as required by GeoJSON and MongoDB 2dsphere indexes
+   */
+  coordinates: [number, number];
+}
+
+export interface ProfilePhotoDTO {
+  fileId?: string;
+  url: string;
+  mimeType?: string;
+  size?: number;
+  uploadedAt?: string;
 }
 
 export interface UserDTO {
@@ -65,11 +111,32 @@ export interface UserDTO {
   phone?: string;
   email?: string;
   role: UserRole;
+  verificationStatus?: VerificationStatus;
+  approvalStatus?: ApprovalStatus;
+  rejectionReason?: string;
+  profilePhoto?: ProfilePhotoDTO;
   location?: string;
+  geoPoint?: GeoPoint;
   district?: string;
   state?: string;
+  village?: string;
+  primaryCrop?: string;
+  farmSize?: number;
+  preferredLanguage?: string;
+  organization?: string;
+  contactPerson?: string;
+  businessType?: string;
+  warehouseLocation?: string;
+  gstin?: string;
+  fssai?: string;
+  kccNumber?: string;
+  apmcLicense?: string;
   isVerified: boolean;
+  profileCompletionStatus?: 'INCOMPLETE' | 'COMPLETE';
+  profileCompletionPercentage?: number;
+  missingFields?: string[];
   createdAt: string;
+  updatedAt?: string;
 }
 
 export interface CropDTO {
@@ -84,6 +151,7 @@ export interface MarketDTO {
   name: string;
   district: string;
   state: string;
+  location?: GeoPoint;
   latitude?: number;
   longitude?: number;
 }
@@ -112,11 +180,14 @@ export interface CropLotDTO {
   expectedPrice: number;
   qualityGrade: QualityGrade | string;
   location: string;
-  harvestDate: string;
+  geoPoint?: GeoPoint;
+  harvestDate?: string;
   status: CropLotStatus;
   farmerName?: string;
   farmerVerified?: boolean;
+  farmerPhoto?: string;
   createdAt: string;
+  updatedAt?: string;
 }
 
 export interface BidDTO {
@@ -124,6 +195,7 @@ export interface BidDTO {
   lotId: string;
   buyerId: string;
   buyerName?: string;
+  buyerPhoto?: string;
   price: number;
   quantity: number;
   message?: string;
@@ -143,6 +215,7 @@ export interface TransactionDTO {
   totalAmount: number;
   status: TransactionStatus;
   createdAt: string;
+  updatedAt?: string;
 }
 
 export interface PaymentDTO {
@@ -150,8 +223,20 @@ export interface PaymentDTO {
   transactionId: string;
   amount: number;
   status: PaymentStatus;
-  reference?: string;
+  paymentReference?: string;
   updatedAt: string;
+}
+
+export interface NotificationDTO {
+  id: string;
+  recipientId: string;
+  type: NotificationType;
+  title: string;
+  message: string;
+  entityType?: string;
+  entityId?: string;
+  isRead: boolean;
+  createdAt: string;
 }
 
 export interface AuditLogDTO {

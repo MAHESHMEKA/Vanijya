@@ -1,10 +1,12 @@
-import { Injectable } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
+import { Injectable, Logger } from '@nestjs/common';
+import { InjectModel } from '@nestjs/mongoose';
+import { Model } from 'mongoose';
+import { Notification, NotificationDocument } from '../database/schemas';
 import { CreateNotificationDto } from './dto/create-notification.dto';
-import { NotificationType } from '@prisma/client';
 
 export const FALLBACK_NOTIFICATIONS: any[] = [
   {
+    _id: 'notif-demo-1',
     id: 'notif-demo-1',
     recipientId: 'usr-farmer-1',
     type: 'BID_RECEIVED',
@@ -16,6 +18,7 @@ export const FALLBACK_NOTIFICATIONS: any[] = [
     createdAt: new Date(Date.now() - 3600000),
   },
   {
+    _id: 'notif-demo-2',
     id: 'notif-demo-2',
     recipientId: 'usr-farmer-1',
     type: 'PAYMENT_PAID',
@@ -30,12 +33,18 @@ export const FALLBACK_NOTIFICATIONS: any[] = [
 
 @Injectable()
 export class NotificationsService {
-  constructor(private prisma: PrismaService) {}
+  private readonly logger = new Logger(NotificationsService.name);
+
+  constructor(
+    @InjectModel(Notification.name)
+    private readonly notificationModel: Model<NotificationDocument>,
+  ) {}
 
   async create(dto: CreateNotificationDto) {
-    if (!this.prisma.isConnected) {
-      const newNotif = {
-        id: `notif-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
+    const notifId = `notif-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`;
+    try {
+      const created = await this.notificationModel.create({
+        _id: notifId,
         recipientId: dto.recipientId,
         type: dto.type,
         title: dto.title,
@@ -44,122 +53,93 @@ export class NotificationsService {
         entityId: dto.entityId || null,
         isRead: false,
         createdAt: new Date(),
-      };
-      FALLBACK_NOTIFICATIONS.unshift(newNotif);
-      return newNotif;
+      });
+      return { ...created.toObject(), id: created._id };
+    } catch (err: any) {
+      this.logger.warn(`MongoDB create notification fallback: ${err.message}`);
     }
 
-    try {
-      return await this.prisma.notification.create({
-        data: {
-          recipientId: dto.recipientId,
-          type: dto.type,
-          title: dto.title,
-          message: dto.message,
-          entityType: dto.entityType,
-          entityId: dto.entityId,
-          isRead: false,
-        },
-      });
-    } catch (err) {
-      const newNotif = {
-        id: `notif-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
-        recipientId: dto.recipientId,
-        type: dto.type,
-        title: dto.title,
-        message: dto.message,
-        entityType: dto.entityType || null,
-        entityId: dto.entityId || null,
-        isRead: false,
-        createdAt: new Date(),
-      };
-      FALLBACK_NOTIFICATIONS.unshift(newNotif);
-      return newNotif;
-    }
+    const newNotif = {
+      _id: notifId,
+      id: notifId,
+      recipientId: dto.recipientId,
+      type: dto.type,
+      title: dto.title,
+      message: dto.message,
+      entityType: dto.entityType || null,
+      entityId: dto.entityId || null,
+      isRead: false,
+      createdAt: new Date(),
+    };
+    FALLBACK_NOTIFICATIONS.unshift(newNotif);
+    return newNotif;
   }
 
   async findAllForUser(userId: string, limit: number = 20) {
-    if (!this.prisma.isConnected) {
-      return FALLBACK_NOTIFICATIONS.filter((n) => n.recipientId === userId)
-        .slice(0, limit)
-        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    try {
+      const list = await this.notificationModel
+        .find({ recipientId: userId })
+        .sort({ createdAt: -1 })
+        .limit(limit)
+        .lean();
+      if (list && list.length > 0) {
+        return list.map((n) => ({ ...n, id: n._id }));
+      }
+    } catch (err: any) {
+      this.logger.warn(`MongoDB findAll notifications fallback: ${err.message}`);
     }
 
-    try {
-      return await this.prisma.notification.findMany({
-        where: { recipientId: userId },
-        orderBy: { createdAt: 'desc' },
-        take: limit,
-      });
-    } catch (err) {
-      return FALLBACK_NOTIFICATIONS.filter((n) => n.recipientId === userId)
-        .slice(0, limit)
-        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-    }
+    return FALLBACK_NOTIFICATIONS.filter((n) => n.recipientId === userId)
+      .slice(0, limit)
+      .map((n) => ({ ...n, id: n._id || n.id }))
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
   }
 
   async getUnreadCount(userId: string): Promise<number> {
-    if (!this.prisma.isConnected) {
-      return FALLBACK_NOTIFICATIONS.filter((n) => n.recipientId === userId && !n.isRead).length;
+    try {
+      const count = await this.notificationModel.countDocuments({
+        recipientId: userId,
+        isRead: false,
+      });
+      return count;
+    } catch (err: any) {
+      this.logger.warn(`MongoDB getUnreadCount fallback: ${err.message}`);
     }
 
-    try {
-      return await this.prisma.notification.count({
-        where: {
-          recipientId: userId,
-          isRead: false,
-        },
-      });
-    } catch (err) {
-      return FALLBACK_NOTIFICATIONS.filter((n) => n.recipientId === userId && !n.isRead).length;
-    }
+    return FALLBACK_NOTIFICATIONS.filter((n) => n.recipientId === userId && !n.isRead).length;
   }
 
   async markAsRead(notificationId: string, userId: string) {
-    if (!this.prisma.isConnected) {
-      const notif = FALLBACK_NOTIFICATIONS.find(
-        (n) => n.id === notificationId && n.recipientId === userId,
+    try {
+      await this.notificationModel.updateOne(
+        { _id: notificationId, recipientId: userId },
+        { $set: { isRead: true } },
       );
-      if (notif) notif.isRead = true;
-      return notif || { success: true };
+    } catch (err: any) {
+      this.logger.warn(`MongoDB markAsRead fallback: ${err.message}`);
     }
 
-    try {
-      return await this.prisma.notification.updateMany({
-        where: {
-          id: notificationId,
-          recipientId: userId,
-        },
-        data: { isRead: true },
-      });
-    } catch (err) {
-      const notif = FALLBACK_NOTIFICATIONS.find(
-        (n) => n.id === notificationId && n.recipientId === userId,
-      );
-      if (notif) notif.isRead = true;
-      return notif || { success: true };
-    }
+    const notif = FALLBACK_NOTIFICATIONS.find(
+      (n) => (n.id === notificationId || n._id === notificationId) && n.recipientId === userId,
+    );
+    if (notif) notif.isRead = true;
+    return { success: true };
   }
 
   async markAllAsRead(userId: string) {
-    if (!this.prisma.isConnected) {
-      FALLBACK_NOTIFICATIONS.forEach((n) => {
-        if (n.recipientId === userId) n.isRead = true;
-      });
-      return { success: true, count: FALLBACK_NOTIFICATIONS.length };
+    try {
+      const res = await this.notificationModel.updateMany(
+        { recipientId: userId, isRead: false },
+        { $set: { isRead: true } },
+      );
+      return { success: true, count: res.modifiedCount };
+    } catch (err: any) {
+      this.logger.warn(`MongoDB markAllAsRead fallback: ${err.message}`);
     }
 
-    try {
-      const result = await this.prisma.notification.updateMany({
-        where: { recipientId: userId, isRead: false },
-        data: { isRead: true },
-      });
-      return { success: true, count: result.count };
-    } catch (err) {
-      FALLBACK_NOTIFICATIONS.forEach((n) => {
-        if (n.recipientId === userId) n.isRead = true;
-      });
-      return { success: true, count: 0 };
-    }
+    FALLBACK_NOTIFICATIONS.forEach((n) => {
+      if (n.recipientId === userId) n.isRead = true;
+    });
+    return { success: true, count: FALLBACK_NOTIFICATIONS.length };
   }
 }

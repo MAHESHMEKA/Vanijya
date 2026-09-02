@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="120" height="120">
+  <rect width="120" height="120" rx="60" fill="#0D9488" />
+  <circle cx="60" cy="45" r="20" fill="#FED7AA" />
+  <circle cx="54" cy="43" r="2.5" fill="#1F2937" />
+  <circle cx="66" cy="43" r="2.5" fill="#1F2937" />
+  <!-- Hair & Glasses -->
+  <path d="M40 38 C40 25, 80 25, 80 38 Z" fill="#1E293B" />
+  <rect x="48" y="40" width="10" height="7" rx="2" fill="none" stroke="#0F172A" stroke-width="1.5" />
+  <rect x="62" y="40" width="10" height="7" rx="2" fill="none" stroke="#0F172A" stroke-width="1.5" />
+  <path d="M58 43 L62 43" stroke="#0F172A" stroke-width="1.5" />
+  <!-- Suit -->
+  <path d="M25 105 C25 78, 42 68, 60 68 C78 68, 95 78, 95 105 Z" fill="#0F172A" />
+  <polygon points="60,68 50,90 70,90" fill="#FFFFFF" />
+  <polygon points="60,72 58,86 62,86" fill="#0D9488" />
+</svg>

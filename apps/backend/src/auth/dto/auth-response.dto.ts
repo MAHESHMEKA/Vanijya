@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { Role, ApprovalStatus, VerificationStatus } from '@prisma/client';
+import { Role, ApprovalStatus, VerificationStatus } from '../../database/schemas/enums';
 
 export class UserProfileDto {
   @ApiProperty()
@@ -27,6 +27,9 @@ export class UserProfileDto {
   rejectionReason?: string | null;
 
   @ApiPropertyOptional({ nullable: true })
+  profilePhoto?: any;
+
+  @ApiPropertyOptional({ nullable: true })
   district: string | null;
 
   @ApiPropertyOptional({ nullable: true })
@@ -37,6 +40,9 @@ export class UserProfileDto {
 
   @ApiPropertyOptional({ nullable: true })
   location: string | null;
+
+  @ApiPropertyOptional({ nullable: true })
+  geoPoint?: any;
 
   @ApiPropertyOptional({ nullable: true })
   primaryCrop?: string | null;

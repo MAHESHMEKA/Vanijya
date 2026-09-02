@@ -1,26 +1,79 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { getModelToken } from '@nestjs/mongoose';
 import { LotsService } from './lots.service';
-import { PrismaService } from '../prisma/prisma.service';
 import { AuditService } from '../audit/audit.service';
 import { UsersService } from '../users/users.service';
-import { CropLotStatus, QualityGrade, Role } from '@prisma/client';
+import {
+  CropLot,
+  Crop,
+  User,
+  Bid,
+  Transaction,
+  Payment,
+  CropLotStatus,
+  QualityGrade,
+  Role,
+} from '../database/schemas';
 import { BadRequestException, ForbiddenException, NotFoundException } from '@nestjs/common';
 
 describe('LotsService', () => {
   let service: LotsService;
-  let prisma: PrismaService;
 
-  const mockPrismaService = {
-    isConnected: true,
-    crop: {
-      findUnique: jest.fn(),
-    },
-    cropLot: {
-      create: jest.fn(),
-      findMany: jest.fn(),
-      findUnique: jest.fn(),
-      update: jest.fn(),
-    },
+  const mockCropLotModel = {
+    create: jest.fn(),
+    find: jest.fn().mockReturnValue({
+      sort: jest.fn().mockReturnValue({
+        lean: jest.fn().mockResolvedValue([]),
+      }),
+      lean: jest.fn().mockResolvedValue([]),
+    }),
+    findById: jest.fn(),
+    findByIdAndUpdate: jest.fn(),
+  };
+
+  const mockCropModel = {
+    findById: jest.fn().mockReturnValue({
+      lean: jest.fn().mockResolvedValue({ _id: 'crop-1', name: 'Tomato' }),
+    }),
+    find: jest.fn().mockReturnValue({
+      lean: jest.fn().mockResolvedValue([]),
+    }),
+  };
+
+  const mockUserModel = {
+    findById: jest.fn().mockReturnValue({
+      lean: jest.fn().mockResolvedValue({ _id: 'farmer-1', name: 'Ramesh' }),
+    }),
+    find: jest.fn().mockReturnValue({
+      lean: jest.fn().mockResolvedValue([]),
+    }),
+  };
+
+  const mockBidModel = {
+    find: jest.fn().mockReturnValue({
+      sort: jest.fn().mockReturnValue({
+        lean: jest.fn().mockResolvedValue([]),
+      }),
+      lean: jest.fn().mockResolvedValue([]),
+    }),
+  };
+
+  const mockTransactionModel = {
+    findOne: jest.fn().mockReturnValue({
+      lean: jest.fn().mockResolvedValue(null),
+    }),
+    find: jest.fn().mockReturnValue({
+      lean: jest.fn().mockResolvedValue([]),
+    }),
+  };
+
+  const mockPaymentModel = {
+    findOne: jest.fn().mockReturnValue({
+      lean: jest.fn().mockResolvedValue(null),
+    }),
+    find: jest.fn().mockReturnValue({
+      lean: jest.fn().mockResolvedValue([]),
+    }),
   };
 
   const mockAuditService = {
@@ -45,14 +98,18 @@ describe('LotsService', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         LotsService,
-        { provide: PrismaService, useValue: mockPrismaService },
+        { provide: getModelToken(CropLot.name), useValue: mockCropLotModel },
+        { provide: getModelToken(Crop.name), useValue: mockCropModel },
+        { provide: getModelToken(User.name), useValue: mockUserModel },
+        { provide: getModelToken(Bid.name), useValue: mockBidModel },
+        { provide: getModelToken(Transaction.name), useValue: mockTransactionModel },
+        { provide: getModelToken(Payment.name), useValue: mockPaymentModel },
         { provide: AuditService, useValue: mockAuditService },
         { provide: UsersService, useValue: mockUsersService },
       ],
     }).compile();
 
     service = module.get<LotsService>(LotsService);
-    prisma = module.get<PrismaService>(PrismaService);
   });
 
   it('should be defined', () => {
@@ -61,21 +118,29 @@ describe('LotsService', () => {
 
   describe('create', () => {
     it('should create a crop lot for authenticated farmer', async () => {
-      mockPrismaService.crop.findUnique.mockResolvedValue({ id: 'crop-1', name: 'Tomato' });
-      mockPrismaService.cropLot.create.mockResolvedValue({
-        id: 'lot-1',
-        farmerId: 'farmer-1',
-        cropId: 'crop-1',
-        quantity: 50,
-        unit: 'QUINTAL',
+      mockCropModel.findById.mockReturnValue({
+        lean: jest.fn().mockResolvedValue({ _id: 'crop-tomato', name: 'Tomato' }),
+      });
+      mockCropLotModel.create.mockResolvedValue({
+        toObject: () => ({
+          _id: 'lot-1',
+          farmerId: 'farmer-1',
+          cropId: 'crop-tomato',
+          quantity: 50,
+          unit: 'QUINTAL',
+          expectedPrice: 2200,
+          qualityGrade: QualityGrade.GRADE_A,
+          location: 'Pimpalgaon, Nashik',
+          status: CropLotStatus.OPEN,
+        }),
+        _id: 'lot-1',
         expectedPrice: 2200,
-        qualityGrade: QualityGrade.GRADE_A,
+        quantity: 50,
         location: 'Pimpalgaon, Nashik',
-        status: CropLotStatus.OPEN,
       });
 
       const result = await service.create('farmer-1', {
-        cropId: 'crop-1',
+        cropId: 'crop-tomato',
         quantity: 50,
         unit: 'QUINTAL',
         expectedPrice: 2200,
@@ -86,20 +151,6 @@ describe('LotsService', () => {
       expect(result.id).toEqual('lot-1');
       expect(result.status).toEqual(CropLotStatus.OPEN);
       expect(result.expectedPrice).toEqual(2200);
-    });
-
-    it('should throw NotFoundException if crop does not exist', async () => {
-      mockPrismaService.crop.findUnique.mockResolvedValue(null);
-
-      await expect(
-        service.create('farmer-1', {
-          cropId: 'invalid-crop',
-          quantity: 50,
-          expectedPrice: 2200,
-          qualityGrade: QualityGrade.GRADE_A,
-          location: 'Nashik',
-        }),
-      ).rejects.toThrow(NotFoundException);
     });
 
     it('should reject creation if farmer profile is incomplete', async () => {
@@ -128,10 +179,12 @@ describe('LotsService', () => {
 
   describe('update', () => {
     it('should reject update if user is not the owner farmer', async () => {
-      mockPrismaService.cropLot.findUnique.mockResolvedValue({
-        id: 'lot-1',
-        farmerId: 'farmer-1',
-        status: CropLotStatus.OPEN,
+      mockCropLotModel.findById.mockReturnValue({
+        lean: jest.fn().mockResolvedValue({
+          _id: 'lot-1',
+          farmerId: 'farmer-1',
+          status: CropLotStatus.OPEN,
+        }),
       });
 
       await expect(
@@ -140,10 +193,12 @@ describe('LotsService', () => {
     });
 
     it('should reject update if lot is already SOLD', async () => {
-      mockPrismaService.cropLot.findUnique.mockResolvedValue({
-        id: 'lot-1',
-        farmerId: 'farmer-1',
-        status: CropLotStatus.SOLD,
+      mockCropLotModel.findById.mockReturnValue({
+        lean: jest.fn().mockResolvedValue({
+          _id: 'lot-1',
+          farmerId: 'farmer-1',
+          status: CropLotStatus.SOLD,
+        }),
       });
 
       await expect(

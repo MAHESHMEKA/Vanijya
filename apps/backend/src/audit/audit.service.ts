@@ -1,7 +1,8 @@
-import { Injectable } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
-import { AuditAction, Role } from '@prisma/client';
-import { FALLBACK_USERS } from '../auth/fallback-users';
+import { Injectable, Logger } from '@nestjs/common';
+import { InjectModel } from '@nestjs/mongoose';
+import { Model } from 'mongoose';
+import { AuditLog, AuditLogDocument, User, UserDocument, AuditAction } from '../database/schemas';
+import { FALLBACK_USERS } from '../users/users.service';
 
 export interface AuditEntry {
   id?: string;
@@ -20,6 +21,7 @@ export interface AuditEntry {
 
 export const FALLBACK_AUDIT_LOGS: any[] = [
   {
+    _id: 'audit-demo-1',
     id: 'audit-demo-1',
     actorId: 'usr-farmer-1',
     actorName: 'Ramesh Patel',
@@ -32,6 +34,7 @@ export const FALLBACK_AUDIT_LOGS: any[] = [
     metadata: { cropName: 'Tomato', location: 'Nashik' },
   },
   {
+    _id: 'audit-demo-2',
     id: 'audit-demo-2',
     actorId: 'usr-buyer-1',
     actorName: 'FreshCart Agro Ltd.',
@@ -48,11 +51,17 @@ export const FALLBACK_AUDIT_LOGS: any[] = [
 
 @Injectable()
 export class AuditService {
-  constructor(private prisma: PrismaService) {}
+  private readonly logger = new Logger(AuditService.name);
+
+  constructor(
+    @InjectModel(AuditLog.name) private readonly auditLogModel: Model<AuditLogDocument>,
+    @InjectModel(User.name) private readonly userModel: Model<UserDocument>,
+  ) {}
 
   async log(entry: AuditEntry) {
-    const actor = FALLBACK_USERS.find((u) => u.id === entry.actorId);
+    const actor = FALLBACK_USERS.find((u) => u.id === entry.actorId || u._id === entry.actorId);
     const logItem = {
+      _id: `audit-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
       id: `audit-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
       ...entry,
       actorName: actor?.name || 'System User',
@@ -62,69 +71,54 @@ export class AuditService {
 
     FALLBACK_AUDIT_LOGS.unshift(logItem);
 
-    if (this.prisma.isConnected) {
-      try {
-        await this.prisma.auditLog.create({
-          data: {
-            actorId: entry.actorId,
-            action: entry.action,
-            bidId: entry.bidId,
-            lotId: entry.lotId,
-            oldQuantity: entry.oldQuantity,
-            newQuantity: entry.newQuantity,
-            oldStatus: entry.oldStatus,
-            newStatus: entry.newStatus,
-            price: entry.price,
-            metadata: entry.metadata ? JSON.stringify(entry.metadata) : null,
-          },
-        });
-      } catch (err) {
-        // Safe fallback in memory
-      }
+    try {
+      await this.auditLogModel.create({
+        _id: logItem._id,
+        actorId: entry.actorId,
+        action: entry.action,
+        bidId: entry.bidId || null,
+        lotId: entry.lotId || null,
+        oldQuantity: entry.oldQuantity || null,
+        newQuantity: entry.newQuantity || null,
+        oldStatus: entry.oldStatus || null,
+        newStatus: entry.newStatus || null,
+        price: entry.price || null,
+        metadata: entry.metadata || null,
+        createdAt: logItem.createdAt,
+      });
+    } catch (err: any) {
+      this.logger.warn(`MongoDB log audit fallback: ${err.message}`);
     }
 
     return logItem;
   }
 
   async getRecent(limit: number = 50) {
-    if (!this.prisma.isConnected) {
-      return FALLBACK_AUDIT_LOGS.slice(0, limit);
-    }
-
     try {
-      const logs = await this.prisma.auditLog.findMany({
-        take: limit,
-        orderBy: { createdAt: 'desc' },
-        include: {
-          actor: {
-            select: { id: true, name: true, role: true, district: true },
-          },
-          lot: {
-            include: { crop: true },
-          },
-          bid: true,
-        },
-      });
+      const logs = await this.auditLogModel
+        .find()
+        .sort({ createdAt: -1 })
+        .limit(limit)
+        .lean();
 
-      return logs.map((l) => ({
-        id: l.id,
-        actorId: l.actorId,
-        actorName: l.actor?.name || 'User',
-        actorRole: l.actor?.role || 'FARMER',
-        action: l.action,
-        lotId: l.lotId,
-        bidId: l.bidId,
-        oldQuantity: l.oldQuantity,
-        newQuantity: l.newQuantity,
-        oldStatus: l.oldStatus,
-        newStatus: l.newStatus,
-        price: l.price,
-        cropName: l.lot?.crop?.name,
-        metadata: l.metadata ? (typeof l.metadata === 'string' ? JSON.parse(l.metadata) : l.metadata) : null,
-        createdAt: l.createdAt,
-      }));
-    } catch (err) {
-      return FALLBACK_AUDIT_LOGS.slice(0, limit);
+      if (logs && logs.length > 0) {
+        const users = await this.userModel.find().lean();
+        const userMap = new Map(users.map((u) => [u._id, u]));
+
+        return logs.map((l) => {
+          const actor = userMap.get(l.actorId);
+          return {
+            ...l,
+            id: l._id,
+            actorName: actor?.name || 'User',
+            actorRole: actor?.role || 'FARMER',
+          };
+        });
+      }
+    } catch (err: any) {
+      this.logger.warn(`MongoDB getRecent audit fallback: ${err.message}`);
     }
+
+    return FALLBACK_AUDIT_LOGS.slice(0, limit).map((l) => ({ ...l, id: l._id || l.id }));
   }
 }

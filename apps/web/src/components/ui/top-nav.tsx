@@ -124,9 +124,17 @@ export function TopNav() {
 
               <Link
                 href="/profile"
-                className="flex items-center gap-1.5 bg-slate-900 hover:bg-slate-800 px-3 py-1.5 rounded-full text-xs font-semibold border border-amber-500/30 transition"
+                className="flex items-center gap-1.5 bg-slate-900 hover:bg-slate-800 px-2.5 py-1 rounded-full text-xs font-semibold border border-amber-500/30 transition"
               >
-                <ShieldCheck className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                {(user as any)?.profilePhoto?.url || (user as any)?.photo ? (
+                  <img
+                    src={(user as any)?.profilePhoto?.url || (user as any)?.photo}
+                    alt={user.name}
+                    className="w-5 h-5 rounded-full object-cover border border-amber-400 shrink-0 bg-slate-800"
+                  />
+                ) : (
+                  <ShieldCheck className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                )}
                 <span className="max-w-[110px] truncate text-slate-200">
                   {user.name.split(' ')[0]}
                 </span>

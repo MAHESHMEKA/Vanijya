@@ -1,4 +1,4 @@
-import { Controller, Get, Patch, Post, Body, Param, Query, UseGuards } from '@nestjs/common';
+import { Controller, Get, Patch, Body, Param, Query, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { AdminService } from './admin.service';
 import { TransactionsService } from '../transactions/transactions.service';
@@ -6,7 +6,7 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
-import { Role, ApprovalStatus } from '@prisma/client';
+import { Role, ApprovalStatus } from '../database/schemas/enums';
 import { RejectUserDto } from './dto/reject-user.dto';
 
 @ApiTags('Admin Command & Monitoring')

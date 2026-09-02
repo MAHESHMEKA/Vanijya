@@ -1,9 +1,9 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsEnum, IsNotEmpty, IsNumber, IsOptional, IsPositive, IsString, Min } from 'class-validator';
-import { QualityGrade, CropLotStatus } from '@prisma/client';
+import { IsEnum, IsNotEmpty, IsNumber, IsOptional, IsPositive, IsString } from 'class-validator';
+import { QualityGrade, CropLotStatus } from '../../database/schemas/enums';
 
 export class CreateCropLotDto {
-  @ApiProperty({ description: 'Crop UUID' })
+  @ApiProperty({ description: 'Crop ID' })
   @IsString()
   @IsNotEmpty()
   cropId: string;
@@ -67,12 +67,12 @@ export class UpdateCropLotDto {
 }
 
 export class QueryLotsDto {
-  @ApiPropertyOptional({ description: 'Filter by Crop UUID' })
+  @ApiPropertyOptional({ description: 'Filter by Crop ID' })
   @IsString()
   @IsOptional()
   cropId?: string;
 
-  @ApiPropertyOptional({ description: 'Filter by Farmer UUID' })
+  @ApiPropertyOptional({ description: 'Filter by Farmer ID' })
   @IsString()
   @IsOptional()
   farmerId?: string;

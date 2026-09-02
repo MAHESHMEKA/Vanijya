@@ -7,7 +7,7 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
-import { Role } from '@prisma/client';
+import { Role } from '../database/schemas/enums';
 
 @ApiTags('Bids & Bidding Desk')
 @Controller()
@@ -33,19 +33,16 @@ export class BidsController {
   @ApiOperation({ summary: 'List all bids received on a specific crop lot' })
   @ApiResponse({ status: 200, description: 'List of lot bids returned' })
   getLotBids(@Param('id') lotId: string) {
-    return this.bidsService.getLotBids(lotId);
+    return this.bidsService.findBidsForLot(lotId);
   }
 
   @Get('bids/my')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Get current user bids (Buyer submitted bids or Farmer received bids)' })
+  @ApiOperation({ summary: 'Get current user bids' })
   @ApiResponse({ status: 200, description: 'User bids returned' })
-  getMyBids(
-    @CurrentUser('id') userId: string,
-    @CurrentUser('role') role: Role,
-  ) {
-    return this.bidsService.getMyBids(userId, role);
+  getMyBids(@CurrentUser('id') userId: string) {
+    return this.bidsService.findMyBids(userId);
   }
 
   @Patch('bids/:id/quantity')
@@ -61,7 +58,7 @@ export class BidsController {
     @CurrentUser('role') userRole: Role,
     @Body() dto: UpdateBidQuantityDto,
   ) {
-    return this.bidsService.updateBidQuantity(bidId, buyerId, userRole, dto.quantity);
+    return this.bidsService.modifyBidQuantity(bidId, buyerId, userRole, dto.quantity);
   }
 
   @Patch('bids/:id/cancel')

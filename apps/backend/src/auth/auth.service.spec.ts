@@ -1,28 +1,23 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { getModelToken } from '@nestjs/mongoose';
 import { AuthService } from './auth.service';
-import { PrismaService } from '../prisma/prisma.service';
 import { CaptchaService } from './captcha.service';
 import { JwtService } from '@nestjs/jwt';
 import { NotificationsService } from '../notifications/notifications.service';
 import { AuditService } from '../audit/audit.service';
-import { Role, ApprovalStatus, VerificationStatus } from '@prisma/client';
+import { PhotoStorageService } from '../users/photo-storage.service';
+import { User, Role, ApprovalStatus, VerificationStatus } from '../database/schemas';
 import { BadRequestException, ForbiddenException, UnauthorizedException } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 
 describe('AuthService', () => {
   let service: AuthService;
-  let prisma: PrismaService;
   let jwtService: JwtService;
   let captchaService: CaptchaService;
 
-  const mockPrismaService = {
-    isConnected: true,
-    user: {
-      findUnique: jest.fn(),
-      findFirst: jest.fn(),
-      findMany: jest.fn().mockResolvedValue([]),
-      create: jest.fn(),
-    },
+  const mockUserModel = {
+    findOne: jest.fn(),
+    create: jest.fn(),
   };
 
   const mockJwtService = {
@@ -35,6 +30,16 @@ describe('AuthService', () => {
 
   const mockAuditService = {
     log: jest.fn().mockResolvedValue({ id: 'audit-1' }),
+  };
+
+  const mockPhotoStorageService = {
+    storeProfilePhoto: jest.fn().mockResolvedValue({
+      url: '/api/users/photo/file-123',
+      fileId: 'file-123',
+      mimeType: 'image/jpeg',
+      size: 1024,
+      uploadedAt: new Date(),
+    }),
   };
 
   const mockCaptchaService = {
@@ -54,16 +59,16 @@ describe('AuthService', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         AuthService,
-        { provide: PrismaService, useValue: mockPrismaService },
+        { provide: getModelToken(User.name), useValue: mockUserModel },
         { provide: JwtService, useValue: mockJwtService },
         { provide: CaptchaService, useValue: mockCaptchaService },
         { provide: NotificationsService, useValue: mockNotificationsService },
         { provide: AuditService, useValue: mockAuditService },
+        { provide: PhotoStorageService, useValue: mockPhotoStorageService },
       ],
     }).compile();
 
     service = module.get<AuthService>(AuthService);
-    prisma = module.get<PrismaService>(PrismaService);
     jwtService = module.get<JwtService>(JwtService);
     captchaService = module.get<CaptchaService>(CaptchaService);
   });
@@ -74,8 +79,11 @@ describe('AuthService', () => {
 
   describe('register', () => {
     it('should register a new farmer in PENDING state without issuing JWT', async () => {
-      mockPrismaService.user.findUnique.mockResolvedValue(null);
-      mockPrismaService.user.create.mockResolvedValue({
+      mockUserModel.findOne.mockReturnValue({
+        lean: jest.fn().mockResolvedValue(null),
+      });
+      mockUserModel.create.mockResolvedValue({
+        _id: 'farmer-uuid-1',
         id: 'farmer-uuid-1',
         name: 'Ramesh Patel',
         phone: '9876543210',
@@ -157,19 +165,22 @@ describe('AuthService', () => {
   describe('login approval status enforcement', () => {
     it('1. Approved user logs in successfully with valid CAPTCHA', async () => {
       const passwordHash = await bcrypt.hash('Farmer@123', 10);
-      mockPrismaService.user.findFirst.mockResolvedValue({
-        id: 'farmer-uuid-1',
-        name: 'Ramesh Patel',
-        phone: '9876543210',
-        email: 'ramesh@farmer.in',
-        passwordHash,
-        role: Role.FARMER,
-        approvalStatus: ApprovalStatus.APPROVED,
-        verificationStatus: VerificationStatus.VERIFIED,
-        district: 'Nashik',
-        state: 'Maharashtra',
-        location: 'Pimpalgaon',
-        isVerified: true,
+      mockUserModel.findOne.mockReturnValue({
+        lean: jest.fn().mockResolvedValue({
+          _id: 'farmer-uuid-1',
+          id: 'farmer-uuid-1',
+          name: 'Ramesh Patel',
+          phone: '9876543210',
+          email: 'ramesh@farmer.in',
+          passwordHash,
+          role: Role.FARMER,
+          approvalStatus: ApprovalStatus.APPROVED,
+          verificationStatus: VerificationStatus.VERIFIED,
+          district: 'Nashik',
+          state: 'Maharashtra',
+          location: 'Pimpalgaon',
+          isVerified: true,
+        }),
       });
 
       const result = await service.login({
@@ -187,14 +198,17 @@ describe('AuthService', () => {
 
     it('2. Pending user is blocked from logging in with 403 Forbidden', async () => {
       const passwordHash = await bcrypt.hash('Farmer@123', 10);
-      mockPrismaService.user.findFirst.mockResolvedValue({
-        id: 'farmer-uuid-2',
-        name: 'Pending Farmer',
-        phone: '9876543210',
-        passwordHash,
-        role: Role.FARMER,
-        approvalStatus: ApprovalStatus.PENDING,
-        verificationStatus: VerificationStatus.PENDING,
+      mockUserModel.findOne.mockReturnValue({
+        lean: jest.fn().mockResolvedValue({
+          _id: 'farmer-uuid-2',
+          id: 'farmer-uuid-2',
+          name: 'Pending Farmer',
+          phone: '9876543210',
+          passwordHash,
+          role: Role.FARMER,
+          approvalStatus: ApprovalStatus.PENDING,
+          verificationStatus: VerificationStatus.PENDING,
+        }),
       });
 
       await expect(
@@ -209,15 +223,18 @@ describe('AuthService', () => {
 
     it('3. Rejected user is blocked from logging in with rejection reason', async () => {
       const passwordHash = await bcrypt.hash('Farmer@123', 10);
-      mockPrismaService.user.findFirst.mockResolvedValue({
-        id: 'farmer-uuid-3',
-        name: 'Rejected Farmer',
-        phone: '9876543210',
-        passwordHash,
-        role: Role.FARMER,
-        approvalStatus: ApprovalStatus.REJECTED,
-        verificationStatus: VerificationStatus.REJECTED,
-        rejectionReason: 'Invalid land record verification.',
+      mockUserModel.findOne.mockReturnValue({
+        lean: jest.fn().mockResolvedValue({
+          _id: 'farmer-uuid-3',
+          id: 'farmer-uuid-3',
+          name: 'Rejected Farmer',
+          phone: '9876543210',
+          passwordHash,
+          role: Role.FARMER,
+          approvalStatus: ApprovalStatus.REJECTED,
+          verificationStatus: VerificationStatus.REJECTED,
+          rejectionReason: 'Invalid land record verification.',
+        }),
       });
 
       await expect(
